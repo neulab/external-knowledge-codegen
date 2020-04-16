@@ -151,7 +151,7 @@ http://<IP Address>:8081/parse/conala/<utterance>
 
 
 ## Thanks
-Most of the code for the underlying neural model is adapted from [TranX](https://github.com/pcyin/tranx) software.
+Most of the code for the underlying neural model is adapted from [TranX](https://github.com/pcyin/tranx) software, and the [CoNaLa challenge dataset](https://conala-corpus.github.io/).
 
 We are also grateful to the following previous papers that inspire this work :P
 ```
