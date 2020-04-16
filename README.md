@@ -6,7 +6,10 @@ If you are interested in the underlying neural code generation model used in thi
 
 ## Prepare Environment
 We recommend using `conda` to manage the environment:
-`conda env create -n "tranx" -f config/conda_environment.yml`
+```
+conda env create -n "tranx" -f config/conda_environment.yml
+conda activate tranx
+```
 
 Some key dependencies and their versions are:
 - python=3.7
@@ -36,164 +39,121 @@ After this, please check `apidocs/Python-3.7.5/Doc/build/html/library` directory
 To actually parse all the documentation and output the same NL-code pair format as the model supports, please run `apidocs/doc_parser.py`, which would generate `apidocs/python-docs.jsonl`.
 
 ## Resampling API Knowledge
+As we found in the paper, external knowledge from different sources has different characteristics.
+NL-code pairs automatically mined from StackOverflow are good representatives of the questions that developers may ask, but are inevitably noisy.
+NL-code pairs from API documentation are clean, but there may be a topical distribution shift from real questions asked by developers.
+We show that resampling the API documentation is crucial to minimize the distribution gap and improve pretraining performance.
 
+You can find resampled API corpus as used in the experiments in the paper in `apidocs/processed`.
+`direct` contains corpus resampled via "direct retrieval".
+`distsmpl` contains corpus resampled via "distribution estimation".
+Both are compared in the experiments, and `distsmpl` has better performance.
+The filenames of the resampled corpus represent different strategies.
+`snippet` or `intent` means retrieved by code snippet or NL intent.
+`tempX` means the temperature parameter is X.
+`topK` means top K retrieval results are used for resampling.
 
+If you are interested in performing the resampling step on your own, you will need to load `python-docs.jsonl` into an [ElasticSearch](https://github.com/elastic/elasticsearch) instance that provides retrieval functionality.
+Check out `apidocs/index_es.py` for indexing the API documents, and `apidocs/retrieve.py` for actual retrieval and resampling.
 
-# TranX
+## Pretraining and Finetuning Underlying Code Generation Model
+For this part, our underlying model is [TranX](https://github.com/pcyin/tranx) for code generation, and the code is modified and integrated in this repo.
 
-A general-purpose **Tran**sition-based abstract synta**X** parser 
-that maps natural language queries into machine executable 
-source code (e.g., Python) or logical forms (e.g., lambda calculus). **[Online Demo](http://moto.clab.cs.cmu.edu:8081/)**.
+Our paper's training strategy is basically 3-step: pretrain on mined + API data, finetune on [CoNaLa](https://conala-corpus.github.io/) dataset, and rerank.
 
-## System Architecture
+### Preprocess all the data into binarized dataset and vocab.
+All related operations are in `datasets/conala/dataset.py`.
 
-For technical details please refer to our [ACL '18 paper](https://arxiv.org/abs/1806.07832) and [EMNLP '18 demo paper](https://arxiv.org/abs/1810.02720). 
-To cope with different 
-domain specific logical formalisms (e.g., SQL, Python, lambda-calculus, 
-prolog, etc.), TranX uses abstract syntax trees (ASTs) defined in the 
-Abstract Syntax Description Language (ASDL) as intermediate meaning
-representation.
+For our best performing experiment, with is mined (top 100K) + API (dist. resampled w/ code, k = 1 and t = 2), run the following to create the dataset:
 
-![Sysmte Architecture](doc/system.png)
-
-Figure 1 gives a brief overview of the system.
-
-1. TranX first employs a transition system to transform a natural language utterance into a sequence of tree-constructing actions, following the input grammar specification of the target formal language. The grammar specification is provided by users in textual format (e.g., `asdl/lang/py_asdl.txt` for Python grammar).
-
-2. The tree-constructing actions produce an intermediate abstract syntax tree. TranX uses ASTs defined under the ASDL formalism as general-purpose, intermediate meaning representations.
-
-3. The intermediate AST is finally transformed to a domain-specific representation (e.g., Python source code) using customly-defined conversion functions.
-
-**File Structure** tranX is mainly composed of two components: 
-
-1. A general-purpose transition system that defines the generation process of an AST `z`
- using a sequence of tree-constructing actions `a_0, a_1, ..., a_T`.
-2. A neural network that computes the probability distribution over action sequences, conditional on the natural language query `x`, `p(a_0, a_1, ..., a_T | x)`.
-
-These two components are implemented in the following two folders, respectively:
-
-* `asdl` defines a general-purpose transition system based on the ASDL formalism, and its instantiations in different programming languages and datasets. The transition system defines how an AST is constructed using a sequence of actions. This package can be used as a standalone library independent of tranX. See Section 2.2 of the technical report for details.
-
-* `model` contains the neural network implementation of the transition system defined in `asdl`, which computes action probabilities using neural networks.See Section 2.3 of the technical report for details.
-
-Here is a detailed map of the file strcuture:
-```bash
-├── asdl (grammar-based transition system)
-├── datasets (dataset specific code like data preprocessing/evaluation/etc.)
-├── model (PyTorch implementation of neural nets)
-├── server (interactive Web server)
-├── components (helper functions and classes like vocabulary)
+```
+mkdir data/conala
+python datasets/conala/dataset.py --pretrain path/to/conala-mined.jsonl --topk 100000 --include_api apidocs/processed/distsmpl/snippet_15k/goldmine_snippet_count100k_topk1_temp2.jsonl
 ```
 
-## Supported Language and Datasets
+By default things should be preprocessed and saved to `data/conala`. Check out those `.bin` files.
 
-TranX officially supports the following grammatical formalism and datasets.
-More languages (C#) are coming! 
+### Pretraining
 
-Language | Transition System | Grammar Specification | Example Datasets
----------|--------------------| -------- | -------- 
-Python 2   | `asdl.PythonTransitionSystem` | `asdl/lang/py/py_asdl.txt` | Django (Oda et al., 2015)
-Python 3 | `asdl.Python3TransitionSystem` | `asdl/lang/py3/py3_asdl.simplified.txt` | CoNaLa (Yin et al., 2018) 
-Lambda Calculus| `asdl.LambdaCalculusTransitionSystem` | `asdl/lang/lambda_asdl.txt` | ATIS, GeoQuery (Zettlemoyer and Collins, 2005)
-Prolog | `asdl.PrologTransitionSystem` | `asdl/lang/prolog_asdl.txt`  | Jobs (Zettlemoyer and Collins, 2005)
-SQL | `asdl.SqlTransitionSystem` | `asdl/lang/sql/sql_asdl.txt` | WikiSQL (Zhong et al., 2017)
+Check out the script `scripts/conala/train_retrieved_distsmpl.sh` for our best performing strategy. Under the directory you could find scripts for other strategies compared in the experiments as well.
 
-### Evaluation Results
-
-Here is a list of performance results on six datasets using pretrained models in `data/pretrained_models`
-
-| Dataset | Results      | Metric             |
-| ------- | ------------ | ------------------ |
-| GEO     | 88.6         | Accuracy           |
-| ATIS    | 87.7         | Accuracy           |
-| JOBS    | 90.0         | Accuracy           |
-| Django  | 77.2         | Accuracy           |
-| CoNaLa  | 24.5         | Corpus BLEU        |
-| WikiSQL | 79.1         | Execution Accuracy |
-
-
-## Usage
-
-
-### TL;DR
-
-```bash
-git clone https://github.com/pcyin/tranX
-cd tranX
-
-bash ./pull_data.sh  # get datasets and pre-trained models
-
-conda env create -f config/env/tranx.yml  # create conda Python environment.
-
-./scripts/atis/train.sh 0  # train on ATIS semantic parsing dataset with random seed 0
-./scripts/geo/train.sh 0  # train on GEO dataset
-./scripts/django/train.sh 0  # train on django code generation dataset
-./scripts/conala/train.sh 0  # train on CoNaLa code generation dataset
-./scripts/wikisql/train.sh 0  # train on WikiSQL SQL code generation dataset
+Basically, you have to specify number of mined pairs (50k or 100k), retrieval method (`snippet_count100k_topk1_temp2`, etc.):
 ```
+scripts/conala/train_retrieved_distsmpl.sh 100000 snippet_count100k_topk1_temp2
+``` 
+If anything goes wrong, make sure you have already preprocessed the corresponding dataset/strategy in the previous step.
 
+The best model will be saved to `saved_models/conala`
+
+### Finetuning
+
+Check out the script `scripts/conala/finetune_retrieved_distsmpl.sh` for best performing finetuning on CoNaLa training dataset (clean).
+The parameters are similar as above, number of mined pairs (50k or 100k), retrieval method (`snippet_count100k_topk1_temp2`, etc.), and additionally, the previous pretrained model path:
+```
+scripts/conala/finetune_retrieved_distsmpl.sh 100000 snippet_count100k_topk1_temp2 saved_models/conala/retdistsmpl.dr0.3.lr0.001.lr_de0.5.lr_da15.beam15.vocab.src_freq3.code_freq3.mined_100000.goldmine_snippet_count100k_topk1_temp2.bin.pre_100000_goldmine_snippet_count100k_topk1_temp2.bin.seed0.bin
+``` 
+For other strategies, modify accordingly and refer to other `finetune_xxx.sh` scripts.
+The best model will also be saved to `saved_models/conala`.
+
+### Reranking
+Reranking is not the core part of this paper, please refer to [this branch](https://github.com/pcyin/tranX/tree/rerank) and [the paper](https://www.aclweb.org/anthology/P19-1447.pdf).
+This is an orthogonal post-processing step.
+
+In general, you will first need to obtain the decoded hypothesis list after beam-search of the train/dev/test set in CoNaLA, and train the reranking weight on it.
+
+To obtain decodes, run `scripts/conala/decode.sh <train/dev/test_data_file> <model_file>`.
+The outputs will be saved at `decodes/conala`
+
+Then, train the reranker by `scripts/conala/rerank.sh <decode_file_prefix>.dev.bin.decode/.test.decode`
+
+For easy use, we provide our trained reranker at `best_pretrained_models/reranker.conala.vocab.src_freq3.code_freq3.mined_100000.intent_count100k_topk1_temp5.bin`
+
+### Test
+This is easy, just run `scripts/conala/test.sh saved_models/conala/<model_name>.bin`
+
+## Provided State-of-the-art Model
+The best models are provided at `best_pretrained_models/` directories, including the neural model as well as trained reranker weights.
+
+First, checkout our [online demo](http://moto.clab.cs.cmu.edu:8081/).
+
+Second, we also provide an easy to use HTTP API for code generation.
 ### Web Server/HTTP API
-
-`tranX` also ships with a web server for demonstraction and interactive debugging perpuse. It also exposes an HTTP API for online semantic parsing/code generation.
-
-
-To start the web server, simply run:
+To start the web server with our state-of-the-art model, simply run:
 
 ```
-source activate tranx
-PYTHONPATH=../ python app.py --config_file config/server/config_py3.json
+conda activate tranx
+python server/app.py --config_file config/config_conala.json
 ```
 
-This will start a web server at port 8081 with ATIS/GEO/CoNaLa datasets.
+The config file contains the path to our best models under `best_pretrained_models`.
 
+This will start a web server at port 8081.
 
-
-**HTTP API** To programmically query `tranX` to get semantic parsing results, send your HTTP GET request to
+**HTTP API** To programmically query the model to get semantic parsing results, send your HTTP GET request to
 
 ```
-http://<IP Address>:8081/parse/<dataset_name>/<utterance>
+http://<IP Address>:8081/parse/conala/<utterance>
 
-# e.g., http://localhost:8081/parse/atis/show me flight from Pittsburgh to Seattle
+# e.g., http://localhost:8081/parse/conala/reverse a list
 ```
 
 
-
-### Conda Environments
-
-TranX supports both Python 2.7 and 3.5. Please note that 
-some datasets only support Python 2.7 (e.g., Django) or Python 3+ (e.g., WikiSQL).
-The main example conda environment (`config/env/tranx.yml`) supports Python 3, but
-we also provide one for Python 2 (`config/env/tranx-py2.yml`).
-You can export the enviroments using the following command:
-
-```bash
-conda env create -f config/env/(tranx.yml,tranx-py2.yml)
-```
-
-## FAQs
-
-#### How to adapt to a new programming language or logical form?
-
-You need to implement the 
-`TransitionSystem` class with a bunch of custom functions which (1) convert between 
-domain-specific logical forms and intermediate ASTs used by TranX, (2) predictors which 
-check if a hypothesis parse if correct during beam search decoding.
-You may take a look at the examples in `asdl/lang/*`.
-
-#### How to generate those pickled datasets (.bin files)?
-
-Please refer to `datasets/<lang>/dataset.py` for code snippets that converts 
-a dataset into pickled files. 
-
-#### How to run without CUDA?
-
-Simply remove the `--cuda`` flag from the command line arguments. It is included
-by default in all scripts in the `scripts` directory.
 
 ## Reference
+```
+@inproceedings{xu20aclcodegen,
+    title = {Incorporating External Knowledge through Pre-training for Natural Language to Code Generation},
+    author = {Frank F. Xu and Zhengbao Jiang and Pengcheng Yin and Graham Neubig},
+    booktitle = {Annual Conference of the Association for Computational Linguistics},
+    year = {2020}
+}
+```
 
-TranX is described/used in the following two papers:
 
+## Thanks
+Most of the code for the underlying neural model is adapted from [TranX](https://github.com/pcyin/tranx) software.
+
+We are also grateful to the following previous papers that inspire this work :P
 ```
 @inproceedings{yin18emnlpdemo,
     title = {{TRANX}: A Transition-based Neural Abstract Syntax Parser for Semantic Parsing and Code Generation},
@@ -209,12 +169,7 @@ TranX is described/used in the following two papers:
     url = {https://arxiv.org/abs/1806.07832v1},
     year = {2018}
 }
-```
 
-## Thanks
-
-We are also grateful to the following papers that inspire this work :P
-```
 Abstract Syntax Networks for Code Generation and Semantic Parsing.
 Maxim Rabinovich, Mitchell Stern, Dan Klein.
 in Proceedings of the Annual Meeting of the Association for Computational Linguistics, 2017
@@ -223,5 +178,3 @@ The Zephyr Abstract Syntax Description Language.
 Daniel C. Wang, Andrew W. Appel, Jeff L. Korn, and Christopher S. Serra.
 in Proceedings of the Conference on Domain-Specific Languages, 1997
 ```
-
-We also thank [Li Dong](http://homepages.inf.ed.ac.uk/s1478528/) for all the helpful discussions and sharing the data-preprocessing code for ATIS and GEO used in our Web Demo.
