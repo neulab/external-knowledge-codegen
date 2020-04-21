@@ -1,8 +1,26 @@
 # Incorporating External Knowledge through Pre-training for Natural Language to Code Generation
 
-This repository contains code and resources for the ACL20 paper "Incorporating External Knowledge through Pre-training for Natural Language to Code Generation".
-Most of the code in this repo is borrowed from the awesome [TranX](https://github.com/pcyin/tranx) semantic parsing software.
+This repository contains code and resources for the ACL20 paper ["Incorporating External Knowledge through Pre-training for Natural Language to Code Generation"](https://arxiv.org/abs/2004.09015).
+Some of the code is borrowed from the awesome [TranX](https://github.com/pcyin/tranx) semantic parsing software.
 If you are interested in the underlying neural code generation model used in this paper, please have a look!
+
+## TL;DR
+Open-domain code generation aims to generate code in a general-purpose programming language (such as Python) from natural language (NL) intents. Motivated by the intuition that developers usually retrieve resources on the web when writing code, we explore the effectiveness of incorporating two varieties of external knowledge into NL-to-code generation: automatically mined NL-code pairs from the online programming QA forum StackOverflow and programming language API documentation. Our evaluations show that combining the two sources with data augmentation and retrieval-based data re-sampling improves the current state-of-the-art by up to 2.2% absolute BLEU score on the code generation testbed CoNaLa.
+
+If you want to try out our strong pre-trained English-to-Python generation models, check out [this section](#provided-state-of-the-art-model).
+
+Our approach: incorporating external knowledge by data re-sampling, pre-training and fine-tuning.
+
+![](doc/approach.png)
+
+Examples from Python API documentation and pre-processed code snippets, including class constructors, methods, and top-level functions. We use red, blue, and green to denote required, optional positional, and optional keyword arguments respectively.
+
+![](doc/api.png)
+
+Performance comparison of different strategies to incorporate external knowledge.
+
+![](doc/result.png)
+
 
 ## Prepare Environment
 We recommend using `conda` to manage the environment:
