@@ -105,7 +105,7 @@ def preprocess_conala_dataset(train_file, test_file, grammar_file, src_freq=3, c
     pickle.dump(test_examples, open(os.path.join(out_dir, 'test.bin'), 'wb'))
     if mined_examples and api_examples:
         vocab_name = 'vocab.src_freq%d.code_freq%d.mined_%s.%s.bin' % (
-        src_freq, code_freq, num_mined, name)
+            src_freq, code_freq, num_mined, name)
     elif mined_examples:
         vocab_name = 'vocab.src_freq%d.code_freq%d.mined_%s.bin' % (src_freq, code_freq, num_mined)
     elif api_examples:
@@ -132,6 +132,13 @@ def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
     skipped_list = []
     for i, example_json in tqdm(enumerate(dataset), file=sys.stdout, total=len(dataset),
                                 desc='Preproc'):
+
+        # Author: Gabe
+        # Have to skip this one question because it causes the program to hang and never recover.
+        if example_json['question_id'] in [39525993]:
+            skipped_list.append(example_json['question_id'])
+            tqdm.write(f"Skipping {example_json['question_id']} because it causes errors")
+            continue
         try:
             example_dict = preprocess_example(example_json)
 
@@ -147,7 +154,7 @@ def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
                 if isinstance(action, ApplyRuleAction):
                     assert action.production in \
                            transition_system.get_valid_continuating_productions(
-                        hyp)
+                               hyp)
                 # p_t = -1
                 # f_t = None
                 # if hyp.frontier_node:
@@ -175,6 +182,9 @@ def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
             tgt_action_infos = get_action_infos(example_dict['intent_tokens'], tgt_actions)
         except (AssertionError, SyntaxError, ValueError, OverflowError) as e:
             skipped_list.append(example_json['question_id'])
+            tqdm.write(
+                f"Skipping example {example_json['question_id']} because of {type(e).__name__}:{e}"
+            )
             continue
         example = Example(idx=f'{i}-{example_json["question_id"]}',
                           src_sent=example_dict['intent_tokens'],
@@ -187,17 +197,21 @@ def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
 
         examples.append(example)
 
+        # Author: Gabe
+        # Had to remove logging, when the log file would get too large, it would cause the
+        # program to hang.
+
         # log!
-        f.write(f'Example: {example.idx}\n')
-        if 'rewritten_intent' in example.meta['example_dict']:
-            f.write(f"Original Utterance: {example.meta['example_dict']['rewritten_intent']}\n")
-        else:
-            f.write(f"Original Utterance: {example.meta['example_dict']['intent']}\n")
-        f.write(f"Original Snippet: {example.meta['example_dict']['snippet']}\n")
-        f.write(f"\n")
-        f.write(f"Utterance: {' '.join(example.src_sent)}\n")
-        f.write(f"Snippet: {example.tgt_code}\n")
-        f.write(f"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+        # f.write(f'Example: {example.idx}\n')
+        # if 'rewritten_intent' in example.meta['example_dict']:
+        #     f.write(f"Original Utterance: {example.meta['example_dict']['rewritten_intent']}\n")
+        # else:
+        #     f.write(f"Original Utterance: {example.meta['example_dict']['intent']}\n")
+        # f.write(f"Original Snippet: {example.meta['example_dict']['snippet']}\n")
+        # f.write(f"\n")
+        # f.write(f"Utterance: {' '.join(example.src_sent)}\n")
+        # f.write(f"Snippet: {example.tgt_code}\n")
+        # f.write(f"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
 
     f.close()
     print('Skipped due to exceptions: %d' % len(skipped_list), file=sys.stderr)

@@ -112,3 +112,4 @@ saved_models/
 
 # decodes output files
 decodes/
+apidocs/processed/distsmpl/snippet_15k/goldmine_snippet_count100k_topk1_temp2.jsonl.debug
