@@ -2,11 +2,16 @@
 Preprocess Script Created By Gabriel Orlanski.
 
 Attempt to fix asdl errors
+
+Arguments code is from: https://github.com/neulab/external-knowledge-codegen/blob/master/datasets
+/conala/dataset.py
 """
 import argparse
 from datasets.conala.dataset import preprocess_conala_dataset
 
 if __name__ == '__main__':
+    # Originally from dataset/conala/dataset.py, but when attempting to run it there,
+    # I was getting import errors.
     arg_parser = argparse.ArgumentParser()
     #### General configuration ####
     arg_parser.add_argument('--pretrain', type=str, help='Path to pretrain file')
