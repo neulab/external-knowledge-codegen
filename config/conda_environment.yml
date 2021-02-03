@@ -8,6 +8,7 @@ dependencies:
   - cudatoolkit=10.0.130
   - python=3.7.3
   - pytorch=1.1.0
+  - nltk=3.5
   - pip:
     - six
     - xgboost
