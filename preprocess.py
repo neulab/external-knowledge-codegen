@@ -6,6 +6,7 @@ Attempt to fix asdl errors
 Arguments code is from: https://github.com/neulab/external-knowledge-codegen/blob/master/datasets
 /conala/dataset.py
 """
+import os
 import argparse
 from datasets.conala.dataset import preprocess_conala_dataset
 
@@ -24,6 +25,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('--include_api', type=str, help='Path to apidocs file')
     args = arg_parser.parse_args()
 
+    args.out_dir = os.path.join(os.getcwd(), *args.out_dir.split(
+        '/' if '/' in args.out_dir else "\\"))
     # the json files can be downloaded from http://conala-corpus.github.io
     preprocess_conala_dataset(train_file='data/conala/conala-train.json',
                               test_file='data/conala/conala-test.json',

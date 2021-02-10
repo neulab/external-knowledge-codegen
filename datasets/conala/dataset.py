@@ -116,6 +116,8 @@ def preprocess_conala_dataset(train_file, test_file, grammar_file, src_freq=3, c
 
 
 def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
+    file_path = os.path.join(os.getcwd(), *file_path.split('/' if '/' in file_path else "\\"))
+
     try:
         dataset = json.load(open(file_path))
     except:
