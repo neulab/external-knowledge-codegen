@@ -24,8 +24,8 @@ model_name=finetune.mined.retapi.distsmpl.dr${dropout}.lr${lr}.lr_de${lr_decay}.
 
 echo "**** Writing results to logs/conala/${model_name}.log ****"
 mkdir -p logs/conala
-echo commit hash: "$(git rev-parse HEAD)" > logs/conala/"${model_name}".log
-
+#echo commit hash: "$(git rev-parse HEAD)" > logs/conala/"${model_name}".log
+echo "Finetuning"
 python -u exp.py \
     --cuda \
     --seed ${seed} \
@@ -57,5 +57,5 @@ python -u exp.py \
     --beam_size ${beam_size} \
     --log_every 50 \
     --save_to saved_models/conala/${model_name} 2>&1 | tee logs/conala/${model_name}.log
-
+echo "Testing after finetuning"
 . scripts/conala/test.sh saved_models/conala/${model_name}.bin 2>&1 | tee -a logs/conala/${model_name}.log

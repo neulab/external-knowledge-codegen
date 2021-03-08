@@ -25,7 +25,7 @@ model_name=retdistsmpl.dr${dropout}.lr${lr}.lr_de${lr_decay}.lr_da${lr_decay_aft
 
 echo "**** Writing results to logs/conala/${model_name}.log ****"
 mkdir -p logs/conala
-echo commit hash: `git rev-parse HEAD` > logs/conala/${model_name}.log
+#echo commit hash: `git rev-parse HEAD` > logs/conala/${model_name}.log
 
 python -u exp.py \
     --cuda \
