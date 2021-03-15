@@ -141,5 +141,8 @@ class TransitionSystem(object):
         elif lang == 'prolog':
             from .lang.prolog.prolog_transition_system import PrologTransitionSystem
             return PrologTransitionSystem
+        elif lang == 'java':
+            from .lang.java.java_transition_system import JavaTransitionSystem
+            return JavaTransitionSystem
 
         raise ValueError('unknown language %s' % lang)

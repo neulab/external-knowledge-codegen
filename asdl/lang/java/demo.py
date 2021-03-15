@@ -1,0 +1,107 @@
+# coding=utf-8
+
+import javalang
+from asdl.lang.java.java_transition_system import *
+from asdl.hypothesis import *
+import jastor
+
+# read in the grammar specification of Python 2.7, defined in ASDL
+asdl_text = open('java_asdl.simplified.txt').read()
+grammar = ASDLGrammar.from_text(asdl_text)
+print(grammar, flush=True)
+
+
+def test(java_code):
+    # get the (domain-specific) java AST of the example Java code snippet
+    java_ast = javalang.parse.parse(java_code)
+
+    # convert the java AST into general-purpose ASDL AST used by tranX
+    asdl_ast = java_ast_to_asdl_ast(java_ast, grammar)
+    print('String representation of the ASDL AST: \n%s' % asdl_ast.to_string())
+    print('Size of the AST: %d' % asdl_ast.size)
+
+    # we can also convert the ASDL AST back into Java AST
+    java_ast_reconstructed = asdl_ast_to_java_ast(asdl_ast, grammar)
+
+    # initialize the Java transition parser
+    parser = JavaTransitionSystem(grammar)
+    # get the sequence of gold-standard actions to construct the ASDL AST
+    actions = parser.get_actions(asdl_ast)
+
+    # a hypothesis is an (partial) ASDL AST generated using a sequence of
+    # tree-construction actions
+    hypothesis = Hypothesis()
+    for t, action in enumerate(actions, 1):
+        # the type of the action should belong to one of the valid continuing
+        # types of the transition system
+        if action.__class__ not in parser.get_valid_continuation_types(hypothesis):
+            assert action.__class__ in parser.get_valid_continuation_types(hypothesis)
+
+        # if it's an ApplyRule action, the production rule should belong to the
+        # set of rules with the same LHS type as the current rule
+        if isinstance(action, ApplyRuleAction) and hypothesis.frontier_node:
+            assert action.production in grammar[hypothesis.frontier_field.type]
+
+        p_t = (hypothesis.frontier_node.created_time
+               if hypothesis.frontier_node else -1)
+        print(f't={t}, p_t={p_t}, Action={action}', flush=True)
+        hypothesis.apply_action(action)
+
+    src0 = java_code.replace("\n", "").strip()
+    print(f"Original Java code      : {src0}", flush=True)
+    # get the surface code snippets from the original Python AST,
+    # the reconstructed AST and the AST generated using actions
+    # they should be the same
+    src1 = jastor.to_source(java_ast).replace("\n", "").strip()
+    print(f"Java AST                : {src1}", flush=True)
+    src2 = jastor.to_source(java_ast_reconstructed).replace("\n", "").strip()
+    print(f"Java AST from ASDL      : {src2}", flush=True)
+    src3 = jastor.to_source(
+      asdl_ast_to_java_ast(hypothesis.tree, grammar)).replace("\n", "").strip()
+    print(f"Java AST from hypothesis: {src3}", flush=True)
+
+    if not ((src1.replace(" ", "") == src2.replace(" ", "")
+             == src3.replace(" ", "") == src0.replace(" ", ""))):
+        return False
+        # raise Exception("Test failed")
+    # == src3.replace(" ", "") == src0.replace(" ", "")
+    return True
+
+
+java_code = [
+    """public class Test {}""",
+    """package javalang.brewtab.com; class Test {}""",
+    """class Test { String s = "bepo"; }""",
+    """class Test {
+        public static void main(String[] args) {}
+    }""",
+    """class Test {
+        public static void main(String[] args) {
+            System.out.println();
+        }
+    }""",
+    """class Test {
+        public static void main(String[] args) {
+            for (int i = 42; i < args.length; i++)
+                System.out.print(i == 666 ? args[i] : " " + args[i]);
+            System.out.println();
+        }
+    }""",
+    """package javalang.brewtab.com;
+        class Test {
+        public static void main(String[] args) {
+            for (int i = 42; i < args.length; i++)
+                System.out.print(i == 666 ? args[i] : " " + args[i]);
+            System.out.println();
+        }
+    }""",
+    ]
+
+if __name__ == '__main__':
+    for i, java in enumerate(java_code):
+        print(f'Test ({i}/{len(java_code)}). Code:\n"""\n{java}\n"""',
+              flush=True)
+        if not test(java):
+            print(f"Test failed for code:\n{java_code}", file=sys.stderr)
+            exit(1)
+        print()
