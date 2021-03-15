@@ -60,6 +60,13 @@ class Modifier(Node):
     attrs = ("value",)
 
 
+class Void(Node):
+    attrs = ("void",)
+
+
+class Operator(Node):
+    attrs = ("operator",)
+
 # ------------------------------------------------------------------------------
 
 class Type(Node):

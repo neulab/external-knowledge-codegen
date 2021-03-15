@@ -429,30 +429,51 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_BinaryOperation(self, node):
         self.write(node.operandl)
+        # self.write(" ", get_op_symbol(node.operator, ' %s '), " ")
         self.write(" ", node.operator, " ")
         self.write(node.operandr)
 
     def visit_MemberReference(self, node):
         for op in node.prefix_operators:
-            self.write(op)
+            # self.write(get_op_symbol(op, ' %s '))
+            self.write(op.operator)
         if node.qualifier:
             self.write(node.qualifier, ".")
         self.write(node.member)
         for selector in node.selectors:
             self.write(selector)
         for op in node.postfix_operators:
-            self.write(op)
+            # self.write(get_op_symbol(op, ' %s '))
+            self.write(op.operator)
 
     def visit_BasicType(self, node):
         self.write(node.name)
         for _ in range(len(node.dimensions)):
             self.write("[]")
 
+    def visit_Void(self, node):
+        self.write("void")
+
     def visit_ArraySelector(self, node):
-            self.write("[", node.index, "]")
+        self.write("[", node.index, "]")
 
     def visit_Modifier(self, node):
-            self.write(node.value, " ")
+        self.write(node.value, " ")
+
+    def visit_LocalVariableDeclaration(self, node):
+        # ['modifiers', 'annotations', 'type', 'declarators']
+        for attr, child in zip(node.attrs, node.children):
+            if attr in ['modifiers', 'annotations'] and child is not None:
+                for element in child:
+                    self.write(element, " ")
+            elif attr == 'type' and child:
+                self.write(child)
+            elif attr == 'declarators':
+                self.comma_list(node.declarators)
+        self.write(';')
+
+    def visit_Operator(self, node):
+        self.write(node.operator)
 
     #def visit_Assign(self, node):
         #set_precedence(node, node.value, *node.targets)

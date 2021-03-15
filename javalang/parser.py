@@ -180,7 +180,7 @@ class Parser(object):
 
         for level in range(start_level, len(self.operator_precedence)):
             for j in range(1, len(parts) - 1, 2):
-                if parts[j] in self.operator_precedence[level]:
+                if parts[j].operator in self.operator_precedence[level]:
                     operand = self.build_binary_operation(parts[i:j], level + 1)
                     operator = parts[j]
                     i = j + 1
@@ -638,9 +638,8 @@ class Parser(object):
         while True:
             token = self.tokens.look()
             if self.would_accept(Modifier):
-                # modifiers.append(self.accept(Modifier))
                 modifier = self.accept(Modifier)
-                modifiers.append(tree.Modifier(value = modifier))
+                modifiers.append(tree.Modifier(value=modifier))
             elif self.is_annotation():
                 annotation = self.parse_annotation()
                 annotation._position = token.position
@@ -909,7 +908,8 @@ class Parser(object):
 
         return tree.MethodDeclaration(parameters=formal_parameters,
                                       throws=throws,
-                                      body=body)
+                                      body=body,
+                                      return_type=tree.Void())
 
     @parse_debug
     def parse_constructor_declarator_rest(self):
@@ -1846,14 +1846,15 @@ class Parser(object):
     def parse_expression_3(self):
         prefix_operators = list()
         while self.tokens.look().value in Operator.PREFIX:
-            prefix_operators.append(self.tokens.next().value)
+            prefix_operators.append(
+              tree.Operator(operator=self.tokens.next().value))
 
         if self.would_accept('('):
             try:
                 with self.tokens:
-                        lambda_exp = self.parse_lambda_expression()
-                        if lambda_exp:
-                            return lambda_exp
+                    lambda_exp = self.parse_lambda_expression()
+                    if lambda_exp:
+                        return lambda_exp
             except JavaSyntaxError:
                 pass
             try:
@@ -1882,7 +1883,8 @@ class Parser(object):
             token = self.tokens.look()
 
         while token.value in Operator.POSTFIX:
-            primary.postfix_operators.append(self.tokens.next().value)
+            primary.postfix_operators.append(
+                tree.Operator(operator=self.tokens.next().value))
             token = self.tokens.look()
 
         return primary
@@ -1937,7 +1939,7 @@ class Parser(object):
             if self.try_accept('>'):
                 operator = '>>>'
 
-        return operator
+        return tree.Operator(operator=operator)
 
 # ------------------------------------------------------------------------------
 # -- Primary expressions --

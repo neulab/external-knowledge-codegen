@@ -48,7 +48,7 @@ classbodydeclaration = ClassMemberDeclaration(classmemberdeclaration cmd)
       | InstanceInitializer(instanceinitializer ii)
       | StaticInitializer(staticinitializer si)
       | ConstructorDeclaration(constructordeclaration constructordeclaration)
-      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, identifier return_type, identifier name, parameter* parameters, throw? throws, statement* body)
+      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, parameter* parameters, throw? throws, statement* body)
       | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
 
 fieldmodifier = Modifier(constant value)
@@ -58,6 +58,7 @@ parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, i
 statement = ForStatement(identifier? label, forcontrol control, statement body)
       | MethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments, identifier member)
       | StatementExpression(identifier? label, statement expression)
+      | LocalVariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
 
 forcontrol = ForControl(expression init, expression condition, expression* update)
 #      | EnhancedForControl(var, iterable)
@@ -65,7 +66,7 @@ forcontrol = ForControl(expression init, expression condition, expression* updat
 
 expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | Literal(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, string value)
-      | BinaryOperation(constant operator, member_reference operandl, member_reference operandr)
+      | BinaryOperation(infix_operator operator, member_reference operandl, member_reference operandr)
       | MemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, identifier member)
       | TernaryExpression(expression condition, expression if_true, expression if_false)
       | ArraySelector(expression index)
@@ -88,7 +89,8 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
 #      | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type, constructor_type_arguments, arguments, body)
 #      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type, constructor_type_arguments, arguments, body)
 
-type = BasicType(identifier name, int* dimensions)
+type = Void(constant void)
+      |BasicType(identifier name, int* dimensions)
       | ReferenceType(identifier name, int* dimensions, type_argument* arguments, identifier? sub_type)
 
 declarator = VariableDeclarator(identifier name, int* dimensions, expression initializer)
@@ -97,13 +99,21 @@ type_argument = TypeArgument(identifier type, identifier pattern_type)
 
 boolean = True | False
 
-infix_operator = Or | And, BitOr | BitAnd | BitEx | Eq | Ne | Lt | Gt | Le | Ge | LeftShift | RightShift | ZeroFillRightShift | Plus | Minus | Mult | Div | Mod
+infix_operator = Operator(constant operator)
 
-prefix_operator = PreInc | PreDec | Not | BinNot | PrePlus | PreMinus
+prefix_operator = Operator(constant operator)
 
-postfix_operator = PostInc | PostDec
+postfix_operator = Operator(constant operator)
 
-assign_operator = Assisn | AssignInc | AssignDec | AssignMult | AssignDiv | AssignBitAnd | AssignBitOr | AssignBitEx | AssignMod | AssignLeftShift | AssignRightShift | AssignZeroFillRightShift
+assign_operator = Operator(constant operator)
+
+#infix_operator = Or | And | BitOr | BitAnd | BitEx | Eq | Ne | Lt | Gt | Le | Ge | LeftShift | RightShift | ZeroFillRightShift | Plus | Minus | Mult | Div | Mod
+
+#prefix_operator = PreInc | PreDec | Not | BinNot | PrePlus | PreMinus
+
+#postfix_operator = PostInc | PostDec
+
+#assign_operator = Assisn | AssignInc | AssignDec | AssignMult | AssignDiv | AssignBitAnd | AssignBitOr | AssignBitEx | AssignMod | AssignLeftShift | AssignRightShift | AssignZeroFillRightShift
 
 LAMBDA = Lambda
 METHOD_REFERENCE = MethodReference

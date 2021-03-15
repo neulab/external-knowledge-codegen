@@ -45,10 +45,12 @@ class Keyword(JavaToken):
                   'void', 'volatile', 'while'])
 
 
+
 class Modifier(Keyword):
     VALUES = set(['abstract', 'default', 'final', 'native', 'private',
                   'protected', 'public', 'static', 'strictfp', 'synchronized',
                   'transient', 'volatile'])
+
 
 class BasicType(Keyword):
     VALUES = set(['boolean', 'byte', 'char', 'double',
