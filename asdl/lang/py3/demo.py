@@ -10,7 +10,12 @@ if __name__ == '__main__':
     asdl_text = open('py3_asdl.simplified.txt').read()
     grammar = ASDLGrammar.from_text(asdl_text)
 
-    py_code = """pandas.read('file.csv', nrows=100)"""
+    #py_code = """pandas.read('file.csv', nrows=100)"""
+    #py_code = """class A:
+    #def __init__(self):
+        #pass
+    #"""
+    py_code = """1+3"""
 
     # get the (domain-specific) python AST of the example Python code snippet
     py_ast = ast.parse(py_code)
@@ -48,8 +53,13 @@ if __name__ == '__main__':
     # get the surface code snippets from the original Python AST,
     # the reconstructed AST and the AST generated using actions
     # they should be the same
-    src1 = astor.to_source(py_ast).strip()
-    src2 = astor.to_source(py_ast_reconstructed).strip()
-    src3 = astor.to_source(asdl_ast_to_python_ast(hypothesis.tree, grammar)).strip()
+    src0 = py_code.replace("\n", "").strip()
+    print(f'Original Python code      : {src0}')
+    src1 = astor.to_source(py_ast).replace("\n", "").replace("\n", "").strip()
+    print(f"Python AST                : {src1}")
+    src2 = astor.to_source(py_ast_reconstructed).replace("\n", "").strip()
+    print(f"Python AST from ASDL      : {src2}")
+    src3 = astor.to_source(asdl_ast_to_python_ast(hypothesis.tree, grammar)).replace("\n", "").strip()
+    print(f"Python AST from hypothesis: {src3}")
 
-    assert src1 == src2 == src3 == "pandas.read('file.csv', nrows=100)"
+    assert src1 == src2 == src3 == src0
