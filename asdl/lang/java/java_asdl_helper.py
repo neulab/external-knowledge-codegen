@@ -31,7 +31,7 @@ def java_ast_to_asdl_ast(java_ast_node, grammar):
     # assert py_node_name.startswith('_ast.')
 
     production = grammar.get_prod_by_ctr_name(java_node_name)
-    print(production, flush=True)
+    # print(production, flush=True)
 
     fields = []
     for field in production.fields:

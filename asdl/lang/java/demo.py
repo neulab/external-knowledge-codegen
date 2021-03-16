@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import sys
 
 import jastor
@@ -113,10 +114,25 @@ java_code = [
 
 if __name__ == '__main__':
     check_hypothesis = False
-    for i, java in enumerate(java_code):
-        print(f'Test ({i+1}/{len(java_code)}). Code:\n"""\n{java}\n"""',
-              flush=True)
-        if not test(java, check_hypothesis):
-            print(f"Test failed for code:\n{java_code}", file=sys.stderr)
-            exit(1)
-        print()
+    #for i, java in enumerate(java_code):
+        #print(f'Test ({i+1}/{len(java_code)}). Code:\n"""\n{java}\n"""',
+              #flush=True)
+        #if not test(java, check_hypothesis):
+            #print(f"Test failed for code:\n{java_code}", file=sys.stderr)
+            #exit(1)
+        #print()
+
+    for subdir, dirs, files in os.walk(r'test'):
+        for filename in files:
+            filepath = os.path.join(subdir, filename)
+
+            if filepath.endswith(".java"):
+                print(f"Testing Java file {filepath}", file=sys.stderr)
+                with open(filepath, "r") as f:
+                    java = f.read()
+                    if not test(java, check_hypothesis):
+                        print(f"**Warn** Test failed for file: {filepath}",
+                              file=sys.stderr)
+                        print(java, file=sys.stderr)
+                        print()
+                        # exit(1)

@@ -276,6 +276,10 @@ class Parser(object):
         if self.is_annotation():
             package_annotations = self.parse_annotations()
 
+        if self.would_accept('package'):
+            next_token = self.tokens.look()
+            if next_token and next_token.javadoc:
+                javadoc = next_token.javadoc
         if self.try_accept('package'):
             self.tokens.pop_marker(False)
 
@@ -1779,7 +1783,7 @@ class Parser(object):
             assignment_type = self.tokens.next().value
             assignment_expression = self.parse_expression()
             return tree.Assignment(expressionl=expressionl,
-                                   type=assignment_type,
+                                   type=tree.Operator(operator=assignment_type),
                                    value=assignment_expression)
         else:
             return expressionl
@@ -1829,7 +1833,8 @@ class Parser(object):
         while token.value in Operator.INFIX or token.value == 'instanceof':
             if self.try_accept('instanceof'):
                 comparison_type = self.parse_type()
-                parts.extend(('instanceof', comparison_type))
+                parts.extend((tree.Operator(operator='instanceof'),
+                              comparison_type))
             else:
                 operator = self.parse_infix_operator()
                 expression = self.parse_expression_3()

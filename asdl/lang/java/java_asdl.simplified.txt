@@ -1,39 +1,14 @@
 ## ASDL's 4 builtin types are
 identifier, int, string, constant
 
-# package javalang.brewtab.com; class Test {}
-#
-# CompilationUnit(
-#   imports=[],
-#   package=PackageDeclaration(
-#     annotations=None,
-#     documentation=None,
-#     modifiers=None,
-#     name=javalang.brewtab.com),
-#   types=[
-#     ClassDeclaration(
-#       annotations=[],
-#       body=[],
-#       documentation=None,
-#       extends=None,
-#       implements=None,
-#       modifiers=set(),
-#       name=Test,
-#       type_parameters=None
-#     )
-#   ]
-# )
 
 cu = CompilationUnit(package? package, importdeclaration* imports, typedeclaration* types)
 
-package = PackageDeclaration(packagemodifier* modifiers, identifier name)
+package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name)
 
-importdeclaration = SingleTypeImportDeclaration(dottedname name)
-      | TypeImportOnDemandDeclaration(dottedname name)
-      | SingleStaticImportDeclaration(dottedname name, dotop op, identifier id)
-      | StaticImportOnDemandDeclaration(dottedname name)
+importdeclaration = Import(identifier path, constant static, constant wildcard)
 
-packagemodifier = PackageModifier(annotation annot)
+annotation = Annotation(string? element, identifier name)
 
 dottedname = Identifier(identifier id)
       | PackageOrTypeName(dottedname left, dotop op, identifier right)
@@ -48,20 +23,30 @@ classbodydeclaration = ClassMemberDeclaration(classmemberdeclaration cmd)
       | InstanceInitializer(instanceinitializer ii)
       | StaticInitializer(staticinitializer si)
       | ConstructorDeclaration(constructordeclaration constructordeclaration)
-      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, parameter* parameters, throw? throws, statement* body)
+      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, parameter* parameters, identifier* throws, statement* body)
       | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
 
 fieldmodifier = Modifier(constant value)
 
 parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, constant varargs)
+      | InferredFormalParameter(identifier name)
 
 statement = ForStatement(identifier? label, forcontrol control, statement body)
       | MethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments, identifier member)
       | StatementExpression(identifier? label, statement expression)
       | LocalVariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+      | ReturnStatement(identifier* label, expression expression)
+      | IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
+      | BlockStatement(identifier? label, statement* statements)
+      | TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
+      | ThrowStatement(identifier* label, expression expression)
+
+catch = CatchClause(identifier? label, catch_clause_parameter parameter, statement* block)
+
+catch_clause_parameter = CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
 
 forcontrol = ForControl(expression init, expression condition, expression* update)
-#      | EnhancedForControl(var, iterable)
+      | EnhancedForControl(expression var, statement iterable)
 
 
 expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
@@ -70,24 +55,24 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | MemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, identifier member)
       | TernaryExpression(expression condition, expression if_true, expression if_false)
       | ArraySelector(expression index)
-#      | Assignment(expressionl, value, type)
-#      | Cast(type, expression)
-#      | MethodReference(expression, method, type_arguments)
-#      | LambdaExpression(parameters, body)
-#      | Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors)
-#      | This(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors)
-#      | Invocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type_arguments, arguments)
-#      | ExplicitConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type_arguments, arguments)
-#      | SuperConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type_arguments, arguments)
-#      | MethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type_arguments, arguments, member)
-#      | SuperMethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type_arguments, arguments, member)
-#      | SuperMemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, member)
-#      | ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type)
-#      | VoidClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type)
-#      | Creator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type)
-#      | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type, int* dimensions, initializer)
-#      | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type, constructor_type_arguments, arguments, body)
-#      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selectors, type, constructor_type_arguments, arguments, body)
+      | Assignment(expression expressionl, expression value, assign_operator type)
+      | This(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
+      | Cast(type type, expression expression)
+      | MethodReference(expression expression, identifier method, type_argument* type_arguments)
+      | LambdaExpression(parameter* parameters, statement body)
+      | Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
+      | Invocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
+      | ExplicitConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
+      | SuperConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
+      | MethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments, identifier member)
+      | SuperMethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments, identifier member)
+      | SuperMemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, identifier member)
+      | ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
+      | VoidClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
+      | Creator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
+      | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, int* dimensions, expression initializer)
+      | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
+      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
 
 type = Void(constant void)
       |BasicType(identifier name, int* dimensions)
@@ -115,377 +100,5 @@ assign_operator = Operator(constant operator)
 
 #assign_operator = Assisn | AssignInc | AssignDec | AssignMult | AssignDiv | AssignBitAnd | AssignBitOr | AssignBitEx | AssignMod | AssignLeftShift | AssignRightShift | AssignZeroFillRightShift
 
-LAMBDA = Lambda
-METHOD_REFERENCE = MethodReference
 
 # ------------------------------------------------------------------------------
-
-#class TypeParameter(Node):
-#    attrs = ("name", "extends")
-
-
-
-
-
-
-
-annotation = NormalAnnotation(typename name, elementvaluepairlist values)
-elementvaluepairlist = ElementValuePairList(elementvaluepair* elmsts)
-elementvaluepair = ElementValuePair(identifier id, elementvalue val)
-elementvalue = ConditionalExpression(conditionalexpression ce)
-      | ElementValueArrayInitializer(elementvalue* evl)
-      | Annotation(annotation annot)
-
-
-
-#Block:
-  #{ [BlockStatements] }
-#BlockStatements:
-  #BlockStatement {BlockStatement}
-#BlockStatement:
-  #LocalVariableDeclarationStatement
-  #ClassDeclaration
-  #Statement
-#LocalVariableDeclarationStatement:
-  #LocalVariableDeclaration ;
-#LocalVariableDeclaration:
-  #{VariableModifier} UnannType VariableDeclaratorList
-#Statement:
-  #StatementWithoutTrailingSubstatement
-  #LabeledStatement
-  #IfThenStatement
-  #IfThenElseStatement
-  #WhileStatement
-  #ForStatement
-#StatementNoShortIf:
-  #StatementWithoutTrailingSubstatement
-  #LabeledStatementNoShortIf
-  #IfThenElseStatementNoShortIf
-  #WhileStatementNoShortIf
-  #ForStatementNoShortIf
-#StatementWithoutTrailingSubstatement:
-  #Block
-  #EmptyStatement
-  #ExpressionStatement
-  #AssertStatement
-  #SwitchStatement
-  #DoStatement
-  #BreakStatement
-  #ContinueStatement
-  #ReturnStatement
-  #SynchronizedStatement
-  #ThrowStatement
-  #TryStatement
-#EmptyStatement:
-  #;
-#LabeledStatement:
-  #Identifier : Statement
-#LabeledStatementNoShortIf:
-  #Identifier : StatementNoShortIf
-#ExpressionStatement:
-  #StatementExpression ;
-#StatementExpression:
-  #Assignment
-  #PreIncrementExpression
-  #PreDecrementExpression
-  #PostIncrementExpression
-  #PostDecrementExpression
-  #MethodInvocation
-  #ClassInstanceCreationExpression
-#IfThenStatement:
-  #if ( Expression ) Statement
-#IfThenElseStatement:
-  #if ( Expression ) StatementNoShortIf else Statement
-#IfThenElseStatementNoShortIf:
-  #if ( Expression ) StatementNoShortIf else StatementNoShortIf
-#AssertStatement:
-  #assert Expression ;
-  #assert Expression : Expression ;
-#SwitchStatement:
-  #switch ( Expression ) SwitchBlock
-#SwitchBlock:
-  #{ {SwitchBlockStatementGroup} {SwitchLabel} }
-#SwitchBlockStatementGroup:
-  #SwitchLabels BlockStatements
-#SwitchLabels:
-  #SwitchLabel {SwitchLabel}
-#SwitchLabel:
-  #case ConstantExpression :
-  #case EnumConstantName :
-  #default :
-#EnumConstantName:
-  #Identifier
-#WhileStatement:
-  #while ( Expression ) Statement
-#WhileStatementNoShortIf:
-  #while ( Expression ) StatementNoShortIf
-#DoStatement:
-  #do Statement while ( Expression ) ;
-#ForStatement:
-  #BasicForStatement
-  #EnhancedForStatement
-#ForStatementNoShortIf:
-  #BasicForStatementNoShortIf
-  #EnhancedForStatementNoShortIf
-#BasicForStatement:
-  #for ( [ForInit] ; [Expression] ; [ForUpdate] ) Statement
-#BasicForStatementNoShortIf:
-  #for ( [ForInit] ; [Expression] ; [ForUpdate] ) StatementNoShortIf
-#ForInit:
-  #StatementExpressionList
-  #LocalVariableDeclaration
-#ForUpdate:
-  #StatementExpressionList
-#StatementExpressionList:
-  #StatementExpression {, StatementExpression}
-#EnhancedForStatement:
-  #for ( {VariableModifier} UnannType VariableDeclaratorId : Expression ) Statement
-#EnhancedForStatementNoShortIf:
-  #for ( {VariableModifier} UnannType VariableDeclaratorId : Expression ) StatementNoShortIf
-#BreakStatement:
-  #break [Identifier] ;
-#ContinueStatement:
-  #continue [Identifier] ;
-#ReturnStatement:
-  #return [Expression] ;
-#ThrowStatement:
-  #throw Expression ;
-#SynchronizedStatement:
-  #synchronized ( Expression ) Block
-#TryStatement:
-  #try Block Catches
-#try Block [Catches] Finally
-  #TryWithResourcesStatement
-#Catches:
-  #CatchClause {CatchClause}
-#CatchClause:
-  #catch ( CatchFormalParameter ) Block
-#CatchFormalParameter:
-  #{VariableModifier} CatchType VariableDeclaratorId
-#CatchType:
-  #UnannClassType {| ClassType}
-#Finally:
-  #finally Block
-#TryWithResourcesStatement:
-  #try ResourceSpecification Block [Catches] [Finally]
-#ResourceSpecification:
-  #( ResourceList [;] )
-#ResourceList:
-  #Resource {; Resource}
-#Resource:
-  #{VariableModifier} UnannType VariableDeclaratorId = Expression
-
-#Primary:
-  #PrimaryNoNewArray
-  #ArrayCreationExpression
-#PrimaryNoNewArray:
-  #Literal
-  #ClassLiteral
-  #this
-  #TypeName . this
-  #( Expression )
-  #ClassInstanceCreationExpression
-  #FieldAccess
-  #ArrayAccess
-  #MethodInvocation
-  #MethodReference
-#ClassLiteral:
-  #TypeName {[ ]} . class
-  #NumericType {[ ]} . class
-  #boolean {[ ]} . class
-  #void . class
-#ClassInstanceCreationExpression:
-  #UnqualifiedClassInstanceCreationExpression
-  #ExpressionName . UnqualifiedClassInstanceCreationExpression
-  #Primary . UnqualifiedClassInstanceCreationExpression
-#UnqualifiedClassInstanceCreationExpression:
-  #new [TypeArguments] ClassOrInterfaceTypeToInstantiate ( [ArgumentList] ) [ClassBody]
-#ClassOrInterfaceTypeToInstantiate:
-  #{Annotation} Identifier {. {Annotation} Identifier} [TypeArgumentsOrDiamond]
-#TypeArgumentsOrDiamond:
-  #TypeArguments
-  #<>
-#FieldAccess:
-  #Primary . Identifier
-  #super . Identifier
-  #TypeName . super . Identifier
-#ArrayAccess:
-  #ExpressionName [ Expression ]
-  #PrimaryNoNewArray [ Expression ]
-#MethodName:
-  #Identifier
-#MethodInvocation:
-  #MethodName ( [ArgumentList] )
-  #TypeName . [TypeArguments] Identifier ( [ArgumentList] )
-  #ExpressionName . [TypeArguments] Identifier ( [ArgumentList] )
-  #Primary . [TypeArguments] Identifier ( [ArgumentList] )
-  #super . [TypeArguments] Identifier ( [ArgumentList] )
-  #TypeName . super . [TypeArguments] Identifier ( [ArgumentList] )
-#ArgumentList:
-  #Expression {, Expression}
-#MethodReference:
-  #ExpressionName :: [TypeArguments] Identifier
-  #ReferenceType :: [TypeArguments] Identifier
-  #Primary :: [TypeArguments] Identifier
-  #super :: [TypeArguments] Identifier
-  #TypeName . super :: [TypeArguments] Identifier
-  #ClassType :: [TypeArguments] new
-  #ArrayType :: new
-#ArrayCreationExpression:
-  #new PrimitiveType DimExprs [Dims]
-  #new ClassOrInterfaceType DimExprs [Dims]
-  #new PrimitiveType Dims ArrayInitializer
-  #new ClassOrInterfaceType Dims ArrayInitializer
-#DimExprs:
-  #DimExpr {DimExpr}
-#DimExpr:
-  #{Annotation} [ Expression ]
-#Expression:
-  #LambdaExpression
-  #AssignmentExpression
-#LambdaExpression:
-  #LambdaParameters -> LambdaBody
-#LambdaParameters:
-  #Identifier
-  #( [FormalParameterList] )
-  #( InferredFormalParameterList )
-#InferredFormalParameterList:
-  #Identifier {, Identifier}
-#LambdaBody:
-  #Expression
-  #Block
-#AssignmentExpression:
-  #ConditionalExpression
-  #Assignment
-#Assignment:
-  #LeftHandSide AssignmentOperator Expression
-#LeftHandSide:
-  #ExpressionName
-  #FieldAccess
-  #ArrayAccess
-#AssignmentOperator:
-  #(one of)
-  #=  *=  /=  %=  +=  -=  <<=  >>=  >>>=  &=  ^=  |=
-#ConditionalExpression:
-  #ConditionalOrExpression
-  #ConditionalOrExpression ? Expression : ConditionalExpression
-  #ConditionalOrExpression ? Expression : LambdaExpression
-conditionalexpression = ConditionalOrExpression(conditionalorexpression coe)
-      | ConditionalOrExpressionExp(conditionalorexpression coe, expression exp, conditionalexpression ce)
-      | ConditionalOrExpressionLambda(conditionalorexpression coe, expression exp, lambdaexpression le)
-#ConditionalOrExpression:
-  #ConditionalAndExpression
-  #ConditionalOrExpression || ConditionalAndExpression
-conditionalorexpression = ConditionalAndExpression(conditionalandexpression cae)
-      | ConditionalOrExpressionOr(conditionalorexpression coe, conditionalandexpression cae)
-#ConditionalAndExpression:
-  #InclusiveOrExpression
-  #ConditionalAndExpression && InclusiveOrExpression
-conditionalandexpression = InclusiveOrExpression(inclusiveorexpression ioe)
-      | ConditionalAndExpressionAnd(conditionalandexpression cae, inclusiveorexpression ioe)
-#InclusiveOrExpression:
-  #ExclusiveOrExpression
-  #InclusiveOrExpression | ExclusiveOrExpression
-inclusiveorexpression = ExclusiveOrExpression(exclusiveorexpression eoe)
-      | InclusiveOrExpressionOr(inclusiveorexpression ioe, exclusiveorexpression eoe)
-#ExclusiveOrExpression:
-  #AndExpression
-  #ExclusiveOrExpression ^ AndExpression
-exclusiveorexpression = AndExpression(andexpression ae)
-      | ExclusiveOrExpressionOr(exclusiveorexpression eoe, andexpression ae)
-#AndExpression:
-  #EqualityExpression
-  #AndExpression & EqualityExpression
-andexpression = EqualityExpression(equalityexpression ee)
-      | AndExpressionAnd(andexpression ae, equalityexpression ee)
-#EqualityExpression:
-  #RelationalExpression
-  #EqualityExpression == RelationalExpression
-  #EqualityExpression != RelationalExpression
-equalityexpression = RelationalExpression(relationalexpression re)
-      | EqualityExpressionEq(equalityexpression ee, relationalexpression re)
-      | EqualityExpressionNe(equalityexpression ee, relationalexpression re)
-#RelationalExpression:
-  #ShiftExpression
-  #RelationalExpression < ShiftExpression
-  #RelationalExpression > ShiftExpression
-  #RelationalExpression <= ShiftExpression
-  #RelationalExpression >= ShiftExpression
-  #RelationalExpression instanceof ReferenceType
-relationalexpression = ShiftExpression(shiftexpression se)
-      | RelationalExpressionLt(relationalexpression re, shiftexpression se)
-      | RelationalExpressionGt(relationalexpression re, shiftexpression se)
-      | RelationalExpressionLte(relationalexpression re, shiftexpression se)
-      | RelationalExpressionGte(relationalexpression re, shiftexpression se)
-#ShiftExpression:
-  #AdditiveExpression
-  #ShiftExpression << AdditiveExpression
-  #ShiftExpression >> AdditiveExpression
-  #ShiftExpression >>> AdditiveExpression
-shiftexpression = AdditiveExpression(additiveexpression ae)
-      | ShiftExpressionLeft(shiftexpression se, additiveexpression ae)
-      | ShiftExpressionRight(shiftexpression se, additiveexpression ae)
-      | ShiftExpressionRightThree(shiftexpression se, additiveexpression ae)
-#AdditiveExpression:
-  #MultiplicativeExpression
-  #AdditiveExpression + MultiplicativeExpression
-  #AdditiveExpression - MultiplicativeExpression
-additiveexpression = MultiplicativeExpression(multiplicativeexpression me)
-      | AdditiveExpressionPlus(additiveexpression ae, multiplicativeexpression me)
-      | AdditiveExpressionMinus(additiveexpression ae, multiplicativeexpression me)
-#MultiplicativeExpression:
-  #UnaryExpression
-  #MultiplicativeExpression * UnaryExpression
-  #MultiplicativeExpression / UnaryExpression
-  #MultiplicativeExpression % UnaryExpression
-multiplicativeexpression = UnaryExpression(unaryexpression ue)
-      | MultiplicativeExpressionMult(multiplicativeexpression me, unaryexpression ue)
-      | MultiplicativeExpressionDiv(multiplicativeexpression me, unaryexpression ue)
-      | MultiplicativeExpressionMod(multiplicativeexpression me, unaryexpression ue)
-#UnaryExpression:
-  #PreIncrementExpression
-  #PreDecrementExpression
-  #+ UnaryExpression
-  #- UnaryExpression
-  #UnaryExpressionNotPlusMinus
-  #PostfixExpression
-  #~ UnaryExpression
-  #! UnaryExpression
-  #CastExpression
-unaryexpression = PreIncrementExpression(unaryexpression ue)
-      | PreDecrementExpression(unaryexpression ue)
-      | UnaryExpressionPlus(UnaryExpression ue)
-      | UnaryExpressionMinus(UnaryExpression ue)
-      | UnaryExpressionNotPlusMinus(unaryexpressionnotplusminus uenpm)
-unaryexpressionnotplusminus = PostfixExpression(postfixexpression pe)
-      | UnaryExpressionTilde(unaryexpression ue)
-      | UnaryExpressionNot(unaryexpression ue)
-      | CastExpression(castexpression ce)
-#PreIncrementExpression:
-  #++ UnaryExpression
-#PreDecrementExpression:
-  #-- UnaryExpression
-#PostfixExpression:
-  #Primary
-  #ExpressionName
-  #PostIncrementExpression
-  #PostDecrementExpression
-postfixexpression = Primary(primary p)
-      | ExpressionName(expressionname en)
-      | PostIncrementExpression(postfixexpression pe)
-      | PostDecrementExpression(postfixexpression pe)
-#PostIncrementExpression:
-  #PostfixExpression ++
-#PostDecrementExpression:
-  #PostfixExpression --
-#CastExpression:
-  #( PrimitiveType ) UnaryExpression
-  #( ReferenceType {AdditionalBound} ) UnaryExpressionNotPlusMinus
-  #( ReferenceType {AdditionalBound} ) LambdaExpression
-castexpression = ToPrimitiveType(primitivetype pt, unaryexpression ue)
-      | ToReferenceTypeUnary(referencetype rt, additionalbound ab, unaryexpressionnotplusminus ue)
-      | ToReferenceTypeLambda(referencetype rt, additionalbound ab, lambdaexpression le)
-#ConstantExpression:
-  #Expression
-constantexpression = ConstantExpression(expression exp)
-

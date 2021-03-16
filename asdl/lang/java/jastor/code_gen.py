@@ -264,38 +264,19 @@ class SourceGenerator(ExplicitNodeVisitor):
                 for element in child:
                     self.write(element)
 
-    # PackageDeclaration:
-    #   {PackageModifier} package Identifier {. Identifier} ;
-    # PackageModifier:
-    #   Annotation
-    # ['modifiers', 'annotations', 'documentation', 'name']
+    def visit_Annotation(self, node):
+        self.write('@', node.name, ' ')
 
     def visit_PackageDeclaration(self, node):
         for attr, child in zip(node.attrs, node.children):
             if attr in ['modifiers', 'annotations'] and child is not None:
-                self.write(child)
+                for element in child:
+                    self.write(element)
             elif attr == 'documentation' and child is not None:
                 self.write(child)
             elif attr == 'name':
                 self.write('package ', child, ';')
 
-    # NormalClassDeclaration:
-    #   {ClassModifier} class Identifier [TypeParameters] [Superclass] [Superinterfaces] ClassBody
-    # ClassModifier:
-    #   (one of)
-    #   Annotation public protected private
-    #   abstract static final strictfp
-    # TypeParameters:
-    #   < TypeParameterList >
-    # TypeParameterList:
-    #   TypeParameter {, TypeParameter}
-    # Superclass:
-    #   extends ClassType
-
-    # ClassDeclaration(annotation* annotations, classbodydeclaration* body,
-    #   string? documentation, dottedname? extends, dottedname* implements,
-    #   modifier* modifiers, identifier name, type_parameter* type_parameters)
-    # ['body', 'extends', ]
     def visit_ClassDeclaration(self, node):
         for attr, child in zip(node.attrs, node.children):
             if attr == 'documentation' and child is not None:
@@ -475,556 +456,95 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_Operator(self, node):
         self.write(node.operator)
 
-    #def visit_Assign(self, node):
-        #set_precedence(node, node.value, *node.targets)
-        #self.newline(node)
-        #for target in node.targets:
-            #self.write(target, ' = ')
-        #self.visit(node.value)
-
-    #def visit_AugAssign(self, node):
-        #set_precedence(node, node.value, node.target)
-        #self.statement(node, node.target, get_op_symbol(node.op, ' %s= '),
-                       #node.value)
-
-    #def visit_AnnAssign(self, node):
-        #set_precedence(node, node.target, node.annotation)
-        #set_precedence(Precedence.Comma, node.value)
-        #need_parens = isinstance(node.target, ast.Name) and not node.simple
-        #begin = '(' if need_parens else ''
-        #end = ')' if need_parens else ''
-        #self.statement(node, begin, node.target, end, ': ', node.annotation)
-        #self.conditional_write(' = ', node.value)
-
-    #def visit_ImportFrom(self, node):
-        #self.statement(node, 'from ', node.level * '.',
-                       #node.module or '', ' import ')
-        #self.comma_list(node.names)
-        ## Goofy stuff for Python 2.7 _pyio module
-        #if node.module == '__future__' and 'unicode_literals' in (
-                #x.name for x in node.names):
-            #self.using_unicode_literals = True
-
-    #def visit_Import(self, node):
-        #self.statement(node, 'import ')
-        #self.comma_list(node.names)
-
-    #def visit_Expr(self, node):
-        #set_precedence(node, node.value)
-        #self.statement(node)
-        #self.generic_visit(node)
-
-    #def visit_FunctionDef(self, node, is_async=False):
-        #prefix = 'async ' if is_async else ''
-        #self.decorators(node, 1 if self.indentation else 2)
-        #self.statement(node, '%sdef %s' % (prefix, node.name), '(')
-        #self.visit_arguments(node.args)
-        #self.write(')')
-        #self.conditional_write(' ->', self.get_returns(node))
-        #self.write(':')
-        #self.body(node.body)
-        #if not self.indentation:
-            #self.newline(extra=2)
-
-    ## introduced in Python 3.5
-    #def visit_AsyncFunctionDef(self, node):
-        #self.visit_FunctionDef(node, is_async=True)
-
-    #def visit_ClassDef(self, node):
-        #have_args = []
-
-        #def paren_or_comma():
-            #if have_args:
-                #self.write(', ')
-            #else:
-                #have_args.append(True)
-                #self.write('(')
-
-        #self.decorators(node, 2)
-        #self.statement(node, 'class %s' % node.name)
-        #for base in node.bases:
-            #self.write(paren_or_comma, base)
-        ## keywords not available in early version
-        #for keyword in self.get_keywords(node):
-            #self.write(paren_or_comma, keyword.arg or '',
-                       #'=' if keyword.arg else '**', keyword.value)
-        #self.conditional_write(paren_or_comma, '*', self.get_starargs(node))
-        #self.conditional_write(paren_or_comma, '**', self.get_kwargs(node))
-        #self.write(have_args and '):' or ':')
-        #self.body(node.body)
-        #if not self.indentation:
-            #self.newline(extra=2)
-
-    #def visit_If(self, node):
-        #set_precedence(node, node.test)
-        #self.statement(node, 'if ', node.test, ':')
-        #self.body(node.body)
-        #while True:
-            #else_ = node.orelse
-            #if len(else_) == 1 and isinstance(else_[0], ast.If):
-                #node = else_[0]
-                #set_precedence(node, node.test)
-                #self.write('\n', 'elif ', node.test, ':')
-                #self.body(node.body)
-            #else:
-                #self.else_body(else_)
-                #break
-
-    #def visit_For(self, node, is_async=False):
-        #set_precedence(node, node.target)
-        #prefix = 'async ' if is_async else ''
-        #self.statement(node, '%sfor ' % prefix,
-                       #node.target, ' in ', node.iter, ':')
-        #self.body_or_else(node)
-
-    ## introduced in Python 3.5
-    #def visit_AsyncFor(self, node):
-        #self.visit_For(node, is_async=True)
-
-    #def visit_While(self, node):
-        #set_precedence(node, node.test)
-        #self.statement(node, 'while ', node.test, ':')
-        #self.body_or_else(node)
-
-    #def visit_With(self, node, is_async=False):
-        #prefix = 'async ' if is_async else ''
-        #self.statement(node, '%swith ' % prefix)
-        #if hasattr(node, "context_expr"):  # Python < 3.3
-            #self.visit_withitem(node)
-        #else:                              # Python >= 3.3
-            #self.comma_list(node.items)
-        #self.write(':')
-        #self.body(node.body)
-
-    ## new for Python 3.5
-    #def visit_AsyncWith(self, node):
-        #self.visit_With(node, is_async=True)
-
-    ## new for Python 3.3
-    #def visit_withitem(self, node):
-        #self.write(node.context_expr)
-        #self.conditional_write(' as ', node.optional_vars)
-
-    #def visit_NameConstant(self, node):
-        #self.write(str(node.value))
-
-    #def visit_Pass(self, node):
-        #self.statement(node, 'pass')
-
-    #def visit_Print(self, node):
-        ## XXX: python 2.6 only
-        #self.statement(node, 'print ')
-        #values = node.values
-        #if node.dest is not None:
-            #self.write(' >> ')
-            #values = [node.dest] + node.values
-        #self.comma_list(values, not node.nl)
-
-    #def visit_Delete(self, node):
-        #self.statement(node, 'del ')
-        #self.comma_list(node.targets)
-
-    #def visit_TryExcept(self, node):
-        #self.statement(node, 'try:')
-        #self.body(node.body)
-        #self.write(*node.handlers)
-        #self.else_body(node.orelse)
-
-    ## new for Python 3.3
-    #def visit_Try(self, node):
-        #self.statement(node, 'try:')
-        #self.body(node.body)
-        #self.write(*node.handlers)
-        #self.else_body(node.orelse)
-        #if node.finalbody:
-            #self.statement(node, 'finally:')
-            #self.body(node.finalbody)
-
-    #def visit_ExceptHandler(self, node):
-        #self.statement(node, 'except')
-        #if self.conditional_write(' ', node.type):
-            #self.conditional_write(' as ', node.name)
-        #self.write(':')
-        #self.body(node.body)
-
-    #def visit_TryFinally(self, node):
-        #self.statement(node, 'try:')
-        #self.body(node.body)
-        #self.statement(node, 'finally:')
-        #self.body(node.finalbody)
-
-    #def visit_Exec(self, node):
-        #dicts = node.globals, node.locals
-        #dicts = dicts[::-1] if dicts[0] is None else dicts
-        #self.statement(node, 'exec ', node.body)
-        #self.conditional_write(' in ', dicts[0])
-        #self.conditional_write(', ', dicts[1])
-
-    #def visit_Assert(self, node):
-        #set_precedence(node, node.test, node.msg)
-        #self.statement(node, 'assert ', node.test)
-        #self.conditional_write(', ', node.msg)
-
-    #def visit_Global(self, node):
-        #self.statement(node, 'global ', ', '.join(node.names))
-
-    #def visit_Nonlocal(self, node):
-        #self.statement(node, 'nonlocal ', ', '.join(node.names))
-
-    #def visit_Return(self, node):
-        #set_precedence(node, node.value)
-        #self.statement(node, 'return')
-        #self.conditional_write(' ', node.value)
-
-    #def visit_Break(self, node):
-        #self.statement(node, 'break')
-
-    #def visit_Continue(self, node):
-        #self.statement(node, 'continue')
-
-    #def visit_Raise(self, node):
-        ## XXX: Python 2.6 / 3.0 compatibility
-        #self.statement(node, 'raise')
-        #if self.conditional_write(' ', self.get_exc(node)):
-            #self.conditional_write(' from ', node.cause)
-        #elif self.conditional_write(' ', self.get_type(node)):
-            #set_precedence(node, node.inst)
-            #self.conditional_write(', ', node.inst)
-            #self.conditional_write(', ', node.tback)
-
-    ## Expressions
-
-    #def visit_Attribute(self, node):
-        #self.write(node.value, '.', node.attr)
-
-    #def visit_Call(self, node, len=len):
-        #write = self.write
-        #want_comma = []
-
-        #def write_comma():
-            #if want_comma:
-                #write(', ')
-            #else:
-                #want_comma.append(True)
-
-        #args = node.args
-        #keywords = node.keywords
-        #starargs = self.get_starargs(node)
-        #kwargs = self.get_kwargs(node)
-        #numargs = len(args) + len(keywords)
-        #numargs += starargs is not None
-        #numargs += kwargs is not None
-        #p = Precedence.Comma if numargs > 1 else Precedence.call_one_arg
-        #set_precedence(p, *args)
-        #self.visit(node.func)
-        #write('(')
-        #for arg in args:
-            #write(write_comma, arg)
-
-        #set_precedence(Precedence.Comma, *(x.value for x in keywords))
-        #for keyword in keywords:
-            ## a keyword.arg of None indicates dictionary unpacking
-            ## (Python >= 3.5)
-            #arg = keyword.arg or ''
-            #write(write_comma, arg, '=' if arg else '**', keyword.value)
-        ## 3.5 no longer has these
-        #self.conditional_write(write_comma, '*', starargs)
-        #self.conditional_write(write_comma, '**', kwargs)
-        #write(')')
-
-    #def visit_Name(self, node):
-        #self.write(node.id)
-
-    #def visit_JoinedStr(self, node):
-        #self.visit_Str(node, True)
-
-    #def visit_Str(self, node, is_joined=False):
-
-        ## embedded is used to control when we might want
-        ## to use a triple-quoted string.  We determine
-        ## if we are in an assignment and/or in an expression
-        #precedence = self.get__pp(node)
-        #embedded = ((precedence > Precedence.Expr) +
-                    #(precedence >= Precedence.Assign))
-
-        ## Flush any pending newlines, because we're about
-        ## to severely abuse the result list.
-        #self.write('')
-        #result = self.result
-
-        ## Calculate the string representing the line
-        ## we are working on, up to but not including
-        ## the string we are adding.
-
-        #res_index, str_index = self.colinfo
-        #current_line = self.result[res_index:]
-        #if str_index:
-            #current_line[0] = current_line[0][str_index:]
-        #current_line = ''.join(current_line)
-
-        #if is_joined:
-
-            ## Handle new f-strings.  This is a bit complicated, because
-            ## the tree can contain subnodes that recurse back to JoinedStr
-            ## subnodes...
-
-            #def recurse(node):
-                #for value in node.values:
-                    #if isinstance(value, ast.Str):
-                        #self.write(value.s)
-                    #elif isinstance(value, ast.FormattedValue):
-                        #with self.delimit('{}'):
-                            #self.visit(value.value)
-                            #if value.conversion != -1:
-                                #self.write('!%s' % chr(value.conversion))
-                            #if value.format_spec is not None:
-                                #self.write(':')
-                                #recurse(value.format_spec)
-                    #else:
-                        #kind = type(value).__name__
-                        #assert False, 'Invalid node %s inside JoinedStr' % kind
-
-            #index = len(result)
-            #recurse(node)
-
-            ## Flush trailing newlines (so that they are part of mystr)
-            #self.write('')
-            #mystr = ''.join(result[index:])
-            #del result[index:]
-            #self.colinfo = res_index, str_index  # Put it back like we found it
-            #uni_lit = False  # No formatted byte strings
-
-        #else:
-            #mystr = node.s
-            #uni_lit = self.using_unicode_literals
-
-        #mystr = self.pretty_string(mystr, embedded, current_line, uni_lit)
-
-        #if is_joined:
-            #mystr = 'f' + mystr
-
-        #self.write(mystr)
-
-        #lf = mystr.rfind('\n') + 1
-        #if lf:
-            #self.colinfo = len(result) - 1, lf
-
-    #def visit_Bytes(self, node):
-        #self.write(repr(node.s))
-
-    #def visit_Num(self, node,
-                  ## constants
-                  #new=sys.version_info >= (3, 0)):
-        #with self.delimit(node) as delimiters:
-            #x = node.n
-
-            #def part(p, imaginary):
-                ## Represent infinity as 1e1000 and NaN as 1e1000-1e1000.
-                #s = 'j' if imaginary else ''
-                #if math.isinf(p):
-                    #if p < 0:
-                        #return '-1e1000' + s
-                    #return '1e1000' + s
-                #if math.isnan(p):
-                    #return '(1e1000%s-1e1000%s)' % (s, s)
-                #return repr(p) + s
-
-            #real = part(x.real if isinstance(x, complex) else x, imaginary=False)
-            #if isinstance(x, complex):
-                #imag = part(x.imag, imaginary=True)
-                #if x.real == 0:
-                    #s = imag
-                #elif x.imag == 0:
-                    #s = '(%s+0j)' % real
-                #else:
-                    ## x has nonzero real and imaginary parts.
-                    #s = '(%s%s%s)' % (real, ['+', ''][imag.startswith('-')], imag)
-            #else:
-                #s = real
-            #self.write(s)
-
-            ## The Python 2.x compiler merges a unary minus
-            ## with a number.  This is a premature optimization
-            ## that we deal with here...
-            #if not new and delimiters.discard:
-                #if not isinstance(node.n, complex) and node.n < 0:
-                    #pow_lhs = Precedence.Pow + 1
-                    #delimiters.discard = delimiters.pp != pow_lhs
-                #else:
-                    #op = self.get__p_op(node)
-                    #delimiters.discard = not isinstance(op, ast.USub)
-
-    #def visit_Tuple(self, node):
-        #with self.delimit(node) as delimiters:
-            ## Two things are special about tuples:
-            ##   1) We cannot discard the enclosing parentheses if empty
-            ##   2) We need the trailing comma if only one item
-            #elts = node.elts
-            #delimiters.discard = delimiters.discard and elts
-            #self.comma_list(elts, len(elts) == 1)
-
-    #def visit_List(self, node):
-        #with self.delimit('[]'):
-            #self.comma_list(node.elts)
-
-    #def visit_Set(self, node):
-        #if node.elts:
-            #with self.delimit('{}'):
-                #self.comma_list(node.elts)
-        #else:
-            ## If we tried to use "{}" to represent an empty set, it would be
-            ## interpreted as an empty dictionary. We can't use "set()" either
-            ## because the name "set" might be rebound.
-            #self.write('{1}.__class__()')
-
-    #def visit_Dict(self, node):
-        #set_precedence(Precedence.Comma, *node.values)
-        #with self.delimit('{}'):
-            #for idx, (key, value) in enumerate(zip(node.keys, node.values)):
-                #self.write(', ' if idx else '',
-                           #key if key else '',
-                           #': ' if key else '**', value)
-
-    #def visit_BinOp(self, node):
-        #op, left, right = node.op, node.left, node.right
-        #with self.delimit(node, op) as delimiters:
-            #ispow = isinstance(op, ast.Pow)
-            #p = delimiters.p
-            #set_precedence((Precedence.Pow + 1) if ispow else p, left)
-            #set_precedence(Precedence.PowRHS if ispow else (p + 1), right)
-            #self.write(left, get_op_symbol(op, ' %s '), right)
-
-    #def visit_BoolOp(self, node):
-        #with self.delimit(node, node.op) as delimiters:
-            #op = get_op_symbol(node.op, ' %s ')
-            #set_precedence(delimiters.p + 1, *node.values)
-            #for idx, value in enumerate(node.values):
-                #self.write(idx and op or '', value)
-
-    #def visit_Compare(self, node):
-        #with self.delimit(node, node.ops[0]) as delimiters:
-            #set_precedence(delimiters.p + 1, node.left, *node.comparators)
-            #self.visit(node.left)
-            #for op, right in zip(node.ops, node.comparators):
-                #self.write(get_op_symbol(op, ' %s '), right)
-
-    #def visit_UnaryOp(self, node):
-        #with self.delimit(node, node.op) as delimiters:
-            #set_precedence(delimiters.p, node.operand)
-            ## In Python 2.x, a unary negative of a literal
-            ## number is merged into the number itself.  This
-            ## bit of ugliness means it is useful to know
-            ## what the parent operation was...
-            #node.operand._p_op = node.op
-            #sym = get_op_symbol(node.op)
-            #self.write(sym, ' ' if sym.isalpha() else '', node.operand)
-
-    #def visit_Subscript(self, node):
-        #set_precedence(node, node.slice)
-        #self.write(node.value, '[', node.slice, ']')
-
-    #def visit_Slice(self, node):
-        #set_precedence(node, node.lower, node.upper, node.step)
-        #self.conditional_write(node.lower)
-        #self.write(':')
-        #self.conditional_write(node.upper)
-        #if node.step is not None:
-            #self.write(':')
-            #if not (isinstance(node.step, ast.Name) and
-                    #node.step.id == 'None'):
-                #self.visit(node.step)
-
-    #def visit_Index(self, node):
-        #with self.delimit(node) as delimiters:
-            #set_precedence(delimiters.p, node.value)
-            #self.visit(node.value)
-
-    #def visit_ExtSlice(self, node):
-        #dims = node.dims
-        #set_precedence(node, *dims)
-        #self.comma_list(dims, len(dims) == 1)
-
-    #def visit_Yield(self, node):
-        #with self.delimit(node):
-            #set_precedence(get_op_precedence(node) + 1, node.value)
-            #self.write('yield')
-            #self.conditional_write(' ', node.value)
-
-    ## new for Python 3.3
-    #def visit_YieldFrom(self, node):
-        #with self.delimit(node):
-            #self.write('yield from ', node.value)
-
-    ## new for Python 3.5
-    #def visit_Await(self, node):
-        #with self.delimit(node):
-            #self.write('await ', node.value)
-
-    #def visit_Lambda(self, node):
-        #with self.delimit(node) as delimiters:
-            #set_precedence(delimiters.p, node.body)
-            #self.write('lambda ')
-            #self.visit_arguments(node.args)
-            #self.write(': ', node.body)
-
-    #def visit_Ellipsis(self, node):
-        #self.write('...')
-
-    #def visit_ListComp(self, node):
-        #with self.delimit('[]'):
-            #self.write(node.elt, *node.generators)
-
-    #def visit_GeneratorExp(self, node):
-        #with self.delimit(node) as delimiters:
-            #if delimiters.pp == Precedence.call_one_arg:
-                #delimiters.discard = True
-            #set_precedence(Precedence.Comma, node.elt)
-            #self.write(node.elt, *node.generators)
-
-    #def visit_SetComp(self, node):
-        #with self.delimit('{}'):
-            #self.write(node.elt, *node.generators)
-
-    #def visit_DictComp(self, node):
-        #with self.delimit('{}'):
-            #self.write(node.key, ': ', node.value, *node.generators)
-
-    #def visit_IfExp(self, node):
-        #with self.delimit(node) as delimiters:
-            #set_precedence(delimiters.p + 1, node.body, node.test)
-            #set_precedence(delimiters.p, node.orelse)
-            #self.write(node.body, ' if ', node.test, ' else ', node.orelse)
-
-    #def visit_Starred(self, node):
-        #self.write('*', node.value)
-
-    #def visit_Repr(self, node):
-        ## XXX: python 2.6 only
-        #with self.delimit('``'):
-            #self.visit(node.value)
-
-    #def visit_Module(self, node):
-        #self.write(*node.body)
-
-    #visit_Interactive = visit_Module
-
-    #def visit_Expression(self, node):
-        #self.visit(node.body)
-
-    ## Helper Nodes
-
-    #def visit_arg(self, node):
-        #self.write(node.arg)
-        #self.conditional_write(': ', node.annotation)
-
-    #def visit_alias(self, node):
-        #self.write(node.name)
-        #self.conditional_write(' as ', node.asname)
-
-    #def visit_comprehension(self, node):
-        #set_precedence(node, node.iter, *node.ifs)
-        #set_precedence(Precedence.comprehension_target, node.target)
-        #stmt = ' async for ' if self.get_is_async(node) else ' for '
-        #self.write(stmt, node.target, ' in ', node.iter)
-        #for if_ in node.ifs:
-            #self.write(' if ', if_)
+    # Import(identifier path, identifier static, identifier wildcard)
+    def visit_Import(self, node):
+        self.write('import ')
+        if node.static:
+            self.write('static ')
+        self.write(node.path)
+        if node.wildcard:
+            self.write('.*', ';', '\n')
+
+    # Assignment(expression expressionl, expression value, assign_operator type)
+    def visit_Assignment(self, node):
+        raise Exception("TODO Assignment")
+
+    # InferredFormalParameter(identifier name)
+    def visit_InferredFormalParameter(self, node):
+        raise Exception("TODO InferredFormalParameter")
+
+    # ReturnStatement(identifier* label, expression expression)
+    def visit_ReturnStatement(self, node):
+        raise Exception("TODO ReturnStatement")
+
+    # IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
+    def visit_IfStatement(self, node):
+        raise Exception("TODO IfStatement")
+
+    # BlockStatement(identifier? label, statement* statements)
+    def visit_BlockStatement(self, node):
+        raise Exception("TODO BlockStatement")
+
+    # TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
+    def visit_TryStatement(self, node):
+        raise Exception("TODO TryStatement")
+
+    # ThrowStatement(identifier* label, expression expression)
+    def visit_ThrowStatement(self, node):
+        raise Exception("TODO ThrowStatement")
+
+    # CatchClause(identifier? label, catch_clause_parameter parameter, statement* block)
+    def visit_CatchClause(self, node):
+        raise Exception("TODO CatchClause")
+
+    # CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
+    def visit_CatchClauseParameter(self, node):
+        raise Exception("TODO CatchClauseParameter")
+
+    # EnhancedForControl(expression var, statement iterable)
+    def visit_EnhancedForControl(self, node):
+        raise Exception("TODO EnhancedForControl")
+
+    # This(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
+    def visit_This(self, node):
+        raise Exception("TODO This")
+
+    # Cast(type type, expression expression)
+    def visit_Cast(self, node):
+        raise Exception("TODO Cast")
+
+    # MethodReference(expression expression, identifier method, type_argument* type_arguments)
+    def visit_MethodReference(self, node):
+        raise Exception("TODO MethodReference")
+
+    # LambdaExpression(parameter* parameters, statement body)
+    def visit_LambdaExpression(self, node):
+        raise Exception("TODO LambdaExpression")
+
+    # Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
+    def visit_Primary(self, node):
+        raise Exception("TODO Primary")
+
+    # ExplicitConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
+    def visit_ExplicitConstructorInvocation(self, node):
+        raise Exception("TODO ExplicitConstructorInvocation")
+
+
+    # SuperConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
+    def visit_SuperConstructorInvocation(self, node):
+        raise Exception("TODO ExplicitConstructorInvocation")
+
+        for op in node.prefix_operators:
+            self.write(op)
+        if node.qualifier:
+            self.write(node.qualifier, ".")
+        self.write(node.member)
+        if node.type_arguments:
+            self.comma_list(node.type_arguments)
+        for selector in node.selectors:
+            self.write(selector)
+        self.write("(")
+        self.comma_list(node.arguments)
+        self.write(")")
+        for op in node.postfix_operators:
+            self.write(op)
