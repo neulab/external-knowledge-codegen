@@ -53,6 +53,14 @@ class InterfaceDeclaration(TypeDeclaration):
 class AnnotationDeclaration(TypeDeclaration):
     attrs = ()
 
+
+class StaticInitializer(Node):
+    attrs = ("block",)
+
+
+class InstanceInitializer(Node):
+    attrs = ("block",)
+
 # ------------------------------------------------------------------------------
 
 
@@ -222,6 +230,7 @@ class Cast(Expression):
 
 class MethodReference(Expression):
     attrs = ("expression", "method", "type_arguments")
+
 
 class LambdaExpression(Expression):
     attrs = ('parameters', 'body')

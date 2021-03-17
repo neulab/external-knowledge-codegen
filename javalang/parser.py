@@ -786,10 +786,10 @@ class Parser(object):
 
         elif self.would_accept('static', '{'):
             self.accept('static')
-            return self.parse_block()
+            return tree.StaticInitializer(block=self.parse_block())
 
         elif self.would_accept('{'):
-            return self.parse_block()
+            return tree.InstanceInitializer(block=self.parse_block())
 
         else:
             return self.parse_member_declaration()
@@ -1180,8 +1180,9 @@ class Parser(object):
 
         while True:
             token = self.tokens.look()
-            if self.try_accept('final'):
-                modifiers.add('final')
+            if self.would_accept(Modifier):
+                modifier = self.accept(Modifier)
+                modifiers.add(tree.Modifier(value=modifier))
             elif self.is_annotation():
                 annotation = self.parse_annotation()
                 annotation._position = token.position
@@ -1280,7 +1281,7 @@ class Parser(object):
             statements.append(statement)
         self.accept('}')
 
-        return statements
+        return tree.BlockStatement(statements=statements)
 
     @parse_debug
     def parse_block_statement(self):
@@ -1371,7 +1372,7 @@ class Parser(object):
         token = self.tokens.look()
         if self.would_accept('{'):
             block = self.parse_block()
-            statement = tree.BlockStatement(statements=block)
+            statement = block
             statement._position = token.position
             return statement
 
@@ -1714,7 +1715,9 @@ class Parser(object):
             declarators, condition, update = rest
             declarators[0].name = var_name
             var.declarators = declarators
-            return tree.ForControl(init=var,
+            varl = list()
+            varl.append(var)
+            return tree.ForControl(init=varl,
                                    condition=condition,
                                    update=update)
 

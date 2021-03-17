@@ -5,6 +5,7 @@ import sys
 
 import jastor
 import javalang
+from javalang.parser import JavaSyntaxError
 from asdl.lang.java.java_transition_system import *
 from asdl.hypothesis import *
 
@@ -129,10 +130,20 @@ if __name__ == '__main__':
             if filepath.endswith(".java"):
                 print(f"Testing Java file {filepath}", file=sys.stderr)
                 with open(filepath, "r") as f:
-                    java = f.read()
-                    if not test(java, check_hypothesis):
-                        print(f"**Warn** Test failed for file: {filepath}",
+                    try:
+                        java = f.read()
+                        if not test(java, check_hypothesis):
+                            print(f"**Warn** Test failed for file: {filepath}",
+                                  file=sys.stderr)
+                            print(java, file=sys.stderr)
+                            print()
+                            # exit(1)
+                    except UnicodeDecodeError:
+                        print(f"Error: Cannot decode file as UTF-8. Ignoring: "
+                              f"{filepath}",
                               file=sys.stderr)
-                        print(java, file=sys.stderr)
-                        print()
-                        # exit(1)
+                    except JavaSyntaxError as e:
+                        print(f"Error: Java syntax error: {e}. Ignoring: "
+                              f"{filepath}",
+                              file=sys.stderr)
+

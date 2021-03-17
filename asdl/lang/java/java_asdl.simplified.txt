@@ -14,41 +14,65 @@ dottedname = Identifier(identifier id)
       | PackageOrTypeName(dottedname left, dotop op, identifier right)
 dotop = Dot
 
-typedeclaration = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, dottedname? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
-      | InterfaceDeclaration(interfacedeclaration id)
-      | EnumDeclaration(classmodifier* cm, identifier id, superinterfaces si, enumbody eb)
+typedeclaration = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, dottedname? extends, classbodydeclaration* body)
+      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
+      | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
 
+enumbody = EnumBody(enumconstant* constants, enumdeclaration* declarations)
 
-classbodydeclaration = ClassMemberDeclaration(classmemberdeclaration cmd)
-      | InstanceInitializer(instanceinitializer ii)
-      | StaticInitializer(staticinitializer si)
-      | ConstructorDeclaration(constructordeclaration constructordeclaration)
-      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, parameter* parameters, identifier* throws, statement* body)
+enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, argument* arguments, statement* body)
+
+enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
+
+classbodydeclaration = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, type* extends, classbodydeclaration* body)
+      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
+      | InstanceInitializer(statement block)
+      | StaticInitializer(statement block)
+      | ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement body)
+      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, parameter* parameters, identifier* throws, statement body)
       | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+      | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+
+annotationbodydeclaration = AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type return_type, int* dimensions, identifier? default)
+
+type_parameter = TypeParameter(identifier name, type* extends)
 
 fieldmodifier = Modifier(constant value)
 
 parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, constant varargs)
       | InferredFormalParameter(identifier name)
 
-statement = ForStatement(identifier? label, forcontrol control, statement body)
+statement = Statement(identifier? label)
+      | ForStatement(identifier? label, forcontrol control, statement body)
+      | DoStatement(identifier? label, expression condition, statement body)
+      | WhileStatement(identifier? label, expression condition, statement body)
       | MethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments, identifier member)
       | StatementExpression(identifier? label, statement expression)
       | LocalVariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
-      | ReturnStatement(identifier* label, expression expression)
+      | ReturnStatement(identifier? label, expression expression)
       | IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
       | BlockStatement(identifier? label, statement* statements)
-      | TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
-      | ThrowStatement(identifier* label, expression expression)
+      | TryStatement(identifier? label, identifier? resources, statement block, catch* catches, statement? finally_block)
+      | ThrowStatement(identifier? label, expression expression)
+      | SwitchStatement(identifier? label, expression expression, case* cases)
+      | BreakStatement(identifier? label, identifier goto)
+      | ContinueStatement(identifier? label, identifier goto)
+      | AssertStatement(identifier? label, expression condition, expression? value)
+      | SynchronizedStatement(identifier? label, expression lock, statement block)
 
-catch = CatchClause(identifier? label, catch_clause_parameter parameter, statement* block)
+case = SwitchStatementCase(identifier* case, statement* statements)
+
+catch = CatchClause(identifier? label, catch_clause_parameter parameter, statement block)
 
 catch_clause_parameter = CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
 
-forcontrol = ForControl(expression init, expression condition, expression* update)
+forcontrol = ForControl(expression* init, expression condition, expression* update)
       | EnhancedForControl(expression var, statement iterable)
 
 
+# | Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
 expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | Literal(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, string value)
       | BinaryOperation(infix_operator operator, member_reference operandl, member_reference operandr)
@@ -60,7 +84,6 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | Cast(type type, expression expression)
       | MethodReference(expression expression, identifier method, type_argument* type_arguments)
       | LambdaExpression(parameter* parameters, statement body)
-      | Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
       | Invocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
       | ExplicitConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
       | SuperConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
@@ -72,13 +95,16 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | Creator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, int* dimensions, expression initializer)
       | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
-      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
+      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
+      | ArrayInitializer(expression* initializers)
 
 type = Void(constant void)
       |BasicType(identifier name, int* dimensions)
       | ReferenceType(identifier name, int* dimensions, type_argument* arguments, identifier? sub_type)
 
-declarator = VariableDeclarator(identifier name, int* dimensions, expression initializer)
+declarator = VariableDeclarator(identifier name, int* dimensions, array_initializer initializer)
+
+array_initializer = ArrayInitializer(expression* initializers)
 
 type_argument = TypeArgument(identifier type, identifier pattern_type)
 
