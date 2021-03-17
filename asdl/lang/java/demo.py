@@ -1,6 +1,8 @@
 # coding=utf-8
 
+import colorama
 import os
+import re
 import sys
 
 import jastor
@@ -13,9 +15,32 @@ from asdl.hypothesis import *
 # read in the grammar specification of Python 2.7, defined in ASDL
 asdl_text = open('java_asdl.simplified.txt').read()
 grammar = ASDLGrammar.from_text(asdl_text)
-print(grammar, flush=True)
+# print(grammar, flush=True)
 # initialize the Java transition parser
 parser = JavaTransitionSystem(grammar)
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def cprint(color, string: str, **kwargs):
+    print(f"{color}{string}{bcolors.ENDC}", **kwargs)
+
+def removeComments(string):
+    # remove all occurance streamed comments (/*COMMENT */) from string
+    string = re.sub(re.compile("/\*.*?\*/", re.DOTALL), "", string)
+    # remove all occurance singleline comments (//COMMENT\n ) from string
+    string = re.sub(re.compile("//.*?\n"), "", string)
+    return string
+
 
 def code_from_hyp(asdl_ast):
     # get the sequence of gold-standard actions to construct the ASDL AST
@@ -42,10 +67,7 @@ def code_from_hyp(asdl_ast):
                if hypothesis.frontier_node else -1)
         print(f't={t}, p_t={p_t}, Action={action}', flush=True)
         hypothesis.apply_action(action)
-    src3 = jastor.to_source(asdl_ast_to_java_ast(
-      hypothesis.tree, grammar)).replace("\n", "").strip()
-    print(f"Java AST from hypothesis: {src3}", flush=True)
-    return src3
+    return jastor.to_source(asdl_ast_to_java_ast(hypothesis.tree, grammar))
 
 
 def test(java_code, check_hypothesis=False):
@@ -54,30 +76,40 @@ def test(java_code, check_hypothesis=False):
 
     # convert the java AST into general-purpose ASDL AST used by tranX
     asdl_ast = java_ast_to_asdl_ast(java_ast, grammar)
-    print('String representation of the ASDL AST: \n%s' % asdl_ast.to_string())
-    print('Size of the AST: %d' % asdl_ast.size)
+    # print('String representation of the ASDL AST: \n%s' % asdl_ast.to_string())
+    # print('Size of the AST: %d' % asdl_ast.size)
 
     # we can also convert the ASDL AST back into Java AST
     java_ast_reconstructed = asdl_ast_to_java_ast(asdl_ast, grammar)
 
-    src0 = java_code.replace("\n", "").strip()
-    print(f"Original Java code      : {src0}", flush=True)
-    # get the surface code snippets from the original Python AST,
-    # the reconstructed AST and the AST generated using actions
-    # they should be the same
-    src1 = jastor.to_source(java_ast).replace("\n", "").strip()
-    print(f"Java AST                : {src1}", flush=True)
-    src2 = jastor.to_source(java_ast_reconstructed).replace("\n", "").strip()
-    print(f"Java AST from ASDL      : {src2}", flush=True)
+    src0 = removeComments(java_code)
+    src1 = removeComments(jastor.to_source(java_ast))
+    src2 = removeComments(jastor.to_source(java_ast_reconstructed))
+    if not ((src1.replace(" ", "").replace("\n", "").strip()
+             == src2.replace(" ", "").replace("\n", "").strip()
+             == src0.replace(" ", "").replace("\n", "").strip())):
+        cprint(bcolors.BLUE,
+               f"Original Java code      :\n{src0}\n===========\n",
+               file=sys.stderr, flush=True)
+        # get the surface code snippets from the original Python AST,
+        # the reconstructed AST and the AST generated using actions
+        # they should be the same
+        cprint(bcolors.CYAN,
+               f"Java AST                :\n{src1}\n===========\n",
+               file=sys.stderr, flush=True)
+        cprint(bcolors.GREEN,
+               f"Java AST from ASDL      :\n{src2}\n===========\n",
+               file=sys.stderr, flush=True)
 
-    if not ((src1.replace(" ", "") == src2.replace(" ", "")
-             == src0.replace(" ", ""))):
         return False
         # raise Exception("Test failed")
 
     if check_hypothesis:
-        src3 = code_from_hyp(asdl_ast).replace(" ", "").replace("\n", "")
-        return src3 == src0
+        src3 = removeComments(code_from_hyp(asdl_ast))
+        cprint(bcolors.MAGENTA,
+               f"Java AST from hyp       :\n{src3}\n===========\n",
+               file=sys.stderr, flush=True)
+        return src3 == src1
     else:
         return True
 
@@ -128,22 +160,27 @@ if __name__ == '__main__':
             filepath = os.path.join(subdir, filename)
 
             if filepath.endswith(".java"):
-                print(f"Testing Java file {filepath}", file=sys.stderr)
+                cprint(bcolors.ENDC,
+                       f"Testing Java file {bcolors.HEADER}{filepath}",
+                       file=sys.stderr, flush=True)
                 with open(filepath, "r") as f:
                     try:
                         java = f.read()
                         if not test(java, check_hypothesis):
-                            print(f"**Warn** Test failed for file: {filepath}",
-                                  file=sys.stderr)
-                            print(java, file=sys.stderr)
-                            print()
+                            cprint(bcolors.RED,
+                                   f"**Warn**{bcolors.ENDC} Test failed for file: {bcolors.HEADER}{filepath}",
+                                   file=sys.stderr, flush=True)
+                            #print(java, file=sys.stderr, flush=True)
+                            print("", file=sys.stderr, flush=True)
                             # exit(1)
                     except UnicodeDecodeError:
-                        print(f"Error: Cannot decode file as UTF-8. Ignoring: "
-                              f"{filepath}",
-                              file=sys.stderr)
+                        cprint(bcolors.RED,
+                               f"Error: Cannot decode file as UTF-8. Ignoring: "
+                               f"{filepath}",
+                               file=sys.stderr)
                     except JavaSyntaxError as e:
-                        print(f"Error: Java syntax error: {e}. Ignoring: "
-                              f"{filepath}",
-                              file=sys.stderr)
+                        cprint(bcolors.RED,
+                               f"Error: Java syntax error: {e}. Ignoring: "
+                               f"{filepath}",
+                               file=sys.stderr)
 

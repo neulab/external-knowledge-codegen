@@ -27,7 +27,7 @@ from .string_repr import pretty_string, string_triplequote_repr
 from .source_repr import pretty_source
 
 
-def to_source(node, indent_with=' ' * 4, add_line_information=False,
+def to_source(node, indent_with=" " * 4, add_line_information=False,
               pretty_string=pretty_string, pretty_source=pretty_source):
     """This function can convert a node tree back into python sourcecode.
     This is useful for debugging purposes, especially if you're dealing with
@@ -50,9 +50,9 @@ def to_source(node, indent_with=' ' * 4, add_line_information=False,
     generator = SourceGenerator(indent_with, add_line_information,
                                 pretty_string)
     generator.visit(node)
-    generator.result.append('\n')
-    if set(generator.result[0]) == set('\n'):
-        generator.result[0] = ''
+    generator.result.append("\n")
+    if set(generator.result[0]) == set("\n"):
+        generator.result[0] = ""
     return pretty_source(generator.result)
 
 
@@ -97,7 +97,7 @@ class Delimit(object):
             for initial data, because it may flush
             preceding data into result.
         """
-        delimiters = '()'
+        delimiters = "()"
         node = None
         op = None
         for arg in args:
@@ -124,7 +124,7 @@ class Delimit(object):
         result = self.result
         start = self.index - 1
         if self.discard:
-            result[start] = ''
+            result[start] = ""
         else:
             result.append(self.closing)
 
@@ -168,11 +168,11 @@ class SourceGenerator(ExplicitNodeVisitor):
                     visit(item)
                 elif callable(item):
                     item()
-                elif item == '\n':
+                elif item == "\n":
                     newline()
                 else:
                     if self.new_lines:
-                        append('\n' * self.new_lines)
+                        append("\n" * self.new_lines)
                         self.colinfo = len(result), 0
                         append(self.indent_with * self.indentation)
                         self.new_lines = 0
@@ -186,7 +186,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         """ Get an attribute of the node.
             like dict.get (returns None if doesn't exist)
         """
-        if not name.startswith('get_'):
+        if not name.startswith("get_"):
             raise AttributeError
         geta = getattr
         shortname = name[4:]
@@ -210,7 +210,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def newline(self, node=None, extra=0):
         self.new_lines = max(self.new_lines, 1 + extra)
         if node is not None and self.add_line_information:
-            self.write('# line: %s' % node.lineno)
+            self.write(f"// line: {node.lineno}")
             self.new_lines = 1
 
     def visit_arguments(self, node):
@@ -218,7 +218,7 @@ class SourceGenerator(ExplicitNodeVisitor):
 
         def write_comma():
             if want_comma:
-                self.write(', ')
+                self.write(", ")
             else:
                 want_comma.append(True)
 
@@ -227,17 +227,17 @@ class SourceGenerator(ExplicitNodeVisitor):
             padding = [None] * (len(args) - len(defaults))
             for arg, default in zip(args, padding + defaults):
                 self.write(write_comma, arg)
-                self.conditional_write('=', default)
+                self.conditional_write("=", default)
 
         loop_args(node.args, node.defaults)
-        self.conditional_write(write_comma, '*', node.vararg)
+        self.conditional_write(write_comma, "*", node.vararg)
 
         kwonlyargs = self.get_kwonlyargs(node)
         if kwonlyargs:
             if node.vararg is None:
-                self.write(write_comma, '*')
+                self.write(write_comma, "*")
             loop_args(kwonlyargs, node.kw_defaults)
-        self.conditional_write(write_comma, '**', node.kwarg)
+        self.conditional_write(write_comma, "**", node.kwarg)
 
     def statement(self, node, *params, **kw):
         self.newline(node)
@@ -246,13 +246,13 @@ class SourceGenerator(ExplicitNodeVisitor):
     def decorators(self, node, extra):
         self.newline(extra=extra)
         for decorator in node.decorator_list:
-            self.statement(decorator, '@', decorator)
+            self.statement(decorator, "@", decorator)
 
     def comma_list(self, items, trailing=False):
         # set_precedence(Precedence.Comma, *items)
         for idx, item in enumerate(items):
-            self.write(', ' if idx else '', item)
-        self.write(',' if trailing else '')
+            self.write(", " if idx else "", item)
+        self.write("," if trailing else "")
 
     # Statements
 
@@ -267,136 +267,255 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(type)
 
     def visit_Annotation(self, node):
-        self.write('@', node.name, ' ')
+        self.write("@", node.name, "\n")
 
-    def visit_PackageDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
+    #### Declarations
+
+    def visit_AnnotationDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write('package ', node.name, ';')
-
-    def visit_ClassDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
+                self.write(annotation, " ")
         if node.modifiers:
             for modifier in node.modifiers:
-                self.write(modifier, ' ')
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write('class', ' ')
-        if node.type_parameters:
-            self.write('< ', node.name)
-            self.comma_list(node.type_parameters)
-            self.write(' >')
+                self.write(modifier, " ")
+        self.write("@interface", " ")
         self.write(node.name)
-        if node.extends:
-            self.write('extends')
-            self.write(node.extends)
-        if node.implements:
-            self.write('implements ')
-            self.comma_list(node.implements)
         if node.body:
-            self.write(' {')
+            self.write("{", "\n")
             for element in node.body:
                 self.write(element)
-            self.write('}')
+            self.write("}")
 
-    def visit_MethodDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
+    def visit_PackageDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
+                self.write(annotation)
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write("package ", node.name, ";", "\n")
+
+    def visit_InterfaceDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
+        if node.annotations:
+            for annotation in node.annotations:
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write("interface ")
+        if node.type_parameters:
+            self.write("< ", node.name)
+            self.comma_list(node.type_parameters)
+            self.write(" >")
+        self.write(node.name)
+        if node.extends:
+            self.write("extends ")
+            self.comma_list(node.extends)
+        if node.body:
+            self.write("{", "\n")
+            for element in node.body:
+                self.write(element)
+            self.write("}")
+
+    def visit_ClassDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
+        if node.annotations:
+            for annotation in node.annotations:
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write("class ")
+        if node.type_parameters:
+            self.write("< ", node.name)
+            self.comma_list(node.type_parameters)
+            self.write(" >")
+        self.write(node.name)
+        if node.extends:
+            self.write("extends")
+            self.write(node.extends)
+        if node.implements:
+            self.write(" implements ")
+            self.comma_list(node.implements)
+        if node.body:
+            self.write(" {", "\n")
+            for element in node.body:
+                self.write(element)
+            self.write("}")
+        self.newline(extra=1)
+
+    # enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
+    def visit_EnumDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
+        if node.annotations:
+            for annotation in node.annotations:
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write("enum ", node.name)
+        self.write(node.body)
+        if node.implements:
+            self.write(" implements ")
+            self.comma_list(node.implements)
+
+    #enumbody = EnumBody(enumconstant* constants, enumdeclaration* declarations)
+    def visit_EnumBody(self, node):
+        self.write("{", "\n")
+        self.comma_list(node.constants)
+        self.write(";")
+        if node.declarations:
+            for declaration in node.declarations:
+                self.write(declaration)
+        self.write("}")
+
+    # enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, argument* arguments, statement body)
+    def visit_EnumConstantDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
+        if node.annotations:
+            for annotation in node.annotations:
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write(node.name)
+        if node.arguments:
+            self.write("(")
+            self.comma_list(node.arguments)
+            self.write(")")
+        if node.body:
+            self.write("{", "\n")
+            for element in node.body:
+                self.write(element)
+            self.write("}")
+
+    def visit_MethodDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
+        if node.annotations:
+            for annotation in node.annotations:
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
         if node.return_type:
             self.write(node.return_type, " ")
         else:
             self.write("void ")
         if node.type_parameters:
-            self.write('< ', node.name)
+            self.write("< ", node.name)
             self.comma_list(node.type_parameters)
-            self.write(' >')
+            self.write(" >")
         self.write(node.name)
         if node.parameters:
-            self.write('(')
+            self.write("(")
             self.comma_list(node.parameters)
-            self.write(')')
+            self.write(")")
         if node.throws:
-            self.write(' throws ')
+            self.write(" throws ")
             self.comma_list(node.throws)
+        self.write(" ")
         if node.body:
             self.write(node.body)
+        self.newline(extra=1)
 
     # ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement* body)
     def visit_ConstructorDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
         if node.type_parameters:
-            self.write('< ', node.name)
+            self.write("< ", node.name)
             self.comma_list(node.type_parameters)
-            self.write(' >')
+            self.write(" >")
         self.write(node.name)
         if node.parameters:
-            self.write('(')
+            self.write("(")
             self.comma_list(node.parameters)
-            self.write(')')
+            self.write(")")
         if node.throws:
-            self.write(' throws ')
+            self.write(" throws")
             self.comma_list(node.throws)
+        self.write(" ")
         if node.body:
             self.write(node.body)
+        self.newline(extra=1)
 
     # FieldDeclaration(string? documentation, fieldmodifier* modifiers,
     # annotation* annotations, type type, declarator* declarators)
     def visit_FieldDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write(node.type, ' ')
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write(node.type, " ")
         if node.declarators:
             self.comma_list(node.declarators)
-        self.write(';')
+        self.write(";", "\n")
 
     # ConstantDeclaration(string? documentation, fieldmodifier* modifiers,
     # annotation* annotations, type type, declarator* declarators)
     def visit_ConstantDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write(node.type, ' ')
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write(node.type, " ")
         if node.declarators:
             self.comma_list(node.declarators)
-        self.write(';')
+        self.write(";", "\n")
+
+    def visit_VariableDeclaration(self, node):
+        self.write(node.type, " ")
+        self.comma_list(node.declarators)
+
+    def visit_LocalVariableDeclaration(self, node):
+        if node.annotations:
+            for annotation in node.annotations:
+                self.write(annotation)
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier)
+        self.write(node.type, " ")
+        self.comma_list(node.declarators)
+        self.write(";", "\n")
+
+
+    ### Declarators
 
     def visit_ReferenceType(self, node):
         self.write(node.name)
+        if node.arguments:
+            self.write("<")
+            self.comma_list(node.arguments)
+            self.write(">")
         if node.dimensions:
-            for _ in range(len(node.dimensions)):
-                self.write("[]")
+            for dim in node.dimensions:
+                self.write("[")
+                self.write(dim)
+                self.write("]")
 
     def visit_VariableDeclarator(self, node):
         self.write(" ", node.name)
@@ -422,51 +541,53 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(op)
 
     def visit_FormalParameter(self, node):
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write(node.type, ' ', node.name)
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write(node.type, " ", node.name)
+
+    ### Statements
 
     def visit_Statement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write(";")
+            self.write(node.label, ": ", "\n")
+        self.write(";", "\n")
 
     def visit_StatementExpression(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write(node.expression, ";")
+            self.write(node.label, ": ", "\n")
+        self.write(node.expression, ";", "\n")
 
     def visit_TernaryExpression(self, node):
         self.write(node.condition, " ? ", node.if_true, " : ", node.if_false)
 
     def visit_MethodInvocation(self, node):
         if node.prefix_operators:
-          for op in node.prefix_operators:
-              self.write(op)
+            for op in node.prefix_operators:
+                self.write(op)
         if node.qualifier:
             self.write(node.qualifier, ".")
         self.write(node.member)
         if node.type_arguments:
             self.comma_list(node.type_arguments)
-        if node.selectors:
-            for selector in node.selectors:
-                self.write(selector)
         self.write("(")
         self.comma_list(node.arguments)
         self.write(")")
+        if node.selectors:
+            for selector in node.selectors:
+                self.write(".", selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        self.write(';')
+        #self.write(";", "\n")
 
     def visit_ForStatement(self, node):
         self.write("for (")
         self.write(node.control)
-        self.write(") ")
+        self.write(") ", "\n")
         self.write(node.body)
 
     def visit_WhileStatement(self, node):
@@ -511,21 +632,18 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_StatementExpressionList(self, node):
         self.comma_list(node.statement)
 
-    def visit_VariableDeclaration(self, node):
-        self.write(node.type, " ")
-        self.comma_list(node.declarators)
-        self.write(';')
-
     def visit_BinaryOperation(self, node):
+        self.write("(")
         self.write(node.operandl)
-        # self.write(" ", get_op_symbol(node.operator, ' %s '), " ")
+        self.write(")")
         self.write(" ", node.operator, " ")
+        self.write("(")
         self.write(node.operandr)
+        self.write(")")
 
     def visit_MemberReference(self, node):
         if node.prefix_operators:
             for op in node.prefix_operators:
-                # self.write(get_op_symbol(op, ' %s '))
                 self.write(op.operator)
         if node.qualifier:
             self.write(node.qualifier, ".")
@@ -535,7 +653,6 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
-                # self.write(get_op_symbol(op, ' %s '))
                 self.write(op.operator)
 
     def visit_BasicType(self, node):
@@ -551,32 +668,20 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("[", node.index, "]")
 
     def visit_Modifier(self, node):
-        self.write(node.value, " ")
-
-    # ['modifiers', 'annotations', 'type', 'declarators']
-    def visit_LocalVariableDeclaration(self, node):
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write(node.type, ' ')
-        self.comma_list(node.declarators)
-        self.write(';')
+        self.write(node.value)
 
     def visit_Operator(self, node):
         self.write(node.operator)
 
     # Import(identifier path, identifier static, identifier wildcard)
     def visit_Import(self, node):
-        self.write('import ')
+        self.write("import ")
         if node.static:
-            self.write('static ')
+            self.write("static ")
         self.write(node.path)
         if node.wildcard:
-            self.write('.*',)
-        self.write(';', '\n')
+            self.write(".*",)
+        self.write(";", "\n")
 
     # Assignment(expression expressionl, expression value,
     # assign_operator type)
@@ -589,6 +694,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_This(self, node):
         for op in node.prefix_operators:
             self.write(op.operator)
+        self.write("this.")
         if node.qualifier:
             self.write(node.qualifier, ".")
         if node.selectors:
@@ -600,26 +706,26 @@ class SourceGenerator(ExplicitNodeVisitor):
     # ReturnStatement(identifier* label, expression expression)
     def visit_ReturnStatement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('return ', node.expression, ";", '\n')
+            self.write(node.label, ": ", "\n")
+        self.write("return ", node.expression, ";", "\n")
 
     # IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
     def visit_IfStatement(self, node):
         if node.label:
-            self.write(node.label, ': ')
-        self.write(node.condition, ' ')
+            self.write(node.label, ": ", "\n")
+        self.write("if (", node.condition, ") ", "\n")
         self.write(node.then_statement)
         if node.else_statement:
-            self.write(node.else_statement)
+            self.write("else ", node.else_statement)
 
     # BlockStatement(identifier? label, statement* statements)
     def visit_BlockStatement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('{', '\n')
+            self.write(node.label, ": ", "\n")
+        self.write("{", "\n")
         for statement in node.statements:
             self.write(statement)
-        self.write('}', '\n')
+        self.write("}", "\n")
 
     # EnhancedForControl(expression var, statement iterable)
     def visit_EnhancedForControl(self, node):
@@ -627,54 +733,54 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # Cast(type type, expression expression)
     def visit_Cast(self, node):
-        self.write('(', node.type, ") ", node.expression)
+        self.write("(", node.type, ") ", node.expression)
 
     # TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
     def visit_TryStatement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('try')
+            self.write(node.label, ": ", "\n")
+        self.write("try")
         if node.resources:
-            self.write('(')
+            self.write("(")
             for idx, item in enumerate(node.resources):
-                self.write('; ' if idx else '', item)
-            self.write(')')
+                self.write("; " if idx else "", item)
+            self.write(")")
         self.write(node.block)
         if node.catches:
             for clause in node.catches:
                 self.write(clause)
         if node.finally_block:
-            self.write('finally', node.finally_block)
+            self.write("finally", node.finally_block)
 
     def visit_TryResource(self, node):
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
 
     # CatchClause(identifier? label, catch_clause_parameter parameter, statement* block)
     def visit_CatchClause(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('catch (', node.parameter, ')', node.block)
+            self.write(node.label, ": ", "\n")
+        self.write("catch (", node.parameter, ")", node.block)
 
     # CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
     def visit_CatchClauseParameter(self, node):
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write('.'.join(node.types), ' ', node.name)
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
+        self.write(".".join(node.types), " ", node.name)
 
     # ThrowStatement(identifier? label, expression expression)
     def visit_ThrowStatement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('throw ', node.expression, ';')
+            self.write(node.label, ": ", "\n")
+        self.write("throw ", node.expression, ";", "\n")
 
     # SuperConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
     def visit_SuperConstructorInvocation(self, node):
@@ -700,6 +806,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.prefix_operators:
             for op in node.prefix_operators:
                 self.write(op)
+        self.write("new ")
         if node.qualifier:
             self.write(node.qualifier, ".")
         if node.constructor_type_arguments:
@@ -713,10 +820,10 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(node.arguments)
         self.write(")")
         if node.body:
-            self.write("{")
+            self.write("{", "\n")
             for statement in node.body:
                 self.write(statement)
-            self.write("}")
+            self.write("}", "\n")
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
@@ -733,20 +840,23 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_SwitchStatement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('(', node.expression, ') {')
+            self.write(node.label, ": ", "\n")
+        self.write("switch (", node.expression, ") {", "\n")
         for case in node.cases:
             self.write(case)
-        self.write('}')
+        self.write("}")
 
     def visit_SwitchStatementCase(self, node):
-        self.write('case ')
-        self.comma_list(node.case)
+        if node.case:
+            for case in node.case:
+                self.write("case ", case, ":", "\n")
+        else:
+            self.write("default:", "\n")
         for statement in node.statements:
             self.write(statement)
 
     def visit_StaticInitializer(self, node):
-        self.write('static', node.block)
+        self.write("static", node.block)
 
     def visit_InstanceInitializer(self, node):
         self.write(node.block)
@@ -758,7 +868,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(op)
         if node.qualifier:
             self.write(node.qualifier, ".")
-        self.write(node.type, '.class')
+        self.write(node.type, ".class")
         if node.selectors:
             for selector in node.selectors:
                 self.write(selector)
@@ -767,32 +877,24 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # MethodReference(expression expression, identifier method, type_argument* type_arguments)
     def visit_MethodReference(self, node):
-        self.write(node.expression, '::', node.method)
+        self.write(node.expression, "::", node.method)
         if node.type_arguments:
             raise Exception("TODO MethodReference type_arguments")
 
     def visit_TypeParameter(self, node):
         self.write(node.name)
         if node.extends:
-            self.write(' extends ')
+            self.write(" extends ")
             self.comma_list(node.extends)
 
     def visit_TypeArgument(self, node):
-        self.write(node.pattern_type, ' ', node.type)
-
-    # Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
-    def visit_Primary(self, node):
-        raise Exception("TODO Primary")
-
-    # ExplicitConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
-    def visit_ExplicitConstructorInvocation(self, node):
-        raise Exception("TODO ExplicitConstructorInvocation")
+        self.write(node.pattern_type, " ", node.type)
 
     def visit_SuperMethodInvocation(self, node):
         if node.prefix_operators:
           for op in node.prefix_operators:
               self.write(op)
-        self.write('super.')
+        self.write("super.")
         if node.qualifier:
             self.write(node.qualifier, ".")
         self.write(node.member)
@@ -810,72 +912,28 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_BreakStatement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('break')
+            self.write(node.label, ": ", "\n")
+        self.write("break")
         if node.goto:
             self.write(node.goto)
-        self.write(';', '\n')
+        self.write(";", "\n")
 
     def visit_ContinueStatement(self, node):
         if node.label:
-            self.write(node.label, ": ")
-        self.write('continue')
+            self.write(node.label, ": ", "\n")
+        self.write("continue")
         if node.goto:
             self.write(node.goto)
-        self.write(';', '\n')
-
-    # public interface AssociableToASTTest<T extends Node> {
-    # public interface ResolvedAnnotationDeclarationTest extends ResolvedReferenceTypeDeclarationTest {
-    # ['modifiers', 'annotations', 'documentation', 'name', 'body', 'type_parameters', 'extends']
-    def visit_InterfaceDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write('interface', ' ')
-        if node.type_parameters:
-            self.write('< ', node.name)
-            self.comma_list(node.type_parameters)
-            self.write(' >')
-        self.write(node.name)
-        if node.extends:
-            self.write('extends ')
-            self.comma_list(node.extends)
-        if node.body:
-            self.write(' {')
-            for element in node.body:
-                self.write(element)
-            self.write('}')
-
-    def visit_AnnotationDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write('@interface', ' ')
-        self.write(node.name)
-        if node.body:
-            self.write(' {')
-            for element in node.body:
-                self.write(element)
-            self.write('}')
+        self.write(";", "\n")
 
     # AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name", type return_type, int* dimensions, identifier? default)
     def visit_AnnotationMethod(self, node):
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
         if node.annotations:
             for annotation in node.annotations:
-                self.write(annotation, ' ')
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
         if node.return_type:
             self.write(node.return_type, " ")
         self.write(node.name)
@@ -883,7 +941,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             for _ in range(len(node.dimensions)):
                 self.write("[]")
         if node.default:
-            self.write('=')
+            self.write("=")
             self.write(node.default)
 
     def visit_SuperMemberReference(self, node):
@@ -899,7 +957,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        self.write(';')
+        self.write(";")
 
     # ExplicitConstructorInvocation(prefix_operator* prefix_operators,
     # postfix_operator* postfix_operators, identifier? qualifier,
@@ -908,6 +966,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.prefix_operators:
             for op in node.prefix_operators:
                 self.write(op)
+        self.write("this")
         if node.qualifier:
             self.write(node.qualifier, ".")
         if node.type_arguments:
@@ -921,56 +980,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        self.write(';')
+        self.write(";")
 
-    # enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
-    def visit_EnumDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write('enum', node.name)
-        self.write(node.body)
-        if node.implements:
-            self.write('implements')
-            self.comma_list(node.implements)
-
-    #enumbody = EnumBody(enumconstant* constants, enumdeclaration* declarations)
-    def visit_EnumBody(self, node):
-        self.write('{')
-        self.comma_list(node.constants)
-        self.write(';')
-        if node.declarations:
-            for declaration in node.declarations:
-                self.write(declaration)
-        self.write('}')
-
-    # enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, argument* arguments, statement body)
-    def visit_EnumConstantDeclaration(self, node):
-        if node.documentation:
-            self.write(node.documentation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, ' ')
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, ' ')
-        self.write(node.name)
-        if node.arguments:
-            self.write('(')
-            self.comma_list(node.arguments)
-            self.write(')')
-        if node.body:
-            self.write(' {')
-            for element in node.body:
-                self.write(element)
-            self.write('}')
-
-    # ['prefix_operators', 'postfix_operators', 'qualifier', 'selectors', 'type', 'dimensions', 'initializer']
     def visit_ArrayCreator(self, node):
         if node.prefix_operators:
             for op in node.prefix_operators:
@@ -991,7 +1002,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        self.write(';')
+        self.write(";")
 
     # InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
     def visit_InnerClassCreator(self, node):
@@ -1005,17 +1016,17 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.selectors:
             for selector in node.selectors:
                 self.write(selector)
-        self.write('class')
+        self.write("class ")
         self.write(node.type)
         self.write("(")
         if node.arguments:
             self.comma_list(node.arguments)
         self.write(")")
         if node.body:
-            self.write("{")
+            self.write("{", "\n")
             for statement in node.body:
                 self.write(statement)
-            self.write("}")
+            self.write("}", "\n")
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
