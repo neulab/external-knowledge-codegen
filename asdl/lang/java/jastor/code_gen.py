@@ -309,7 +309,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             for modifier in node.modifiers:
                 self.write(modifier, " ")
         self.write("interface ")
-        if node.type_parameters:
+        if node.type_parameters is not None:
             self.write("< ", node.name)
             self.comma_list(node.type_parameters)
             self.write(" >")
@@ -333,7 +333,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             for modifier in node.modifiers:
                 self.write(modifier, " ")
         self.write("class ")
-        if node.type_parameters:
+        if node.type_parameters is not None:
             self.write("< ", node.name)
             self.comma_list(node.type_parameters)
             self.write(" >")
@@ -411,15 +411,15 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.return_type, " ")
         else:
             self.write("void ")
-        if node.type_parameters:
+        if node.type_parameters is not None:
             self.write("< ", node.name)
             self.comma_list(node.type_parameters)
             self.write(" >")
         self.write(node.name)
-        if node.parameters:
-            self.write("(")
-            self.comma_list(node.parameters)
-            self.write(")")
+        self.write("(")
+        #if node.parameters:
+        self.comma_list(node.parameters)
+        self.write(")")
         if node.throws:
             self.write(" throws ")
             self.comma_list(node.throws)
@@ -438,7 +438,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.modifiers:
             for modifier in node.modifiers:
                 self.write(modifier, " ")
-        if node.type_parameters:
+        if node.type_parameters is not None:
             self.write("< ", node.name)
             self.comma_list(node.type_parameters)
             self.write(" >")
@@ -507,7 +507,7 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_ReferenceType(self, node):
         self.write(node.name)
-        if node.arguments:
+        if node.arguments is not None:
             self.write("<")
             self.comma_list(node.arguments)
             self.write(">")
@@ -694,7 +694,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_This(self, node):
         for op in node.prefix_operators:
             self.write(op.operator)
-        self.write("this.")
+        self.write("this")
         if node.qualifier:
             self.write(node.qualifier, ".")
         if node.selectors:
