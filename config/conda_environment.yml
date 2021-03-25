@@ -8,8 +8,10 @@ dependencies:
   - cudatoolkit=10.0.130
   - python=3.7.3
   - pytorch=1.1.0
+  - pip=20.2.4
   - pip:
     - six
     - xgboost
     - tqdm
     - nltk
+    - aymara==0.2.1

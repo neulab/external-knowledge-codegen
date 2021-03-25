@@ -154,8 +154,9 @@ class RealizedField(Field):
 
         # initialize value to correct type
         if self.cardinality == 'multiple':
-            self.value = []
+            self.value = None
             if value is not None:
+                self.value = []
                 for child_node in value:
                     self.add_value(child_node)
         else:
@@ -172,6 +173,8 @@ class RealizedField(Field):
             value.parent_field = self
 
         if self.cardinality == 'multiple':
+            if self.value is None:
+                self.value = []
             self.value.append(value)
         else:
             self.value = value

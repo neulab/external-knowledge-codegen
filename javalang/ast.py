@@ -1,6 +1,7 @@
 import pickle
 
 import six
+import sys
 
 
 class MetaNode(type):
@@ -59,7 +60,7 @@ class Node(object):
     @property
     def children(self):
         return [getattr(self, attr_name) for attr_name in self.attrs]
-    
+
     @property
     def position(self):
         if hasattr(self, "_position"):

@@ -31,7 +31,7 @@ def java_ast_to_asdl_ast(java_ast_node, grammar):
     # assert py_node_name.startswith('_ast.')
 
     production = grammar.get_prod_by_ctr_name(java_node_name)
-    # print(production, flush=True)
+    print(production, file=sys.stderr)
 
     fields = []
     for field in production.fields:
@@ -43,7 +43,8 @@ def java_ast_to_asdl_ast(java_ast_node, grammar):
                     child_node = java_ast_to_asdl_ast(field_value, grammar)
                     asdl_field.add_value(child_node)
                 else:
-                    asdl_field.add_value(str(field_value))
+                    #asdl_field.add_value(str(field_value))
+                    asdl_field.add_value(field_value)
         # field with multiple cardinality
         elif field_value is not None:
             if grammar.is_composite_type(field.type):
@@ -102,9 +103,9 @@ def asdl_ast_to_java_ast(asdl_ast_node, grammar):
             elif field.name == 'level':
                 field_value = 0
 
-        # must set unused fields to default value...
-        if field_value is None and field.cardinality == 'multiple':
-            field_value = list()
+        ## must set unused fields to default value...
+        #if field_value is None and field.cardinality == 'multiple':
+            #field_value = list()
 
         setattr(java_ast_node, field.name, field_value)
 

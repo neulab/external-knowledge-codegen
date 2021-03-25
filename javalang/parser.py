@@ -482,6 +482,7 @@ class Parser(object):
     @parse_debug
     def parse_reference_type(self):
         reference_type = tree.ReferenceType()
+        reference_type.arguments = None
         tail = reference_type
 
         while True:
@@ -584,12 +585,14 @@ class Parser(object):
 
     @parse_debug
     def parse_type_parameters(self):
-        type_parameters = list()
+        type_parameters = None
 
         self.accept('<')
 
         while True:
             type_parameter = self.parse_type_parameter()
+            if type_parameters is None:
+                type_parameters = list()
             type_parameters.append(type_parameter)
 
             if self.try_accept('>'):
@@ -1044,17 +1047,17 @@ class Parser(object):
 
         return rest
 
-    @parse_debug
-    def parse_constant_declarators_rest(self):
-        array_dimension, initializer = self.parse_constant_declarator_rest()
-        declarators = [tree.VariableDeclarator(dimensions=array_dimension,
-                                               initializer=initializer)]
+    #@parse_debug
+    #def parse_constant_declarators_rest(self):
+        #array_dimension, initializer = self.parse_constant_declarator_rest()
+        #declarators = [tree.VariableDeclarator(dimensions=array_dimension,
+                                               #initializer=initializer)]
 
-        while self.try_accept(','):
-            declarator = self.parse_constant_declarator()
-            declarators.append(declarator)
+        #while self.try_accept(','):
+            #declarator = self.parse_constant_declarator()
+            #declarators.append(declarator)
 
-        return tree.ConstantDeclaration(declarators=declarators)
+        #return tree.ConstantDeclaration(declarators=declarators)
 
     @parse_debug
     def parse_constant_declarator_rest(self):

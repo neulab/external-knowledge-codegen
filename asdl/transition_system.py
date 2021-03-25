@@ -49,6 +49,8 @@ class TransitionSystem(object):
 
         actions = []
 
+        #if asdl_ast is None:
+            #return actions
         parent_action = ApplyRuleAction(asdl_ast.production)
         actions.append(parent_action)
 
@@ -57,6 +59,8 @@ class TransitionSystem(object):
             if self.grammar.is_composite_type(field.type):
                 if field.cardinality == 'single':
                     field_actions = self.get_actions(field.value)
+                    #if not field_actions:
+                        #field_actions.append(ReduceAction())
                 else:
                     field_actions = []
 

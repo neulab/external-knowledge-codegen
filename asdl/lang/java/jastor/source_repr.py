@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Part of the astor library for Python AST manipulation.
+Part of the jastor library for Java AST manipulation.
+
+Jastor is a port to Java of the astor library for Python AST manipulation.
 
 License: 3-clause BSD
 
+For Astor
 Copyright (c) 2015 Patrick Maupin
+
+For Jastor
+Copyright 2021 (c) CEA LIST (Gaël de Chalendar)
+
 
 Pretty-print source -- post-process for the decompiler
 

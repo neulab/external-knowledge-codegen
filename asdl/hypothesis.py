@@ -19,8 +19,9 @@ class Hypothesis(object):
 
     def apply_action(self, action):
         if self.tree is None:
-            assert isinstance(action, ApplyRuleAction), 'Invalid action [%s], only ApplyRule action is valid ' \
-                                                        'at the beginning of decoding'
+            assert isinstance(action, ApplyRuleAction), (
+              f'Invalid action [{action}], only ApplyRule action is valid '
+              f'at the beginning of decoding')
 
             self.tree = AbstractSyntaxTree(action.production)
             self.update_frontier_info()
@@ -32,20 +33,24 @@ class Hypothesis(object):
                     self.frontier_field.add_value(field_value)
                     self.update_frontier_info()
                 elif isinstance(action, ReduceAction):
-                    assert self.frontier_field.cardinality in ('optional', 'multiple'), 'Reduce action can only be ' \
-                                                                                        'applied on field with multiple ' \
-                                                                                        'cardinality'
+                    assert self.frontier_field.cardinality in ('optional',
+                                                               'multiple'), (
+                        'Reduce action can only be applied on field with '
+                        'multiple cardinality')
                     self.frontier_field.set_finish()
                     self.update_frontier_info()
                 else:
-                    raise ValueError('Invalid action [%s] on field [%s]' % (action, self.frontier_field))
+                    raise ValueError(f'Invalid action [{action}] on field '
+                                     f'[{self.frontier_field}]')
             else:  # fill in a primitive field
                 if isinstance(action, GenTokenAction):
-                    # only field of type string requires termination signal </primitive>
+                    # only field of type string requires termination signal
+                    # </primitive>
                     end_primitive = False
                     if self.frontier_field.type.name == 'string':
                         if action.is_stop_signal():
-                            self.frontier_field.add_value(' '.join(self._value_buffer))
+                            self.frontier_field.add_value(
+                              ' '.join(self._value_buffer))
                             self._value_buffer = []
 
                             end_primitive = True
@@ -55,18 +60,22 @@ class Hypothesis(object):
                         self.frontier_field.add_value(action.token)
                         end_primitive = True
 
-                    if end_primitive and self.frontier_field.cardinality in ('single', 'optional'):
+                    if (end_primitive
+                            and self.frontier_field.cardinality in ('single',
+                                                                    'optional')):
                         self.frontier_field.set_finish()
                         self.update_frontier_info()
 
                 elif isinstance(action, ReduceAction):
-                    assert self.frontier_field.cardinality in ('optional', 'multiple'), 'Reduce action can only be ' \
-                                                                                        'applied on field with multiple ' \
-                                                                                        'cardinality'
+                    assert self.frontier_field.cardinality in ('optional',
+                                                               'multiple'), (
+                      'Reduce action can only be applied on field with '
+                      'multiple cardinality')
                     self.frontier_field.set_finish()
                     self.update_frontier_info()
                 else:
-                    raise ValueError('Can only invoke GenToken or Reduce actions on primitive fields')
+                    raise ValueError('Can only invoke GenToken or Reduce '
+                                     'actions on primitive fields')
 
         self.t += 1
         self.actions.append(action)
@@ -76,9 +85,12 @@ class Hypothesis(object):
             if tree_node:
                 for field in tree_node.fields:
                     # if it's an intermediate node, check its children
-                    if isinstance(field.type, ASDLCompositeType) and field.value:
-                        if field.cardinality in ('single', 'optional'): iter_values = [field.value]
-                        else: iter_values = field.value
+                    if isinstance(field.type,
+                                  ASDLCompositeType) and field.value:
+                        if field.cardinality in ('single', 'optional'):
+                            iter_values = [field.value]
+                        else:
+                            iter_values = field.value
 
                         for child_node in iter_values:
                             result = _find_frontier_node_and_field(child_node)

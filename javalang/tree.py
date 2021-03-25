@@ -121,8 +121,8 @@ class ConstructorDeclaration(Declaration, Documented):
 
 # ------------------------------------------------------------------------------
 
-class ConstantDeclaration(FieldDeclaration):
-    attrs = ()
+#class ConstantDeclaration(FieldDeclaration):
+    #attrs = ()
 
 class ArrayInitializer(Node):
     attrs = ("initializers",)

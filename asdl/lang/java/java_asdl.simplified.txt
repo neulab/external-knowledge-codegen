@@ -6,18 +6,18 @@ cu = CompilationUnit(package? package, importdeclaration* imports, typedeclarati
 
 package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name)
 
-importdeclaration = Import(identifier path, constant static, constant wildcard)
+importdeclaration = Import(identifier path, constant? static, constant? wildcard)
 
-annotation = Annotation(string? element, identifier name)
+annotation = Annotation(expression? element, identifier name)
 
 dottedname = Identifier(identifier id)
       | PackageOrTypeName(dottedname left, dotop op, identifier right)
 dotop = Dot
 
-typedeclaration = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
-      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, dottedname? extends, classbodydeclaration* body)
-      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
-      | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
+#typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+#      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, dottedname? extends, typedeclaration* body)
+#      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, dottedname* implements, enumbody body)
+#      | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
 
 enumbody = EnumBody(enumconstant* constants, enumdeclaration* declarations)
 
@@ -25,15 +25,18 @@ enumconstant = EnumConstantDeclaration(annotation* annotations, string? document
 
 enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
 
-classbodydeclaration = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
-      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, type* extends, classbodydeclaration* body)
+#      | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+# classbodydeclaration  = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+
+typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
       | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
+      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, type* extends, typedeclaration* body)
       | InstanceInitializer(statement block)
       | StaticInitializer(statement block)
       | ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement body)
       | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, parameter* parameters, identifier* throws, statement body)
       | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
-      | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+      | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
 
 annotationbodydeclaration = AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type return_type, int* dimensions, identifier? default)
 
@@ -41,7 +44,7 @@ type_parameter = TypeParameter(identifier name, type* extends)
 
 fieldmodifier = Modifier(constant value)
 
-parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, constant varargs)
+parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, constant? varargs)
       | InferredFormalParameter(identifier name)
 
 statement = Statement(identifier? label)
@@ -52,13 +55,13 @@ statement = Statement(identifier? label)
       | StatementExpression(identifier? label, statement expression)
       | LocalVariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | ReturnStatement(identifier? label, expression expression)
-      | IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
+      | IfStatement(identifier? label, expression condition, statement then_statement, statement? else_statement)
       | BlockStatement(identifier? label, statement* statements)
       | TryStatement(identifier? label, identifier? resources, statement block, catch* catches, statement? finally_block)
       | ThrowStatement(identifier? label, expression expression)
       | SwitchStatement(identifier? label, expression expression, case* cases)
-      | BreakStatement(identifier? label, identifier goto)
-      | ContinueStatement(identifier? label, identifier goto)
+      | BreakStatement(identifier? label, identifier? goto)
+      | ContinueStatement(identifier? label, identifier? goto)
       | AssertStatement(identifier? label, expression condition, expression? value)
       | SynchronizedStatement(identifier? label, expression lock, statement block)
 
@@ -93,7 +96,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | VoidClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | Creator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
-      | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, int* dimensions, expression initializer)
+      | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, int* dimensions, expression? initializer)
       | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
       | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
       | ArrayInitializer(expression* initializers)
@@ -102,11 +105,11 @@ type = Void(constant void)
       |BasicType(identifier name, int* dimensions)
       | ReferenceType(identifier name, int* dimensions, type_argument* arguments, identifier? sub_type)
 
-declarator = VariableDeclarator(identifier name, int* dimensions, array_initializer initializer)
+declarator = VariableDeclarator(identifier name, int* dimensions, array_initializer? initializer)
 
 array_initializer = ArrayInitializer(expression* initializers)
 
-type_argument = TypeArgument(identifier type, identifier pattern_type)
+type_argument = TypeArgument(identifier? type, identifier? pattern_type)
 
 boolean = True | False
 
@@ -117,14 +120,3 @@ prefix_operator = Operator(constant operator)
 postfix_operator = Operator(constant operator)
 
 assign_operator = Operator(constant operator)
-
-#infix_operator = Or | And | BitOr | BitAnd | BitEx | Eq | Ne | Lt | Gt | Le | Ge | LeftShift | RightShift | ZeroFillRightShift | Plus | Minus | Mult | Div | Mod
-
-#prefix_operator = PreInc | PreDec | Not | BinNot | PrePlus | PreMinus
-
-#postfix_operator = PostInc | PostDec
-
-#assign_operator = Assisn | AssignInc | AssignDec | AssignMult | AssignDiv | AssignBitAnd | AssignBitOr | AssignBitEx | AssignMod | AssignLeftShift | AssignRightShift | AssignZeroFillRightShift
-
-
-# ------------------------------------------------------------------------------
