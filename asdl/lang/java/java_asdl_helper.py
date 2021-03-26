@@ -31,7 +31,7 @@ def java_ast_to_asdl_ast(java_ast_node, grammar):
     # assert py_node_name.startswith('_ast.')
 
     production = grammar.get_prod_by_ctr_name(java_node_name)
-    print(production, file=sys.stderr)
+    #print(production, file=sys.stderr)
 
     fields = []
     for field in production.fields:
@@ -48,12 +48,17 @@ def java_ast_to_asdl_ast(java_ast_node, grammar):
         # field with multiple cardinality
         elif field_value is not None:
             if grammar.is_composite_type(field.type):
-                for val in field_value:
-                    child_node = java_ast_to_asdl_ast(val, grammar)
-                    asdl_field.add_value(child_node)
+                if len(field_value) == 0:
+                    asdl_field.init_empty()
+                else:
+                    for val in field_value:
+                        child_node = java_ast_to_asdl_ast(val, grammar)
+                        asdl_field.add_value(child_node)
             else:
                 for val in field_value:
                     asdl_field.add_value(str(val))
+        else:
+            pass
 
         fields.append(asdl_field)
 
@@ -71,7 +76,7 @@ def asdl_ast_to_java_ast(asdl_ast_node, grammar):
         # for composite node
         field_value = None
         if grammar.is_composite_type(field.type):
-            if field.value and field.cardinality == 'multiple':
+            if field.value is not None and field.cardinality == 'multiple':
                 field_value = []
                 for val in field.value:
                     node = asdl_ast_to_java_ast(val, grammar)

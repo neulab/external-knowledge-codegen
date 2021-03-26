@@ -516,6 +516,14 @@ class Parser(object):
 
         return type_arguments
 
+    def update_array_dimensions(self, array):
+        update = self.parse_array_dimension()
+        if update is not None and array is None:
+            array = type(update)()
+        if update is not None:
+            array += update
+        return array
+
     @parse_debug
     def parse_type_argument(self):
         pattern_type = None
@@ -523,7 +531,7 @@ class Parser(object):
 
         if self.try_accept('?'):
             if self.tokens.look().value in ('extends', 'super'):
-                pattern_type = self.tokens.next().value
+                pattern_type = f'? {self.tokens.next().value}'
             else:
                 return tree.TypeArgument(pattern_type='?')
 
@@ -535,7 +543,8 @@ class Parser(object):
             base_type = self.parse_reference_type()
             base_type.dimensions = []
 
-        base_type.dimensions += self.parse_array_dimension()
+        base_type.dimensions = self.update_array_dimensions(
+            base_type.dimensions)
 
         return tree.TypeArgument(type=base_type,
                                  pattern_type=pattern_type)
@@ -561,7 +570,8 @@ class Parser(object):
                 base_type = self.parse_reference_type()
                 base_type.dimensions = []
 
-            base_type.dimensions += self.parse_array_dimension()
+            base_type.dimensions = self.update_array_dimensions(
+                base_type.dimensions)
             types.append(base_type)
 
             if not self.try_accept(','):
@@ -585,9 +595,9 @@ class Parser(object):
 
     @parse_debug
     def parse_type_parameters(self):
-        type_parameters = None
-
         self.accept('<')
+
+        type_parameters = list()
 
         while True:
             type_parameter = self.parse_type_parameter()
@@ -627,7 +637,10 @@ class Parser(object):
         while self.try_accept('[', ']'):
             array_dimension += 1
 
-        return [None] * array_dimension
+        if array_dimension:
+            return [None] * array_dimension
+        else:
+            return None
 
 # ------------------------------------------------------------------------------
 # -- Annotations and modifiers --
@@ -685,9 +698,15 @@ class Parser(object):
             if not self.would_accept(')'):
                 annotation_element = self.parse_annotation_element()
             self.accept(')')
-
-        return tree.Annotation(name=qualified_identifier,
-                               element=annotation_element)
+            if type(annotation_element) == list:
+                return tree.NormalAnnotation(name=qualified_identifier,
+                                             element=annotation_element)
+            else:
+                return tree.SingleElementAnnotation(name=qualified_identifier,
+                                                    element=annotation_element)
+        else:
+            return tree.MarkerAnnotation(name=qualified_identifier,
+                                         element=None)
 
     @parse_debug
     def parse_annotation_element(self):
@@ -729,7 +748,8 @@ class Parser(object):
             return annotation
 
         elif self.would_accept('{'):
-            return self.parse_element_value_array_initializer()
+            return self.parse_array_initializer()
+            #return self.parse_element_value_array_initializer()
 
         else:
             return self.parse_expressionl()
@@ -846,7 +866,8 @@ class Parser(object):
         member = self.parse_method_or_field_rest()
 
         if isinstance(member, tree.MethodDeclaration):
-            member_type.dimensions += member.return_type.dimensions
+            member_type.dimensions = self.update_array_dimensions(
+                member_type.dimensions)
 
             member.name = member_name
             member.return_type = member_type
@@ -954,7 +975,8 @@ class Parser(object):
 
             method = self.parse_method_declarator_rest()
 
-            method_return_type.dimensions += method.return_type.dimensions
+            method_return_type.dimensions = self.update_array_dimensions(
+                method_return_type.dimensions)
             method.return_type = method_return_type
             method.name = method_name
 
@@ -1026,7 +1048,8 @@ class Parser(object):
         member = self.parse_interface_method_or_field_rest()
 
         if isinstance(member, tree.MethodDeclaration):
-            java_type.dimensions += member.return_type.dimensions
+            java_type.dimensions = self.update_array_dimensions(
+                java_type.dimensions)
             member.name = name
             member.return_type = java_type
         else:
@@ -1047,17 +1070,17 @@ class Parser(object):
 
         return rest
 
-    #@parse_debug
-    #def parse_constant_declarators_rest(self):
-        #array_dimension, initializer = self.parse_constant_declarator_rest()
-        #declarators = [tree.VariableDeclarator(dimensions=array_dimension,
-                                               #initializer=initializer)]
+    @parse_debug
+    def parse_constant_declarators_rest(self):
+        array_dimension, initializer = self.parse_constant_declarator_rest()
+        declarators = [tree.VariableDeclarator(dimensions=array_dimension,
+                                               initializer=initializer)]
 
-        #while self.try_accept(','):
-            #declarator = self.parse_constant_declarator()
-            #declarators.append(declarator)
+        while self.try_accept(','):
+            declarator = self.parse_constant_declarator()
+            declarators.append(declarator)
 
-        #return tree.ConstantDeclaration(declarators=declarators)
+        return tree.ConstantDeclaration(declarators=declarators)
 
     @parse_debug
     def parse_constant_declarator_rest(self):
@@ -1154,7 +1177,8 @@ class Parser(object):
                 varargs = True
 
             parameter_name = self.parse_identifier()
-            parameter_type.dimensions += self.parse_array_dimension()
+            parameter_type.dimensions = self.update_array_dimensions(
+                parameter_type.dimensions)
 
             parameter = tree.FormalParameter(modifiers=modifiers,
                                              annotations=annotations,
@@ -1614,7 +1638,8 @@ class Parser(object):
         reference_type = self.parse_reference_type()
         reference_type.dimensions = self.parse_array_dimension()
         name = self.parse_identifier()
-        reference_type.dimensions += self.parse_array_dimension()
+        reference_type.dimensions = self.update_array_dimensions(
+            reference_type.dimensions)
         self.accept('=')
         value = self.parse_expression()
 
@@ -1702,7 +1727,8 @@ class Parser(object):
         modifiers, annotations = self.parse_variable_modifiers()
         var_type = self.parse_type()
         var_name = self.parse_identifier()
-        var_type.dimensions += self.parse_array_dimension()
+        var_type.dimensions = self.update_array_dimensions(
+            var_type.dimensions)
 
         var = tree.VariableDeclaration(modifiers=modifiers,
                                        annotations=annotations,
@@ -2184,7 +2210,7 @@ class Parser(object):
                 array_dimensions.append(expression)
                 self.accept(']')
 
-            array_dimensions += self.parse_array_dimension()
+            array_dimensions = self.update_array_dimensions(array_dimensions)
             return tree.ArrayCreator(dimensions=array_dimensions)
 
     @parse_debug

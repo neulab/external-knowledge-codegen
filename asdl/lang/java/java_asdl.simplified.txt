@@ -8,13 +8,15 @@ package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, 
 
 importdeclaration = Import(identifier path, constant? static, constant? wildcard)
 
-annotation = Annotation(expression? element, identifier name)
+annotation = NormalAnnotation(expression* element, identifier name)
+      | MarkerAnnotation(identifier name)
+      | SingleElementAnnotation(expression element, identifier name)
 
 dottedname = Identifier(identifier id)
       | PackageOrTypeName(dottedname left, dotop op, identifier right)
 dotop = Dot
 
-#typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+#typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
 #      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, dottedname? extends, typedeclaration* body)
 #      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, dottedname* implements, enumbody body)
 #      | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
@@ -25,10 +27,9 @@ enumconstant = EnumConstantDeclaration(annotation* annotations, string? document
 
 enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
 
-#      | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
-# classbodydeclaration  = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+# classbodydeclaration  = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
 
-typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, identifier* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
       | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
       | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, type* extends, typedeclaration* body)
       | InstanceInitializer(statement block)
@@ -37,6 +38,7 @@ typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* bod
       | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, parameter* parameters, identifier* throws, statement body)
       | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
+      | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
 
 annotationbodydeclaration = AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type return_type, int* dimensions, identifier? default)
 
@@ -84,7 +86,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | ArraySelector(expression index)
       | Assignment(expression expressionl, expression value, assign_operator type)
       | This(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
-      | Cast(type type, expression expression)
+      | Cast(type type, expression expression, selector* selectors)
       | MethodReference(expression expression, identifier method, type_argument* type_arguments)
       | LambdaExpression(parameter* parameters, statement body)
       | Invocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
@@ -100,6 +102,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
       | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
       | ArrayInitializer(expression* initializers)
+      | ElementValuePair(identifier name, expression value)
 
 type = Void(constant void)
       |BasicType(identifier name, int* dimensions)

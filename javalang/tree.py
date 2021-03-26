@@ -96,8 +96,23 @@ class TypeParameter(Node):
 
 # ------------------------------------------------------------------------------
 
+
 class Annotation(Node):
     attrs = ("name", "element")
+
+#Annotation:
+  #NormalAnnotation
+  #MarkerAnnotation
+  #SingleElementAnnotation
+
+class NormalAnnotation(Annotation):
+    attrs = ()
+
+class MarkerAnnotation(Annotation):
+    attrs = ()
+
+class SingleElementAnnotation(Annotation):
+    attrs = ()
 
 class ElementValuePair(Node):
     attrs = ("name", "value")
@@ -121,8 +136,8 @@ class ConstructorDeclaration(Declaration, Documented):
 
 # ------------------------------------------------------------------------------
 
-#class ConstantDeclaration(FieldDeclaration):
-    #attrs = ()
+class ConstantDeclaration(FieldDeclaration):
+    attrs = ()
 
 class ArrayInitializer(Node):
     attrs = ("initializers",)
@@ -225,9 +240,6 @@ class TernaryExpression(Expression):
 class BinaryOperation(Expression):
     attrs = ("operator", "operandl", "operandr")
 
-class Cast(Expression):
-    attrs = ("type", "expression")
-
 class MethodReference(Expression):
     attrs = ("expression", "method", "type_arguments")
 
@@ -245,6 +257,9 @@ class Literal(Primary):
 
 class This(Primary):
     attrs = ()
+
+class Cast(Primary):
+    attrs = ("type", "expression")
 
 class MemberReference(Primary):
     attrs = ("member",)

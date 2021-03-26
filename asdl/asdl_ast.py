@@ -84,13 +84,16 @@ class AbstractSyntaxTree(object):
             sb.write(field.name)
 
             if field.value is not None:
+                if len(field.as_value_list) == 0:
+                    sb.write(' []')
                 for val_node in field.as_value_list:
                     sb.write(' ')
                     if isinstance(field.type, ASDLCompositeType):
                         val_node.to_string(sb)
                     else:
                         sb.write(str(val_node).replace(' ', '-SPACE-'))
-
+            else:
+                sb.write(' None')
             sb.write(')')  # of field
 
         sb.write(')')  # of node
@@ -155,8 +158,8 @@ class RealizedField(Field):
         # initialize value to correct type
         if self.cardinality == 'multiple':
             self.value = None
+            #self.value = []
             if value is not None:
-                self.value = []
                 for child_node in value:
                     self.add_value(child_node)
         else:
@@ -178,6 +181,11 @@ class RealizedField(Field):
             self.value.append(value)
         else:
             self.value = value
+
+    def init_empty(self):
+
+        if self.cardinality == 'multiple' and self.value is None:
+                self.value = []
 
     @property
     def as_value_list(self):
