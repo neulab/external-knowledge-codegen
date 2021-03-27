@@ -323,11 +323,11 @@ class SourceGenerator(ExplicitNodeVisitor):
             for modifier in node.modifiers:
                 self.write(modifier, " ")
         self.write("interface ")
+        self.write(node.name)
         if node.type_parameters is not None:
             self.write("< ")
             self.comma_list(node.type_parameters)
             self.write(" >")
-        self.write(node.name)
         if node.extends:
             self.write(" extends ")
             self.comma_list(node.extends)
@@ -347,11 +347,11 @@ class SourceGenerator(ExplicitNodeVisitor):
             for modifier in node.modifiers:
                 self.write(modifier, " ")
         self.write("class ")
+        self.write(node.name)
         if node.type_parameters is not None:
             self.write("< ")
             self.comma_list(node.type_parameters)
             self.write(" >")
-        self.write(node.name)
         if node.extends:
             self.write(" extends ")
             self.write(node.extends)
@@ -388,8 +388,9 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_EnumBody(self, node):
         self.write("{", "\n")
         self.comma_list(node.constants)
-        if node.declarations:
+        if node.separator:
             self.write(";")
+        if node.declarations:
             for declaration in node.declarations:
                 self.write(declaration)
         self.write("}")
@@ -424,14 +425,14 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.modifiers:
             for modifier in node.modifiers:
                 self.write(modifier, " ")
-        if node.return_type:
-            self.write(node.return_type, " ")
-        else:
-            self.write("void ")
         if node.type_parameters is not None:
             self.write("< ")
             self.comma_list(node.type_parameters)
             self.write(" >")
+        if node.return_type:
+            self.write(node.return_type, " ")
+        else:
+            self.write("void ")
         self.write(node.name)
         self.write("(")
         if node.parameters:
@@ -572,6 +573,9 @@ class SourceGenerator(ExplicitNodeVisitor):
             for modifier in node.modifiers:
                 self.write(modifier, " ")
         self.write(node.type, " ", node.name)
+        if node.dimensions is not None:
+            for _ in node.dimensions:
+                self.write("[]")
 
     ### Statements
 
@@ -682,7 +686,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_BasicType(self, node):
         self.write(node.name)
         if node.dimensions:
-            for _ in range(len(node.dimensions)):
+            for _ in node.dimensions:
                 self.write("[]")
 
     def visit_Void(self, node):
@@ -722,9 +726,8 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.qualifier, ".")
         self.write("this")
         if node.selectors:
-            self.write(node.qualifier, ".")
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         for op in node.postfix_operators:
             self.write(op.operator)
 
@@ -758,7 +761,7 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # Cast(type type, expression expression)
     def visit_Cast(self, node):
-        self.write("(", node.type, ") ", node.expression)
+        self.write("(", "(", node.type, ") ", node.expression, ")")
         if node.selectors:
             for selector in node.selectors:
                 self.write(".", selector)
@@ -839,14 +842,14 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.qualifier, ".")
         if node.constructor_type_arguments:
             self.comma_list(node.constructor_type_arguments)
-        if node.selectors:
-            for selector in node.selectors:
-                self.write(selector)
         self.write(node.type)
         self.write("(")
         if node.arguments:
             self.comma_list(node.arguments)
         self.write(")")
+        if node.selectors:
+            for selector in node.selectors:
+                self.write(".", selector)
         if node.body:
             self.write("{", "\n")
             for statement in node.body:
@@ -899,7 +902,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.type, ".class")
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         for op in node.postfix_operators:
             self.write(op)
 
@@ -913,7 +916,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.name)
         if node.extends:
             self.write(" extends ")
-            self.comma_list(node.extends)
+            for idx, item in enumerate(node.extends):
+                self.write(" & " if idx else "", item)
 
     def visit_TypeArgument(self, node):
         self.write(node.pattern_type, " ", node.type)
@@ -1041,15 +1045,15 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.qualifier, ".")
         if node.constructor_type_arguments:
             self.comma_list(node.constructor_type_arguments)
-        if node.selectors:
-            for selector in node.selectors:
-                self.write(selector)
-        self.write("class ")
+        self.write("new ")
         self.write(node.type)
         self.write("(")
         if node.arguments:
             self.comma_list(node.arguments)
         self.write(")")
+        if node.selectors:
+            for selector in node.selectors:
+                self.write(".", selector)
         if node.body:
             self.write("{", "\n")
             for statement in node.body:

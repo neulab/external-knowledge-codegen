@@ -21,7 +21,7 @@ dotop = Dot
 #      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, dottedname* implements, enumbody body)
 #      | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
 
-enumbody = EnumBody(enumconstant* constants, enumdeclaration* declarations)
+enumbody = EnumBody(enumconstant* constants, constant? separator, enumdeclaration* declarations)
 
 enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, argument* arguments, statement* body)
 
@@ -46,7 +46,7 @@ type_parameter = TypeParameter(identifier name, type* extends)
 
 fieldmodifier = Modifier(constant value)
 
-parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, constant? varargs)
+parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, int* dimensions, constant? varargs)
       | InferredFormalParameter(identifier name)
 
 statement = Statement(identifier? label)

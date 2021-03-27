@@ -152,7 +152,7 @@ class VariableDeclarator(Node):
     attrs = ("name", "dimensions", "initializer")
 
 class FormalParameter(Declaration):
-    attrs = ("type", "name", "varargs")
+    attrs = ("type", "name", "dimensions", "varargs")
 
 class InferredFormalParameter(Node):
     attrs = ('name',)
@@ -308,7 +308,7 @@ class InnerClassCreator(Creator):
 # ------------------------------------------------------------------------------
 
 class EnumBody(Node):
-    attrs = ("constants", "declarations")
+    attrs = ("constants", "separator", "declarations")
 
 class EnumConstantDeclaration(Declaration, Documented):
     attrs = ("name", "arguments", "body")

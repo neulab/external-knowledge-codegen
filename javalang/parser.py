@@ -1177,13 +1177,14 @@ class Parser(object):
                 varargs = True
 
             parameter_name = self.parse_identifier()
-            parameter_type.dimensions = self.update_array_dimensions(
-                parameter_type.dimensions)
+            dimensions = []
+            dimensions = self.update_array_dimensions(dimensions)
 
             parameter = tree.FormalParameter(modifiers=modifiers,
                                              annotations=annotations,
                                              type=parameter_type,
                                              name=parameter_name,
+                                             dimensions=dimensions,
                                              varargs=varargs)
 
             parameter._position = token.position
@@ -2342,7 +2343,9 @@ class Parser(object):
 
                 if not self.try_accept(','):
                     break
-
+        separator = False
+        if self.would_accept(';'):
+            separator = True
         if self.try_accept(';'):
             while not self.would_accept('}'):
                 declaration = self.parse_class_body_declaration()
@@ -2353,6 +2356,7 @@ class Parser(object):
         self.accept('}')
 
         return tree.EnumBody(constants=constants,
+                             separator=separator,
                              declarations=body_declarations)
 
     @parse_debug
