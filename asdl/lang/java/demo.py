@@ -124,10 +124,10 @@ def test(java_code, check_hypothesis=False, fail_on_error=False):
             cprint(bcolors.MAGENTA,
                   f">>>>>>> Java AST from hyp       :\n{src3}\n<<<<<<<\n",
                   file=sys.stderr)
-        if fail_on_error:
-            raise Exception("Test failed")
-        else:
-            return False
+        #if fail_on_error:
+            #raise Exception("Test failed")
+        #else:
+        return False
 
     else:
         return True
@@ -181,7 +181,6 @@ def test_filepath(filepath: str,
                             f"file: {bcolors.MAGENTA}{filepath}",
                             file=sys.stderr)
                     #print(java, file=sys.stderr)
-                    print("", file=sys.stderr)
                     return False
                     #exit(1)
                 else:
@@ -206,6 +205,8 @@ def test_filepath(filepath: str,
                         f"Error: '{e}' on file: {filepath}",
                         file=sys.stderr)
                 return False
+    else:
+        return None
 
 
 def stats(nb_ok: int, nb_ko: int):
@@ -263,24 +264,29 @@ if __name__ == '__main__':
     ]
     if args.list:
         for filepath in filepaths:
-            if test_filepath(filepath, check_hypothesis):
-                nb_ok = nb_ok + 1
-            else:
-                nb_ko = nb_ko + 1
-                if fail_on_error:
-                    break
-    else:
-        for subdir, _, files in os.walk(r'test'):
-            for filename in files:
-                filepath = os.path.join(subdir, filename)
-                if test_filepath(filepath,
-                              check_hypothesis=check_hypothesis,
-                              fail_on_error=fail_on_error):
+            test_result = test_filepath(filepath, check_hypothesis)
+            if test_result is not None:
+                if test_result:
                     nb_ok = nb_ok + 1
                 else:
                     nb_ko = nb_ko + 1
                     if fail_on_error:
                         stats(nb_ok, nb_ko)
                         exit(1)
+    else:
+        for subdir, _, files in os.walk(r'test'):
+            for filename in files:
+                filepath = os.path.join(subdir, filename)
+                test_result = test_filepath(filepath, check_hypothesis)
+                if test_result is not None:
+                    if test_result:
+                        nb_ok = nb_ok + 1
+                    else:
+                        nb_ko = nb_ko + 1
+                        if fail_on_error:
+                            stats(nb_ok, nb_ko)
+                            sys.stdout.flush()
+                            sys.stderr.flush()
+                            exit(1)
 
     stats(nb_ok, nb_ko)
