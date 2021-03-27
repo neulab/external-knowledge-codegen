@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import argparse
 import colorama
 import os
 import re
@@ -42,7 +43,7 @@ def removeComments(string: str) -> str:
     # remove all occurance streamed comments (/*COMMENT */) from string
     string = re.sub(re.compile("/\*.*?\*/", re.DOTALL), "", string)
     # remove all occurance singleline comments (//COMMENT\n ) from string
-    string = re.sub(re.compile("//.*?\n"), "", string)
+    string = re.sub(re.compile("//.*"), "", string)
     return string
 
 
@@ -205,29 +206,55 @@ def test_filepath(filepath: str,
 
 
 if __name__ == '__main__':
-    fail_on_error = False
-    check_hypothesis = False
+    arg_parser = argparse.ArgumentParser()
 
-    filepath = None
-    #filepath = "test/DiamondCall.java"
-    #filepath = "test/AnnotationJavadoc.java"
-    #filepath = "test/Implements.java"
-    #filepath = "test/Wildcard.java"
-    #filepath = "test/Final.java"
-    #filepath = "test/CallOnCast.java"
-    #filepath = "test/java/com/github/javaparser/VisitorTest.java"
-    #filepath = "test/test_sourcecode/com/github/javaparser/printer/JavaConcepts.java"
-    #filepath = "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/SourceFileInfoExtractor.java"
-    #filepath = "test/java/com/github/javaparser/SlowTest.java"
-    #filepath = "test/java/com/github/javaparser/symbolsolver/Issue3038Test.java"
-    #filepath = "test/test_sourcecode/javaparser_new_src/javaparser-generated-sources/com/github/javaparser/ASTParser.java"
-    #filepath = "test/resources/issue1599/A.java"
-    #filepath = "test/resources/issue241/TypeWithMemberType.java"
-    #filepath = "test/resources/javassist_symbols/main_jar/src/com/github/javaparser/javasymbolsolver/javassist_symbols/main_jar/EnumInterfaceUserOwnJar.java"
-    #filepath = "test/ParameterizedCall.java"
-    #filepath = "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/DefaultVisitorAdapter.java"
-    if filepath is not None:
-        test_filepath(filepath, check_hypothesis)
+    arg_parser.add_argument('-f', '--fail_on_error', default=False,
+                            action='store_true',
+                            help=('If true, exit at first error. Otherwise, '
+                                  'continue on next file.'))
+    arg_parser.add_argument('-c', '--check_hypothesis', default=False,
+                            action='store_true',
+                            help='If true, the hypothesis parse tree will be tested.')
+    arg_parser.add_argument('-l', '--list', default=False,
+                            action='store_true',
+                            help='If true, use the hardcoded Java files list. '
+                                  'Otherwise, walk the test directory for Java files')
+    args = arg_parser.parse_args()
+
+    fail_on_error = args.fail_on_error
+    check_hypothesis = args.check_hypothesis
+
+    filepaths = [
+        # "test/ComplexGeneric.java",
+        # "test/DiamondCall.java",
+        # "test/AnnotationJavadoc.java",
+        # "test/Implements.java",
+        # "test/Wildcard.java",
+        # "test/Final.java",
+        # "test/CallOnCast.java",
+        # "test/java/com/github/javaparser/VisitorTest.java",
+        # "test/test_sourcecode/com/github/javaparser/printer/JavaConcepts.java",
+        # "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/SourceFileInfoExtractor.java",
+        # "test/java/com/github/javaparser/SlowTest.java",
+        # "test/java/com/github/javaparser/symbolsolver/Issue3038Test.java",
+        # "test/test_sourcecode/javaparser_new_src/javaparser-generated-sources/com/github/javaparser/ASTParser.java",
+        # "test/resources/issue1599/A.java",
+        # "test/resources/issue241/TypeWithMemberType.java",
+        # "test/resources/javassist_symbols/main_jar/src/com/github/javaparser/javasymbolsolver/javassist_symbols/main_jar/EnumInterfaceUserOwnJar.java",
+        # "test/ParameterizedCall.java",
+        # "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/DefaultVisitorAdapter.java",
+        # "test/resources/issue2366/Test.java",
+        # "test/resources/recursion-issue/Base.java",
+        # "test/resources/issue1868/B.java",
+        # "test/resources/issue1574/BlockComment.java",
+        # "test/resources/issue1574/ClassWithOrphanComments.java",
+        # "test/resources/TypeResolutionWithSameNameTest/02_ignore_static_non_type_import/another/MyEnum.java",
+        # "test/resources/javassist_generics/javaparser/GenericClass.java",
+        "test/resources/com/github/javaparser/samples/JavaConcepts.java",
+    ]
+    if args.list:
+        for filepath in filepaths:
+            test_filepath(filepath, check_hypothesis)
     else:
         for subdir, _, files in os.walk(r'test'):
             for filename in files:
