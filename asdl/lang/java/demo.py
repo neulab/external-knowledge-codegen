@@ -117,7 +117,9 @@ def test(java_code, check_hypothesis=False, fail_on_error=False):
             cprint(bcolors.CYAN,
                   f"}}}}}}}}}}}}}} Java AST                :\n{src1}\n{{{{{{{{{{{{{{\n",
                   file=sys.stderr)
-            print(f"Common prefix end: {os.path.commonprefix([simp0, simp1])[-100:]}",
+            common_prefix = os.path.commonprefix([simp0, simp1])
+            percent_ok = int(float(len(common_prefix))*100/len(simp0))
+            print(f"Common prefix end: {common_prefix[-100:]} ({percent_ok}%)",
                   file=sys.stderr)
         elif simp1 != simp2:
             cprint(bcolors.CYAN,
@@ -126,7 +128,9 @@ def test(java_code, check_hypothesis=False, fail_on_error=False):
             cprint(bcolors.GREEN,
                   f"]]]]]]] Java AST from ASDL      :\n{src2}\n[[[[[[[\n",
                   file=sys.stderr)
-            print(f"Common prefix end: {os.path.commonprefix([simp1, simp2])[-100:]}",
+            common_prefix = os.path.commonprefix([simp1, simp2])
+            percent_ok = int(float(len(common_prefix))*100/len(simp1))
+            print(f"Common prefix end: {common_prefix[-100:]} ({percent_ok}%)",
                   file=sys.stderr)
         elif check_hypothesis:
             cprint(bcolors.MAGENTA,
