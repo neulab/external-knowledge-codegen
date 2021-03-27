@@ -805,7 +805,7 @@ class Parser(object):
         token = self.tokens.look()
 
         if self.try_accept(';'):
-            return None
+            return tree.EmptyDeclaration()
 
         elif self.would_accept('static', '{'):
             self.accept('static')
@@ -1600,7 +1600,9 @@ class Parser(object):
         self.accept('catch', '(')
 
         modifiers, annotations = self.parse_variable_modifiers()
-        catch_parameter = tree.CatchClauseParameter(types=list())
+        catch_parameter = tree.CatchClauseParameter(types=list(),
+                                                    modifiers=modifiers,
+                                                    annotations=annotations)
 
         while True:
             catch_type = self.parse_qualified_identifier()

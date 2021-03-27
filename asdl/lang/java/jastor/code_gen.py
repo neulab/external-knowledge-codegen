@@ -365,6 +365,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("}")
         self.newline(extra=1)
 
+    def visit_EmptyDeclaration(self, node: tree.EmptyDeclaration):
+        self.write(";")
+        self.newline()
+
     def visit_ElementValuePair(self, node):
         self.write(node.name, " = ", node.value)
 
@@ -468,7 +472,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(node.parameters)
         self.write(")")
         if node.throws:
-            self.write(" throws")
+            self.write(" throws ")
             self.comma_list(node.throws)
         self.write(" ")
         if node.body:
@@ -508,6 +512,14 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(";", "\n")
 
     def visit_VariableDeclaration(self, node):
+        #if node.documentation:
+            #self.write(node.documentation, "\n")
+        if node.annotations:
+            for annotation in node.annotations:
+                self.write(annotation, " ")
+        if node.modifiers:
+            for modifier in node.modifiers:
+                self.write(modifier, " ")
         self.write(node.type, " ")
         self.comma_list(node.declarators)
 
@@ -542,6 +554,11 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_VariableDeclarator(self, node):
         self.write(" ", node.name)
+        if node.dimensions:
+            for dim in node.dimensions:
+                self.write("[")
+                self.write(dim)
+                self.write("]")
         if node.initializer:
             self.write(" = ", node.initializer)
 
@@ -560,7 +577,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.value)
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
@@ -572,10 +589,14 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.modifiers:
             for modifier in node.modifiers:
                 self.write(modifier, " ")
-        self.write(node.type, " ", node.name)
+        self.write(node.type)
+        if node.varargs:
+            self.write("...")
+        self.write(" ", node.name)
         if node.dimensions is not None:
             for _ in node.dimensions:
                 self.write("[]")
+
 
     ### Statements
 
@@ -625,15 +646,16 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.body)
 
     def visit_DoStatement(self, node):
-        self.write("do")
+        self.write("do ")
         self.write(node.body)
-        self.write("while (")
+        self.write(" while (")
         self.write(node.condition)
         self.write(") ")
         self.write(";")
+        self.newline()
 
     def visit_AssertStatement(self, node):
-        self.write("assert")
+        self.write("assert ")
         self.write(node.condition)
         if node.value:
             self.write(":")
@@ -678,7 +700,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.member)
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op.operator)
@@ -783,19 +808,21 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.finally_block:
             self.write("finally", node.finally_block)
 
-    def visit_TryResource(self, node):
+    def visit_TryResource(self,  node):
         if node.annotations:
             for annotation in node.annotations:
                 self.write(annotation, " ")
         if node.modifiers:
             for modifier in node.modifiers:
                 self.write(modifier, " ")
+        self.write(node.type, " ", node.name, " = ", node.value)
+
 
     # CatchClause(identifier? label, catch_clause_parameter parameter, statement* block)
     def visit_CatchClause(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
-        self.write("catch (", node.parameter, ")", node.block)
+        self.write("catch (", node.parameter, ") ", node.block)
 
     # CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
     def visit_CatchClauseParameter(self, node):
@@ -805,7 +832,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.modifiers:
             for modifier in node.modifiers:
                 self.write(modifier, " ")
-        self.write(".".join(node.types), " ", node.name)
+        self.write(" | ".join(node.types), " ", node.name)
 
     # ThrowStatement(identifier? label, expression expression)
     def visit_ThrowStatement(self, node):
@@ -821,10 +848,12 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.qualifier:
             self.write(node.qualifier, ".")
         if node.type_arguments:
+            self.write("<")
             self.comma_list(node.type_arguments)
+            self.write(">")
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         self.write("super(")
         self.comma_list(node.arguments)
         self.write(")")
@@ -841,7 +870,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.qualifier:
             self.write(node.qualifier, ".")
         if node.constructor_type_arguments:
+            self.write(" < ")
             self.comma_list(node.constructor_type_arguments)
+            self.write(" > ")
         self.write(node.type)
         self.write("(")
         if node.arguments:
@@ -850,11 +881,15 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.selectors:
             for selector in node.selectors:
                 self.write(".", selector)
+
+        if node.body is not None:
+            self.write("{")
         if node.body:
-            self.write("{", "\n")
             for statement in node.body:
                 self.write(statement)
-            self.write("}", "\n")
+        if node.body is not None:
+            self.write("}")
+
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
@@ -929,12 +964,14 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("super.")
         if node.qualifier:
             self.write(node.qualifier, ".")
-        self.write(node.member)
         if node.type_arguments:
+            self.write("<")
             self.comma_list(node.type_arguments)
+            self.write(">")
+        self.write(node.member)
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         self.write("(")
         self.comma_list(node.arguments)
         self.write(")")
@@ -947,7 +984,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.label, ": ", "\n")
         self.write("break")
         if node.goto:
-            self.write(node.goto)
+            self.write(" ", node.goto)
         self.write(";", "\n")
 
     def visit_ContinueStatement(self, node):
@@ -955,7 +992,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.label, ": ", "\n")
         self.write("continue")
         if node.goto:
-            self.write(node.goto)
+            self.write(" ", node.goto)
         self.write(";", "\n")
 
     # AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name", type return_type, int* dimensions, identifier? default)
@@ -982,14 +1019,13 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(op)
         if node.qualifier:
             self.write(node.qualifier, ".")
-        self.write(node.member)
+        self.write("super.", node.member)
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        self.write(";")
 
     # ExplicitConstructorInvocation(prefix_operator* prefix_operators,
     # postfix_operator* postfix_operators, identifier? qualifier,
@@ -1005,7 +1041,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(node.type_arguments)
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         self.write("(")
         self.comma_list(node.arguments)
         self.write(")")
@@ -1022,7 +1058,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.qualifier, ".")
         if node.selectors:
             for selector in node.selectors:
-                self.write(selector)
+                self.write(".", selector)
         self.write("new ", node.type)
         if node.dimensions:
             for dim in node.dimensions:
@@ -1034,7 +1070,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        self.write(";")
+        #self.write(";")
 
     # InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
     def visit_InnerClassCreator(self, node):

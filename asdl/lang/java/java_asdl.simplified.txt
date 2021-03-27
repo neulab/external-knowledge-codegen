@@ -16,20 +16,14 @@ dottedname = Identifier(identifier id)
       | PackageOrTypeName(dottedname left, dotop op, identifier right)
 dotop = Dot
 
-#typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
-#      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, dottedname? extends, typedeclaration* body)
-#      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, dottedname* implements, enumbody body)
-#      | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
-
 enumbody = EnumBody(enumconstant* constants, constant? separator, enumdeclaration* declarations)
 
 enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, argument* arguments, statement* body)
 
 enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
 
-# classbodydeclaration  = ClassDeclaration(annotation* annotations, classbodydeclaration* body, string? documentation, type? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
-
-typedeclaration = ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+typedeclaration = EmptyDeclaration(string? documentation)
+      | ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, dottedname* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
       | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
       | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, type* extends, typedeclaration* body)
       | InstanceInitializer(statement block)
@@ -99,8 +93,8 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | VoidClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | Creator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, int* dimensions, expression? initializer)
-      | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
-      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
+      | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement* body)
+      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement body)
       | ArrayInitializer(expression* initializers)
       | ElementValuePair(identifier name, expression value)
 
@@ -112,7 +106,7 @@ declarator = VariableDeclarator(identifier name, int* dimensions, array_initiali
 
 array_initializer = ArrayInitializer(expression* initializers)
 
-type_argument = TypeArgument(identifier? type, identifier? pattern_type)
+type_argument = TypeArgument(type? type, identifier? pattern_type)
 
 boolean = True | False
 

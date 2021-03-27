@@ -12,6 +12,9 @@ class Import(Node):
 class Documented(Node):
     attrs = ("documentation",)
 
+class EmptyDeclaration(Documented):
+    attrs = ()
+
 class Declaration(Node):
     attrs = ("modifiers", "annotations")
 

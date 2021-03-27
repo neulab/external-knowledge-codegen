@@ -235,6 +235,7 @@ if __name__ == '__main__':
     nb_ok = 0
     nb_ko = 0
     filepaths = [
+        #"test/Test.java",
         # "test/ComplexGeneric.java",
         # "test/DiamondCall.java",
         # "test/AnnotationJavadoc.java",
