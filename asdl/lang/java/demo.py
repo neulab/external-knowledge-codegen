@@ -70,7 +70,7 @@ def code_from_hyp(asdl_ast):
 
         p_t = (hypothesis.frontier_node.created_time
                if hypothesis.frontier_node else -1)
-        print(f't={t}, p_t={p_t}, Action={action}', file=sys.stderr)
+        #print(f't={t}, p_t={p_t}, Action={action}', file=sys.stderr)
         hypothesis.apply_action(action)
     return jastor.to_source(asdl_ast_to_java_ast(hypothesis.tree, grammar))
 
@@ -182,27 +182,34 @@ def test_filepath(filepath: str,
                             file=sys.stderr)
                     #print(java, file=sys.stderr)
                     print("", file=sys.stderr)
+                    return False
                     #exit(1)
                 else:
                     cprint(bcolors.GREEN,
                             f"Success for file: {bcolors.MAGENTA}{filepath}",
                             file=sys.stderr)
+                    return True
             except UnicodeDecodeError:
                 cprint(bcolors.RED,
                         f"Error: Cannot decode file as UTF-8. Ignoring: "
                         f"{filepath}",
                         file=sys.stderr)
+                return False
             except JavaSyntaxError as e:
                 cprint(bcolors.RED,
                         f"Error: Java syntax error: {e}. Ignoring: "
                         f"{filepath}",
                         file=sys.stderr)
+                return False
             except Exception as e:
                 cprint(bcolors.RED,
                         f"Error: '{e}' on file: {filepath}",
                         file=sys.stderr)
-                if fail_on_error:
-                    exit(1)
+                return False
+
+
+def stats(nb_ok: int, nb_ko: int):
+    print(f"Succes: {nb_ok}/{nb_ok+nb_ko} ({int(nb_ok*100.0/(nb_ok+nb_ko))}%)")
 
 
 if __name__ == '__main__':
@@ -224,6 +231,8 @@ if __name__ == '__main__':
     fail_on_error = args.fail_on_error
     check_hypothesis = args.check_hypothesis
 
+    nb_ok = 0
+    nb_ko = 0
     filepaths = [
         # "test/ComplexGeneric.java",
         # "test/DiamondCall.java",
@@ -254,11 +263,24 @@ if __name__ == '__main__':
     ]
     if args.list:
         for filepath in filepaths:
-            test_filepath(filepath, check_hypothesis)
+            if test_filepath(filepath, check_hypothesis):
+                nb_ok = nb_ok + 1
+            else:
+                nb_ko = nb_ko + 1
+                if fail_on_error:
+                    break
     else:
         for subdir, _, files in os.walk(r'test'):
             for filename in files:
                 filepath = os.path.join(subdir, filename)
-                test_filepath(filepath,
+                if test_filepath(filepath,
                               check_hypothesis=check_hypothesis,
-                              fail_on_error=fail_on_error)
+                              fail_on_error=fail_on_error):
+                    nb_ok = nb_ok + 1
+                else:
+                    nb_ko = nb_ko + 1
+                    if fail_on_error:
+                        stats(nb_ok, nb_ko)
+                        exit(1)
+
+    stats(nb_ok, nb_ko)
