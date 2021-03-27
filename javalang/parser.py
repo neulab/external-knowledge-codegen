@@ -640,7 +640,7 @@ class Parser(object):
         if array_dimension:
             return [None] * array_dimension
         else:
-            return None
+            return []
 
 # ------------------------------------------------------------------------------
 # -- Annotations and modifiers --
@@ -866,9 +866,10 @@ class Parser(object):
         member = self.parse_method_or_field_rest()
 
         if isinstance(member, tree.MethodDeclaration):
-            member_type.dimensions = self.update_array_dimensions(
-                member_type.dimensions)
-
+            #member_type.dimensions = self.update_array_dimensions(
+                #member_type.dimensions)
+            #if member.return_type.dimensions:
+                #member_type.dimensions = member.return_type.dimensions
             member.name = member_name
             member.return_type = member_type
         else:
@@ -918,7 +919,8 @@ class Parser(object):
         return tree.MethodDeclaration(parameters=formal_parameters,
                                      throws=throws,
                                      body=body,
-                                     return_type=tree.Type(dimensions=additional_dimensions))
+                                     dimensions=additional_dimensions)
+                                     #return_type=tree.Type(dimensions=additional_dimensions))
 
     @parse_debug
     def parse_void_method_declarator_rest(self):
@@ -1910,7 +1912,10 @@ class Parser(object):
                 pass
 
         primary = self.parse_primary()
-        primary.prefix_operators = prefix_operators
+        if primary.prefix_operators is not None:
+            primary.prefix_operators.extend(prefix_operators)
+        else:
+            primary.prefix_operators = prefix_operators
         primary.selectors = list()
         primary.postfix_operators = list()
 

@@ -129,7 +129,7 @@ class Member(Documented):
     attrs = ()
 
 class MethodDeclaration(Member, Declaration):
-    attrs = ("type_parameters", "return_type", "name", "parameters", "throws", "body")
+    attrs = ("type_parameters", "return_type", "name", "dimensions", "parameters", "throws", "body")
 
 class FieldDeclaration(Member, Declaration):
     attrs = ("type", "declarators")
@@ -234,13 +234,16 @@ class EnhancedForControl(Node):
 class Expression(Node):
     attrs = ()
 
+class Primary(Expression):
+    attrs = ("prefix_operators", "postfix_operators", "qualifier", "selectors")
+
 class Assignment(Expression):
     attrs = ("expressionl", "value", "type")
 
-class TernaryExpression(Expression):
+class TernaryExpression(Primary):
     attrs = ("condition", "if_true", "if_false")
 
-class BinaryOperation(Expression):
+class BinaryOperation(Primary):
     attrs = ("operator", "operandl", "operandr")
 
 class MethodReference(Expression):
@@ -251,9 +254,6 @@ class LambdaExpression(Expression):
     attrs = ('parameters', 'body')
 
 # ------------------------------------------------------------------------------
-
-class Primary(Expression):
-    attrs = ("prefix_operators", "postfix_operators", "qualifier", "selectors")
 
 class Literal(Primary):
     attrs = ("value",)

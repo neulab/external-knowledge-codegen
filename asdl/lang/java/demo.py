@@ -99,26 +99,34 @@ def test(java_code, check_hypothesis=False, fail_on_error=False):
     # the reconstructed AST and the AST generated using actions
     # they should be the same
     src0 = removeComments(java_code)
+    simp0 = simplify(src0)
     src1 = removeComments(jastor.to_source(java_ast))
+    simp1 = simplify(src1)
     src2 = removeComments(jastor.to_source(java_ast_reconstructed))
+    simp2 = simplify(src2)
     if check_hypothesis:
         src3 = code_from_hyp(asdl_ast)
         src3 = removeComments(src3)
-    if not ((simplify(src1) == simplify(src2) == simplify(src0)) or (
-               (check_hypothesis and (simplify(src3) != simplify(src1))))):
-        if simplify(src0) != simplify(src1):
+        simp3 = simplify(src3)
+    if not ((simp1 == simp2 == simp0) or (
+               (check_hypothesis and (simp3 != simp1)))):
+        if simp0 != simp1:
             cprint(bcolors.BLUE,
                   f"))))))) Original Java code      :\n{src0}\n(((((((\n",
                   file=sys.stderr)
             cprint(bcolors.CYAN,
                   f"}}}}}}}}}}}}}} Java AST                :\n{src1}\n{{{{{{{{{{{{{{\n",
                   file=sys.stderr)
-        elif simplify(src1) != simplify(src2):
+            print(f"Common prefix end: {os.path.commonprefix([simp0, simp1])[-100:]}",
+                  file=sys.stderr)
+        elif simp1 != simp2:
             cprint(bcolors.CYAN,
                   f"}}}}}}}}}}}}}} Java AST                :\n{src1}\n{{{{{{{{{{{{{{\n",
                   file=sys.stderr)
             cprint(bcolors.GREEN,
                   f"]]]]]]] Java AST from ASDL      :\n{src2}\n[[[[[[[\n",
+                  file=sys.stderr)
+            print(f"Common prefix end: {os.path.commonprefix([simp1, simp2])[-100:]}",
                   file=sys.stderr)
         elif check_hypothesis:
             cprint(bcolors.MAGENTA,

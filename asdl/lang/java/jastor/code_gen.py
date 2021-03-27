@@ -442,6 +442,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.parameters:
             self.comma_list(node.parameters)
         self.write(")")
+        if node.dimensions:
+            for _ in node.dimensions:
+                self.write("[]")
         if node.throws:
             self.write(" throws ")
             self.comma_list(node.throws)
@@ -634,18 +637,24 @@ class SourceGenerator(ExplicitNodeVisitor):
         #self.write(";", "\n")
 
     def visit_ForStatement(self, node):
+        if node.label:
+            self.write(node.label, ":", "\n")
         self.write("for (")
         self.write(node.control)
         self.write(") ", "\n")
         self.write(node.body)
 
     def visit_WhileStatement(self, node):
+        if node.label:
+            self.write(node.label, ":", "\n")
         self.write("while (")
         self.write(node.condition)
         self.write(")")
         self.write(node.body)
 
     def visit_DoStatement(self, node):
+        if node.label:
+            self.write(node.label, ":", "\n")
         self.write("do ")
         self.write(node.body)
         self.write(" while (")
@@ -655,6 +664,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.newline()
 
     def visit_AssertStatement(self, node):
+        if node.label:
+            self.write(node.label, ":", "\n")
         self.write("assert ")
         self.write(node.condition)
         if node.value:
@@ -663,6 +674,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(";")
 
     def visit_SynchronizedStatement(self, node):
+        if node.label:
+            self.write(node.label, ":", "\n")
         self.write("synchronized")
         self.write("(")
         self.write(node.lock)
@@ -752,7 +765,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("this")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         for op in node.postfix_operators:
             self.write(op.operator)
 
@@ -1041,14 +1057,17 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(node.type_arguments)
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         self.write("(")
         self.comma_list(node.arguments)
         self.write(")")
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        self.write(";")
+        #self.write(";")
 
     def visit_ArrayCreator(self, node):
         if node.prefix_operators:
