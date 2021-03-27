@@ -212,11 +212,11 @@ def test_filepath(filepath: str,
                         f"{filepath}",
                         file=sys.stderr)
                 return False
-            except Exception as e:
-                cprint(bcolors.RED,
-                        f"Error: '{e}' on file: {filepath}",
-                        file=sys.stderr)
-                return False
+            #except Exception as e:
+                #cprint(bcolors.RED,
+                        #f"Error: '{e}' on file: {filepath}",
+                        #file=sys.stderr)
+                #return False
     else:
         return None
 
@@ -273,7 +273,8 @@ if __name__ == '__main__':
         # "test/resources/issue1574/ClassWithOrphanComments.java",
         # "test/resources/TypeResolutionWithSameNameTest/02_ignore_static_non_type_import/another/MyEnum.java",
         # "test/resources/javassist_generics/javaparser/GenericClass.java",
-        "test/resources/com/github/javaparser/samples/JavaConcepts.java",
+        #"test/resources/com/github/javaparser/samples/JavaConcepts.java",
+        "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/TypeExtractor.java",
     ]
     if args.list:
         for filepath in filepaths:

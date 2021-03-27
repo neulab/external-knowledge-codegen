@@ -638,7 +638,7 @@ class Parser(object):
             array_dimension += 1
 
         if array_dimension:
-            return [None] * array_dimension
+            return [tree.NoExpression(null=None)] * array_dimension
         else:
             return []
 
@@ -1678,7 +1678,7 @@ class Parser(object):
 
             if case_type == 'case':
                 if self.would_accept(Identifier, ':'):
-                    case_value = self.parse_identifier()
+                    case_value = tree.Identifier(id=self.parse_identifier())
                 else:
                     case_value = self.parse_expression()
 

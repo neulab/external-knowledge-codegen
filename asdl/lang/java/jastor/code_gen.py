@@ -420,6 +420,12 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(element)
             self.write("}")
 
+    def visit_NoExpression(self, node):
+        pass
+
+    def visit_Identifier(self, node):
+        self.write(node.id)
+
     def visit_MethodDeclaration(self, node):
         #if node.documentation:
             #self.write(node.documentation, "\n")

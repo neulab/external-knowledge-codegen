@@ -61,7 +61,7 @@ statement = Statement(identifier? label)
       | AssertStatement(identifier? label, expression condition, expression? value)
       | SynchronizedStatement(identifier? label, expression lock, statement block)
 
-case = SwitchStatementCase(identifier* case, statement* statements)
+case = SwitchStatementCase(expression* case, statement* statements)
 
 catch = CatchClause(identifier? label, catch_clause_parameter parameter, statement block)
 
@@ -92,11 +92,13 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | VoidClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | Creator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
-      | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, int* dimensions, expression? initializer)
+      | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, expression* dimensions, expression? initializer)
       | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement* body)
       | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement body)
       | ArrayInitializer(expression* initializers)
       | ElementValuePair(identifier name, expression value)
+      | NoExpression(identifier? null)
+      | Identifier(identifier id)
 
 type = Void(constant void)
       |BasicType(identifier name, int* dimensions)

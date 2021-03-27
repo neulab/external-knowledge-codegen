@@ -1,6 +1,3 @@
 class A {
-    void f() {
-            xxx:
-            while (x == 3) continue xxx;
-    }
+    List<String>[][] arrLS = (List<String>[][]) new List<?>[10][];
 }

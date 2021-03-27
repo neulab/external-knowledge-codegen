@@ -234,10 +234,16 @@ class EnhancedForControl(Node):
 class Expression(Node):
     attrs = ()
 
+class NoExpression(Node):
+    attrs = ("null",)
+
+class Identifier(Node):
+    attrs = ("id",)
+
 class Primary(Expression):
     attrs = ("prefix_operators", "postfix_operators", "qualifier", "selectors")
 
-class Assignment(Expression):
+class Assignment(Primary):
     attrs = ("expressionl", "value", "type")
 
 class TernaryExpression(Primary):
@@ -246,11 +252,11 @@ class TernaryExpression(Primary):
 class BinaryOperation(Primary):
     attrs = ("operator", "operandl", "operandr")
 
-class MethodReference(Expression):
+class MethodReference(Primary):
     attrs = ("expression", "method", "type_arguments")
 
 
-class LambdaExpression(Expression):
+class LambdaExpression(Primary):
     attrs = ('parameters', 'body')
 
 # ------------------------------------------------------------------------------
