@@ -1,3 +1,8 @@
 class A {
-    List<String>[][] arrLS = (List<String>[][]) new List<?>[10][];
+    void f() {
+        Type t = f();
+
+        if (!(formalType instanceof VoidType)){
+        }
+    }
 }

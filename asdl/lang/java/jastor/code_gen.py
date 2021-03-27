@@ -702,6 +702,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.comma_list(node.statement)
 
     def visit_BinaryOperation(self, node):
+        if node.prefix_operators:
+            for op in node.prefix_operators:
+                self.write(op.operator)
         self.write("(")
         self.write(node.operandl)
         self.write(")")
@@ -709,6 +712,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("(")
         self.write(node.operandr)
         self.write(")")
+        if node.postfix_operators:
+            for op in node.postfix_operators:
+                self.write(op.operator)
 
     def visit_MemberReference(self, node):
         if node.prefix_operators:

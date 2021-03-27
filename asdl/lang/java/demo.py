@@ -66,6 +66,8 @@ def code_from_hyp(asdl_ast):
         # if it's an ApplyRule action, the production rule should belong to the
         # set of rules with the same LHS type as the current rule
         if isinstance(action, ApplyRuleAction) and hypothesis.frontier_node:
+            if action.production not in grammar[hypothesis.frontier_field.type]:
+                raise Exception(f"{action.production} should be in {grammar[hypothesis.frontier_field.type]}")
             assert action.production in grammar[hypothesis.frontier_field.type]
 
         p_t = (hypothesis.frontier_node.created_time
@@ -105,7 +107,11 @@ def test(java_code, check_hypothesis=False, fail_on_error=False):
     src2 = removeComments(jastor.to_source(java_ast_reconstructed))
     simp2 = simplify(src2)
     if check_hypothesis:
-        src3 = code_from_hyp(asdl_ast)
+        try:
+            src3 = code_from_hyp(asdl_ast)
+        except Exception as e:
+            print(f"{e}", file=sys.stderr)
+            return False
         src3 = removeComments(src3)
         simp3 = simplify(src3)
     if not ((simp1 == simp2 == simp0) or (
@@ -274,7 +280,8 @@ if __name__ == '__main__':
         # "test/resources/TypeResolutionWithSameNameTest/02_ignore_static_non_type_import/another/MyEnum.java",
         # "test/resources/javassist_generics/javaparser/GenericClass.java",
         #"test/resources/com/github/javaparser/samples/JavaConcepts.java",
-        "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/TypeExtractor.java",
+        #"test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/TypeExtractor.java",
+        "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/declarations/JavaParserAnonymousClassDeclaration.java",
     ]
     if args.list:
         for filepath in filepaths:

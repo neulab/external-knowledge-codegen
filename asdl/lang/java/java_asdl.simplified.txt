@@ -74,7 +74,7 @@ forcontrol = ForControl(expression* init, expression condition, expression* upda
 # | Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
 expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | Literal(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, string value)
-      | BinaryOperation(infix_operator operator, member_reference operandl, member_reference operandr)
+      | BinaryOperation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, infix_operator operator, member_reference operandl, member_reference operandr)
       | MemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, identifier member)
       | TernaryExpression(expression condition, expression if_true, expression if_false)
       | ArraySelector(expression index)
