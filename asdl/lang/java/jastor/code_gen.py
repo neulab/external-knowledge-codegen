@@ -1023,7 +1023,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.selectors:
             for selector in node.selectors:
                 self.write(selector)
-        self.write(node.type)
+        self.write("new ", node.type)
         if node.dimensions:
             for dim in node.dimensions:
                 self.write("[")
