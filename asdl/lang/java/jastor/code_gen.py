@@ -391,7 +391,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     #enumbody = EnumBody(enumconstant* constants, enumdeclaration* declarations)
     def visit_EnumBody(self, node):
         self.write("{", "\n")
-        self.comma_list(node.constants)
+        self.comma_list(node.constants, trailing=node.comma)
         if node.separator:
             self.write(";")
         if node.declarations:
@@ -575,6 +575,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("{")
         if node.initializers:
             self.comma_list(node.initializers)
+        if node.comma:
+            self.write(",")
         self.write("}")
 
     def visit_Literal(self, node):
@@ -782,7 +784,16 @@ class SourceGenerator(ExplicitNodeVisitor):
     # Assignment(expression expressionl, expression value,
     # assign_operator type)
     def visit_Assignment(self, node):
+        if node.selectors:
+            self.write("(")
         self.write(node.expressionl, node.type, node.value)
+        if node.selectors:
+            self.write(")")
+            for selector in node.selectors:
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
 
     # This(prefix_operator* prefix_operators,
     # postfix_operator* postfix_operators, identifier? qualifier,

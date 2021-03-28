@@ -16,7 +16,7 @@ dottedname = Identifier(identifier id)
       | PackageOrTypeName(dottedname left, dotop op, identifier right)
 dotop = Dot
 
-enumbody = EnumBody(enumconstant* constants, constant? separator, enumdeclaration* declarations)
+enumbody = EnumBody(enumconstant* constants, constant? separator, enumdeclaration* declarations, constant comma)
 
 enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, argument* arguments, statement* body)
 
@@ -78,7 +78,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | MemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, identifier member)
       | TernaryExpression(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, expression condition, expression if_true, expression if_false)
       | ArraySelector(expression index)
-      | Assignment(expression expressionl, expression value, assign_operator type)
+      | Assignment(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, expression expressionl, expression value, assign_operator type)
       | This(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
       | Cast(type type, expression expression, selector* selectors)
       | MethodReference(expression expression, identifier method, type_argument* type_arguments)
@@ -95,7 +95,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, expression* dimensions, expression? initializer)
       | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement* body)
       | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement body)
-      | ArrayInitializer(expression* initializers)
+      | ArrayInitializer(expression* initializers, constant comma)
       | ElementValuePair(identifier name, expression value)
       | NoExpression(identifier? null)
       | Identifier(identifier id)
@@ -106,7 +106,7 @@ type = Void(constant void)
 
 declarator = VariableDeclarator(identifier name, int* dimensions, array_initializer? initializer)
 
-array_initializer = ArrayInitializer(expression* initializers)
+array_initializer = ArrayInitializer(expression* initializers, constant comma)
 
 type_argument = TypeArgument(type? type, identifier? pattern_type)
 
