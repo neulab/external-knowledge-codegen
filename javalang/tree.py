@@ -143,7 +143,7 @@ class ConstantDeclaration(FieldDeclaration):
     attrs = ()
 
 class ArrayInitializer(Node):
-    attrs = ("initializers",)
+    attrs = ("initializers", "comma")
 
 class VariableDeclaration(Declaration):
     attrs = ("type", "declarators")
@@ -317,7 +317,7 @@ class InnerClassCreator(Creator):
 # ------------------------------------------------------------------------------
 
 class EnumBody(Node):
-    attrs = ("constants", "separator", "declarations")
+    attrs = ("constants", "separator", "declarations", "comma")
 
 class EnumConstantDeclaration(Declaration, Documented):
     attrs = ("name", "arguments", "body")

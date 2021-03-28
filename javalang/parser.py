@@ -1276,23 +1276,26 @@ class Parser(object):
 
     @parse_debug
     def parse_array_initializer(self):
-        array_initializer = tree.ArrayInitializer(initializers=list())
+        array_initializer = tree.ArrayInitializer(initializers=list(),
+                                                  comma=False)
 
         self.accept('{')
 
         if self.try_accept(','):
             self.accept('}')
+            array_initializer.comma = True
             return array_initializer
 
         if self.try_accept('}'):
             return array_initializer
-
         while True:
             initializer = self.parse_variable_initializer()
+            array_initializer.comma = False
             array_initializer.initializers.append(initializer)
 
             if not self.would_accept('}'):
                 self.accept(',')
+                array_initializer.comma = True
 
             if self.try_accept('}'):
                 return array_initializer
@@ -2344,16 +2347,20 @@ class Parser(object):
     def parse_enum_body(self):
         constants = list()
         body_declarations = list()
-
+        comma = False
         self.accept('{')
 
         if not self.try_accept(','):
             while not (self.would_accept(';') or self.would_accept('}')):
                 constant = self.parse_enum_constant()
                 constants.append(constant)
-
+                comma = False
+                if self.would_accept(','):
+                    comma = True
                 if not self.try_accept(','):
                     break
+        else:
+            comma = True
         separator = False
         if self.would_accept(';'):
             separator = True
@@ -2368,7 +2375,8 @@ class Parser(object):
 
         return tree.EnumBody(constants=constants,
                              separator=separator,
-                             declarations=body_declarations)
+                             declarations=body_declarations,
+                             comma=comma)
 
     @parse_debug
     def parse_enum_constant(self):
