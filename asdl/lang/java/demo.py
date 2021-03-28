@@ -253,13 +253,13 @@ if __name__ == '__main__':
     nb_ok = 0
     nb_ko = 0
     filepaths = [
-        #"test/Test.java",
+        "test/Test.java",
+        #"test/Final.java",
         # "test/ComplexGeneric.java",
         # "test/DiamondCall.java",
         # "test/AnnotationJavadoc.java",
         # "test/Implements.java",
         # "test/Wildcard.java",
-        # "test/Final.java",
         # "test/CallOnCast.java",
         # "test/java/com/github/javaparser/VisitorTest.java",
         # "test/test_sourcecode/com/github/javaparser/printer/JavaConcepts.java",
@@ -281,7 +281,7 @@ if __name__ == '__main__':
         # "test/resources/javassist_generics/javaparser/GenericClass.java",
         #"test/resources/com/github/javaparser/samples/JavaConcepts.java",
         #"test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/TypeExtractor.java",
-        "test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/declarations/JavaParserAnonymousClassDeclaration.java",
+        #"test/test_sourcecode/javasymbolsolver_0_6_0/src/java-symbol-solver-core/com/github/javaparser/symbolsolver/javaparsermodel/declarations/JavaParserAnonymousClassDeclaration.java",
     ]
     if args.list:
         for filepath in filepaths:

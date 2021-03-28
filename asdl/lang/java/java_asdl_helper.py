@@ -43,7 +43,6 @@ def java_ast_to_asdl_ast(java_ast_node, grammar):
                     child_node = java_ast_to_asdl_ast(field_value, grammar)
                     asdl_field.add_value(child_node)
                 else:
-                    #asdl_field.add_value(str(field_value))
                     asdl_field.add_value(field_value)
         # field with multiple cardinality
         elif field_value is not None:

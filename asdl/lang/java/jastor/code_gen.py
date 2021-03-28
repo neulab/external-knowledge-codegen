@@ -586,7 +586,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.value)
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
@@ -620,7 +623,17 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.expression, ";", "\n")
 
     def visit_TernaryExpression(self, node):
+        if node.prefix_operators:
+            for op in node.prefix_operators:
+                self.write(op)
+        if node.prefix_operators or node.postfix_operators:
+            self.write('(')
         self.write(node.condition, " ? ", node.if_true, " : ", node.if_false)
+        if node.prefix_operators or node.postfix_operators:
+            self.write(')')
+        if node.postfix_operators:
+            for op in node.postfix_operators:
+                self.write(op)
 
     def visit_MethodInvocation(self, node):
         if node.prefix_operators:
@@ -628,15 +641,20 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(op)
         if node.qualifier:
             self.write(node.qualifier, ".")
-        self.write(node.member)
         if node.type_arguments:
+            self.write('<')
             self.comma_list(node.type_arguments)
+            self.write('>')
+        self.write(node.member)
         self.write("(")
         self.comma_list(node.arguments)
         self.write(")")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
@@ -817,7 +835,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("(", "(", node.type, ") ", node.expression, ")")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
 
     # TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
     def visit_TryStatement(self, node):
@@ -881,7 +902,10 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(">")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         self.write("super(")
         self.comma_list(node.arguments)
         self.write(")")
@@ -908,7 +932,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(")")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
 
         if node.body is not None:
             self.write("{")
@@ -965,7 +992,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.type, ".class")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         for op in node.postfix_operators:
             self.write(op)
 
@@ -999,7 +1029,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.member)
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         self.write("(")
         self.comma_list(node.arguments)
         self.write(")")
@@ -1050,7 +1083,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("super.", node.member)
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
@@ -1089,7 +1125,10 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.qualifier, ".")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         self.write("new ", node.type)
         if node.dimensions:
             for dim in node.dimensions:
@@ -1120,7 +1159,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(")")
         if node.selectors:
             for selector in node.selectors:
-                self.write(".", selector)
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
         if node.body:
             self.write("{", "\n")
             for statement in node.body:

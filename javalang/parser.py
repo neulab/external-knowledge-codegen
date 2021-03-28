@@ -1916,8 +1916,10 @@ class Parser(object):
             primary.prefix_operators.extend(prefix_operators)
         else:
             primary.prefix_operators = prefix_operators
-        primary.selectors = list()
-        primary.postfix_operators = list()
+        if primary.selectors is None:
+            primary.selectors = list()
+        if primary.postfix_operators is None:
+            primary.postfix_operators = list()
 
         token = self.tokens.look()
         while token.value in '[.':
@@ -2043,7 +2045,9 @@ class Parser(object):
 
             identifier_suffix = self.parse_identifier_suffix()
 
-            if isinstance(identifier_suffix, (tree.MemberReference, tree.MethodInvocation)):
+            if (isinstance(identifier_suffix, (tree.MemberReference, tree.MethodInvocation))
+                and identifier_suffix.member is None):
+            #if isinstance(identifier_suffix, (tree.MemberReference)):
                 # Take the last identifer as the member and leave the rest for the qualifier
                 identifier_suffix.member = qualified_identifier.pop()
 

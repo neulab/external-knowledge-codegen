@@ -76,7 +76,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | Literal(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, string value)
       | BinaryOperation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, infix_operator operator, member_reference operandl, member_reference operandr)
       | MemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, identifier member)
-      | TernaryExpression(expression condition, expression if_true, expression if_false)
+      | TernaryExpression(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, expression condition, expression if_true, expression if_false)
       | ArraySelector(expression index)
       | Assignment(expression expressionl, expression value, assign_operator type)
       | This(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
