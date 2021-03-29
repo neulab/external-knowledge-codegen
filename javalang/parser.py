@@ -2055,7 +2055,10 @@ class Parser(object):
                 identifier_suffix.member = qualified_identifier.pop()
 
             elif isinstance(identifier_suffix, tree.ClassReference):
-                identifier_suffix.type = tree.ReferenceType(name=qualified_identifier.pop())
+                identifier_suffix.type = tree.ReferenceType(
+                    name=qualified_identifier.pop(),
+                    dimensions=(identifier_suffix.type.dimensions)
+                        if identifier_suffix.type is not None  else None)
 
             identifier_suffix._position = token.position
             identifier_suffix.qualifier = '.'.join(qualified_identifier)

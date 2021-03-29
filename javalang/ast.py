@@ -30,7 +30,7 @@ class Node(object):
             setattr(self, attr_name, value)
 
         if values:
-            raise ValueError('Extraneous arguments')
+            raise ValueError(f'Extraneous arguments: {values} not in {self.attrs}')
 
     def __equals__(self, other):
         if type(other) is not type(self):

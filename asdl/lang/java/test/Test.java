@@ -1,5 +1,5 @@
 class A {
-    @interface WithValue {
-        String value();
-    }
+  void f() {
+    cu.addImport(CompilationUnit[][][].class);
+  }
 }

@@ -82,7 +82,8 @@ def simplify(code: str) -> str:
             .replace("\n", "")
             .replace("(", "")
             .replace(")", "")
-            .strip())
+            .strip()
+            .lower())
 
 def test(java_code, check_hypothesis=False, fail_on_error=False):
     # get the (domain-specific) java AST of the example Java code snippet
