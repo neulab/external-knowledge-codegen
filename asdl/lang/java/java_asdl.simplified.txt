@@ -80,7 +80,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | ArraySelector(expression index)
       | Assignment(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, expression expressionl, expression value, assign_operator type)
       | This(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
-      | Cast(type type, expression expression, selector* selectors)
+      | Cast(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, expression expression, selector* selectors)
       | MethodReference(expression expression, identifier method, type_argument* type_arguments)
       | LambdaExpression(parameter* parameters, statement body)
       | Invocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)

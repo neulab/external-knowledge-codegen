@@ -1,3 +1,4 @@
+import re
 # -*- coding: utf-8 -*-
 """
 Part of the astor library for Python AST manipulation.
@@ -20,6 +21,7 @@ this code came from here (in 2012):
 from javalang.ast import Node
 from javalang import tree
 import math
+import re
 import sys
 
 from .op_util import get_op_symbol, get_op_precedence, Precedence
@@ -585,7 +587,12 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(op)
         if node.qualifier:
             self.write(node.qualifier, ".")
-        self.write(node.value)
+        char_re = re.compile(r"^'(.)'$")
+        matches = char_re.findall(node.value)
+        if matches:
+            self.write("'", matches[0].encode("unicode_escape").decode('ASCII'), "'")
+        else:
+            self.write(node.value)
         if node.selectors:
             for selector in node.selectors:
                 if type(selector) == tree.ArraySelector:
@@ -843,6 +850,9 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # Cast(type type, expression expression)
     def visit_Cast(self, node):
+        if node.prefix_operators:
+            for op in node.prefix_operators:
+                self.write(op)
         self.write("(", "(", node.type, ") ", node.expression, ")")
         if node.selectors:
             for selector in node.selectors:
@@ -850,6 +860,9 @@ class SourceGenerator(ExplicitNodeVisitor):
                     self.write(selector)
                 else:
                     self.write(".", selector)
+        if node.postfix_operators:
+            for op in node.postfix_operators:
+                self.write(op)
 
     # TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
     def visit_TryStatement(self, node):
@@ -941,13 +954,6 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.arguments:
             self.comma_list(node.arguments)
         self.write(")")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-
         if node.body is not None:
             self.write("{")
         if node.body:
@@ -955,6 +961,13 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(statement)
         if node.body is not None:
             self.write("}")
+        if node.selectors:
+            for selector in node.selectors:
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
+
 
         if node.postfix_operators:
             for op in node.postfix_operators:
@@ -1077,14 +1090,14 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(modifier, " ")
         if node.return_type:
             self.write(node.return_type, " ")
-        self.write(node.name)
+        self.write(node.name, '()')
         if node.dimensions:
             for _ in range(len(node.dimensions)):
                 self.write("[]")
         if node.default:
             self.write("=")
             self.write(node.default)
-
+        self.write(';', '\n')
     def visit_SuperMemberReference(self, node):
         if node.prefix_operators:
             for op in node.prefix_operators:

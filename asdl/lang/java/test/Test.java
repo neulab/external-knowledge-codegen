@@ -1,5 +1,5 @@
 class A {
-    public static enum Operator {
-        or,
+    @interface WithValue {
+        String value();
     }
 }
