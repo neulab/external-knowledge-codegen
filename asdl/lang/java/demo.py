@@ -67,7 +67,7 @@ def code_from_hyp(asdl_ast):
         # set of rules with the same LHS type as the current rule
         if isinstance(action, ApplyRuleAction) and hypothesis.frontier_node:
             if action.production not in grammar[hypothesis.frontier_field.type]:
-                raise Exception(f"{action.production} should be in {grammar[hypothesis.frontier_field.type]}")
+                raise Exception(f"{bcolors.BLUE}{action.production}{bcolors.ENDC} should be in {bcolors.GREEN}{grammar[hypothesis.frontier_field.type]}{bcolors.ENDC}")
             assert action.production in grammar[hypothesis.frontier_field.type]
 
         p_t = (hypothesis.frontier_node.created_time
