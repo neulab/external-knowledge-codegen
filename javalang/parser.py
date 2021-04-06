@@ -463,10 +463,10 @@ class Parser(object):
     @parse_debug
     def parse_type(self):
         java_type = None
-
-        if isinstance(self.tokens.look(), BasicType):
+        token = self.tokens.look()
+        if isinstance(token, BasicType):
             java_type = self.parse_basic_type()
-        elif isinstance(self.tokens.look(), Identifier):
+        elif isinstance(token, Identifier):
             java_type = self.parse_reference_type()
         else:
             self.illegal("Expected type")
