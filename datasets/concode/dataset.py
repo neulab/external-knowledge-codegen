@@ -31,7 +31,7 @@ def preprocess_concode_dataset(train_file, test_file, grammar_file, src_freq=3,
     grammar = ASDLGrammar.from_text(asdl_text)
     transition_system = JavaTransitionSystem(grammar)
 
-    print('process gold training data...')
+    print('process gold training data...', file=sys.stderr)
     train_examples = preprocess_dataset(train_file, name='train',
                                         transition_system=transition_system)
 
@@ -137,11 +137,13 @@ def preprocess_dataset(file_path, transition_system, name='train',
         dataset = [json.loads(jline) for jline in open(file_path).readlines()]
     if firstk:
         dataset = dataset[:firstk]
+    print(f"preprocess_dataset {file_path}, json is loaded", file=sys.stderr)
     examples = []
     evaluator = ConcodeEvaluator(transition_system)
     f = open(file_path + '.debug', 'w')
     skipped_list = []
     for i, example_json in enumerate(dataset):
+        print(f"preprocess_dataset example n°{i+1}", file=sys.stderr)
         try:
             example_dict = preprocess_example(example_json)
 
@@ -151,37 +153,39 @@ def preprocess_dataset(file_path, transition_system, name='train',
                 print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
                 raise
             canonical_code = jastor.to_source(java_ast).strip()
+            print(canonical_code, file=sys.stderr)
             tgt_ast = java_ast_to_asdl_ast(java_ast, transition_system.grammar)
             tgt_actions = transition_system.get_actions(tgt_ast)
 
-            # sanity check
-            hyp = Hypothesis()
-            for t, action in enumerate(tgt_actions):
-                assert action.__class__ in transition_system.get_valid_continuation_types(hyp)
-                if isinstance(action, ApplyRuleAction):
-                    assert action.production in transition_system.get_valid_continuating_productions(hyp)
-                # p_t = -1
-                # f_t = None
-                # if hyp.frontier_node:
-                #     p_t = hyp.frontier_node.created_time
-                #     f_t = hyp.frontier_field.field.__repr__(plain=True)
-                #
-                # # print('\t[%d] %s, frontier field: %s, parent: %d' % (t, action, f_t, p_t))
-                hyp = hyp.clone_and_apply_action(action)
+            ## sanity check
+            #hyp = Hypothesis()
+            #for t, action in enumerate(tgt_actions):
+                #assert action.__class__ in transition_system.get_valid_continuation_types(hyp)
+                #if isinstance(action, ApplyRuleAction):
+                    #assert action.production in transition_system.get_valid_continuating_productions(hyp)
+                ## p_t = -1
+                ## f_t = None
+                ## if hyp.frontier_node:
+                ##     p_t = hyp.frontier_node.created_time
+                ##     f_t = hyp.frontier_field.field.__repr__(plain=True)
+                ##
+                ## # print('\t[%d] %s, frontier field: %s, parent: %d' % (t, action, f_t, p_t))
+                #hyp = hyp.clone_and_apply_action(action)
 
-            assert hyp.frontier_node is None and hyp.frontier_field is None
-            hyp.code = code_from_hyp = jastor.to_source(asdl_ast_to_java_ast(hyp.tree, transition_system.grammar)).strip()
-            # print(code_from_hyp)
-            # print(canonical_code)
-            assert code_from_hyp == canonical_code
+            #assert hyp.frontier_node is None and hyp.frontier_field is None
+            #hyp.code = code_from_hyp = jastor.to_source(asdl_ast_to_java_ast(
+                #hyp.tree, transition_system.grammar)).strip()
+            ## print(code_from_hyp)
+            ## print(canonical_code)
+            #assert code_from_hyp == canonical_code
 
-            decanonicalized_code_from_hyp = decanonicalize_code(
-              code_from_hyp, example_dict['slot_map'])
-            assert compare_ast(ast.parse(example_json['snippet']),
-                               ast.parse(decanonicalized_code_from_hyp))
-            assert transition_system.compare_ast(
-              transition_system.surface_code_to_ast(decanonicalized_code_from_hyp),
-              transition_system.surface_code_to_ast(example_json['snippet']))
+            #decanonicalized_code_from_hyp = decanonicalize_code(
+              #code_from_hyp, example_dict['slot_map'])
+            #assert compare_ast(ast.parse(example_json['snippet']),
+                               #ast.parse(decanonicalized_code_from_hyp))
+            #assert transition_system.compare_ast(
+              #transition_system.surface_code_to_ast(decanonicalized_code_from_hyp),
+              #transition_system.surface_code_to_ast(example_json['snippet']))
 
             tgt_action_infos = get_action_infos(example_dict['intent_tokens'],
                                                 tgt_actions)
@@ -195,7 +199,7 @@ def preprocess_dataset(file_path, transition_system, name='train',
                           tgt_ast=tgt_ast,
                           meta=dict(example_dict=example_json,
                                     slot_map=example_dict['slot_map']))
-        assert evaluator.is_hyp_correct(example, hyp)
+        #assert evaluator.is_hyp_correct(example, hyp)
 
         examples.append(example)
 
@@ -217,47 +221,81 @@ def preprocess_dataset(file_path, transition_system, name='train',
 
 
 def preprocess_example(example_json):
+    """
+    In Conala, this method allowed to replace occurrences of python code names
+    in rewritten snippet and in code by a common representation. There is no
+    such things in our Concode corpus currently but a lot of specificaly quoted
+    names that conflict with this preprocessing. So currrently, just recopy
+    intent and snippet.
+    """
+
     intent = example_json['intent']
-    if 'rewritten_intent' in example_json:
-        rewritten_intent = example_json['rewritten_intent']
-    else:
-        rewritten_intent = None
-
-    if rewritten_intent is None:
-        rewritten_intent = intent
+    slot_map = {}
     snippet = example_json['snippet']
-
-    canonical_intent, slot_map = canonicalize_intent(rewritten_intent)
-    try:
-        canonical_snippet = canonicalize_code(snippet, slot_map)
-    except JavaSyntaxError as e:
-        print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
-        raise
-    intent_tokens = tokenize_intent(canonical_intent)
-    try:
-        decanonical_snippet = decanonicalize_code(canonical_snippet, slot_map)
-    except JavaSyntaxError as e:
-        print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
-        raise
-
-    try:
-        reconstructed_snippet = jastor.to_source(javalang.parse.parse_member_declaration(snippet)).strip()
-    except JavaSyntaxError as e:
-        print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
-        raise
-    try:
-        reconstructed_decanonical_snippet = jastor.to_source(javalang.parse.parse_member_declaration(decanonical_snippet)).strip()
-    except JavaSyntaxError as e:
-        print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
-        raise
-
-    assert compare_ast(javalang.parse.parse_member_declaration(reconstructed_snippet),
-                       javalang.parse.parse_member_declaration(reconstructed_decanonical_snippet))
-
-    return {'canonical_intent': canonical_intent,
+    intent_tokens = tokenize_intent(intent)
+    return {'canonical_intent': intent,
             'intent_tokens': intent_tokens,
             'slot_map': slot_map,
-            'canonical_snippet': canonical_snippet}
+            'canonical_snippet': snippet}
+    #intent = example_json['intent']
+    #if 'rewritten_intent' in example_json:
+        #rewritten_intent = example_json['rewritten_intent']
+    #else:
+        #rewritten_intent = None
+
+    #if rewritten_intent is None:
+        #rewritten_intent = intent
+    #canonical_intent, slot_map = canonicalize_intent(rewritten_intent)
+    #intent_tokens = tokenize_intent(canonical_intent)
+
+    #snippet = example_json['snippet']
+    #print(f"preprocess_example snippet={snippet}", file=sys.stderr)
+    #try:
+        #canonical_snippet = canonicalize_code(snippet, slot_map)
+    #except JavaSyntaxError as e:
+        #print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
+        #raise
+    #print(f"preprocess_example canonical_snippet={canonical_snippet}",
+          #file=sys.stderr)
+    #try:
+        #decanonical_snippet = decanonicalize_code(canonical_snippet, slot_map)
+    #except JavaSyntaxError as e:
+        #print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}",
+              #file=sys.stderr)
+        #raise
+    #print(f"preprocess_example decanonical_snippet={decanonical_snippet}",
+          #file=sys.stderr)
+
+    #try:
+        #reconstructed_snippet = jastor.to_source(
+            #javalang.parse.parse_member_declaration(snippet)).strip()
+    #except JavaSyntaxError as e:
+        #print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}",
+              #file=sys.stderr)
+        #raise
+    #print(f"preprocess_example reconstructed_snippet={reconstructed_snippet}",
+          #file=sys.stderr)
+    #try:
+        #reconstructed_decanonical_snippet = jastor.to_source(
+            #javalang.parse.parse_member_declaration(
+
+                #decanonical_snippet)).strip()
+    #except JavaSyntaxError as e:
+        #print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}",
+              #file=sys.stderr)
+        #raise
+    #print(f"preprocess_example reconstructed_decanonical_snippet="
+          #f"{reconstructed_decanonical_snippet}",
+          #file=sys.stderr)
+
+    #assert compare_ast(
+        #javalang.parse.parse_member_declaration(reconstructed_snippet),
+        #javalang.parse.parse_member_declaration(reconstructed_decanonical_snippet))
+
+    #return {'canonical_intent': canonical_intent,
+            #'intent_tokens': intent_tokens,
+            #'slot_map': slot_map,
+            #'canonical_snippet': canonical_snippet}
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
