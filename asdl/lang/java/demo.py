@@ -85,9 +85,13 @@ def simplify(code: str) -> str:
             .strip()
             .lower())
 
-def test(java_code, check_hypothesis=False, fail_on_error=False):
+def test(java_code, check_hypothesis=False, fail_on_error=False, member=False):
     # get the (domain-specific) java AST of the example Java code snippet
-    java_ast = javalang.parse.parse(java_code)
+    if member:
+        java_ast = javalang.parse.parse_member_declaration(java_code)
+    else:
+        java_ast = javalang.parse.parse(java_code)
+
 
     # convert the java AST into general-purpose ASDL AST used by tranX
     asdl_ast = java_ast_to_asdl_ast(java_ast, grammar)
@@ -186,7 +190,8 @@ java_code = [
 
 def test_filepath(filepath: str,
                   check_hypothesis: bool=False,
-                  fail_on_error=False):
+                  fail_on_error=False,
+                  member=False):
     if filepath.endswith(".java"):
         cprint(bcolors.ENDC,
                 f"\n−−−−−−−−−−\nTesting Java file {bcolors.MAGENTA}{filepath}",
@@ -194,7 +199,8 @@ def test_filepath(filepath: str,
         with open(filepath, "r") as f:
             try:
                 java = f.read()
-                if not test(java, check_hypothesis, fail_on_error):
+                if not test(java, check_hypothesis=check_hypothesis,
+                            fail_on_error=fail_on_error, member=member):
                     cprint(bcolors.RED,
                             f"**Warn**{bcolors.ENDC} Test failed for "
                             f"file: {bcolors.MAGENTA}{filepath}",
@@ -246,6 +252,10 @@ if __name__ == '__main__':
                             action='store_true',
                             help='If true, use the hardcoded Java files list. '
                                   'Otherwise, walk the test directory for Java files')
+    arg_parser.add_argument('-m', '--member', default=False,
+                            action='store_true',
+                            help='If true, consider the file content as the code of a member'
+                                  'instead of a complete compilation unit.')
     args = arg_parser.parse_args()
 
     fail_on_error = args.fail_on_error
@@ -286,7 +296,10 @@ if __name__ == '__main__':
     ]
     if args.list:
         for filepath in filepaths:
-            test_result = test_filepath(filepath, check_hypothesis)
+            test_result = test_filepath(filepath,
+                                        check_hypothesis=check_hypothesis,
+                                        fail_on_error=fail_on_error,
+                                        member=args.member)
             if test_result is not None:
                 if test_result:
                     nb_ok = nb_ok + 1
@@ -299,7 +312,10 @@ if __name__ == '__main__':
         for subdir, _, files in os.walk(r'test'):
             for filename in files:
                 filepath = os.path.join(subdir, filename)
-                test_result = test_filepath(filepath, check_hypothesis)
+                test_result = test_filepath(filepath,
+                                            check_hypothesis=check_hypothesis,
+                                            fail_on_error=fail_on_error,
+                                            member=args.member)
                 if test_result is not None:
                     if test_result:
                         nb_ok = nb_ok + 1
