@@ -1308,6 +1308,8 @@ class Parser(object):
         statements = list()
 
         self.accept('{')
+        if self.try_accept('}'):
+            return tree.BlockStatement(statements=statements)
 
         while not self.would_accept('}'):
             statement = self.parse_block_statement()
@@ -1371,21 +1373,23 @@ class Parser(object):
             statement._position = token.position
             return statement
 
-        # At this point, if the block statement is a variable definition the next
-        # token MUST be an identifier, so if it isn't we can conclude the block
-        # statement is a normal statement
+        # At this point, if the block statement is a variable definition the
+        # next token MUST be an identifier, so if it isn't we can conclude the
+        # block statement is a normal statement
         if not isinstance(token, Identifier):
             return self.parse_statement()
 
-        # We can't easily determine the statement type. Try parsing as a variable
-        # declaration first and fall back to a statement
+        # We can't easily determine the statement type. Try parsing as a
+        # variable declaration first and fall back to a statement
         try:
-            with self.tokens:
-                statement = self.parse_local_variable_declaration_statement()
-                statement._position = token.position
-                return statement
+            self.tokens.push_marker()
+            statement = self.parse_local_variable_declaration_statement()
+            statement._position = token.position
+            self.tokens.pop_marker(False)
+            return statement
         except JavaSyntaxError:
-            return self.parse_statement()
+            self.tokens.pop_marker(True)
+        return self.parse_statement()
 
     @parse_debug
     def parse_local_variable_declaration_statement(self):
@@ -1815,11 +1819,19 @@ class Parser(object):
 
     @parse_debug
     def parse_expression(self):
+        try:
+            self.tokens.push_marker()
+            method_reference_expression = self.parse_method_reference_expression()
+            self.tokens.pop_marker(False)
+            return method_reference_expression
+        except JavaSyntaxError:
+            self.tokens.pop_marker(True)
         expressionl = self.parse_expressionl()
         assignment_type = None
         assignment_expression = None
 
-        if self.tokens.look().value in Operator.ASSIGNMENT:
+        next_token = self.tokens.look()
+        if next_token.value in Operator.ASSIGNMENT:
             assignment_type = self.tokens.next().value
             assignment_expression = self.parse_expression()
             return tree.Assignment(expressionl=expressionl,
@@ -1827,6 +1839,22 @@ class Parser(object):
                                    value=assignment_expression)
         else:
             return expressionl
+
+    @parse_debug
+    def parse_method_reference_expression(self):
+        created_name = tree.ReferenceType()
+        created_name.name = self.parse_identifier()
+
+        if self.would_accept('<'):
+            created_name.arguments = self.parse_type_arguments_or_diamond()
+        if self.try_accept('::'):
+            method_reference, type_arguments = self.parse_method_reference()
+            return tree.MethodReference(
+                expression=created_name,
+                method=method_reference,
+                type_arguments=type_arguments)
+        else:
+            self.illegal("nope")
 
     @parse_debug
     def parse_expressionl(self):
