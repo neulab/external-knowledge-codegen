@@ -219,17 +219,6 @@ def test_filepath(filepath: str,
                         f"{filepath}",
                         file=sys.stderr)
                 return False
-            except JavaSyntaxError as e:
-                cprint(bcolors.RED,
-                        f"Error: Java syntax error: {e}. Ignoring: "
-                        f"{filepath}",
-                        file=sys.stderr)
-                return False
-            #except Exception as e:
-                #cprint(bcolors.RED,
-                        #f"Error: '{e}' on file: {filepath}",
-                        #file=sys.stderr)
-                #return False
     else:
         return None
 
