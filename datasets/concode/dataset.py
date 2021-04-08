@@ -21,6 +21,7 @@ from javalang.parser import JavaSyntaxError
 
 assert jastor.__version__ == '0.7.1'
 
+
 def preprocess_concode_dataset(train_file, test_file, grammar_file, src_freq=3,
                                code_freq=3, mined_data_file=None,
                                api_data_file=None, vocab_size=20000,
@@ -33,7 +34,8 @@ def preprocess_concode_dataset(train_file, test_file, grammar_file, src_freq=3,
 
     print('process gold training data...', file=sys.stderr)
     train_examples = preprocess_dataset(train_file, name='train',
-                                        transition_system=transition_system)
+                                        transition_system=transition_system,
+                                        firstk=num_mined)
 
     # held out 200 examples for development
     # TODO use the Concode valid corpus instead
@@ -47,9 +49,9 @@ def preprocess_concode_dataset(train_file, test_file, grammar_file, src_freq=3,
     if mined_data_file and num_mined > 0:
         print("use mined data: ", num_mined)
         print("from file: ", mined_data_file)
-        mined_examples = preprocess_dataset(mined_data_file, name='mined',
-                                            transition_system=transition_system,
-                                            firstk=num_mined)
+        mined_examples = preprocess_dataset(
+          mined_data_file, name='mined', transition_system=transition_system,
+          firstk=num_mined)
         pickle.dump(mined_examples,
                     open(os.path.join(out_dir,
                                       'mined_{}.bin'.format(num_mined)), 'wb'))
@@ -82,9 +84,13 @@ def preprocess_concode_dataset(train_file, test_file, grammar_file, src_freq=3,
     src_vocab = VocabEntry.from_corpus([e.src_sent for e in train_examples],
                                        size=vocab_size,
                                        freq_cutoff=src_freq)
-    primitive_tokens = [map(lambda a: a.action.token,
-                            filter(lambda a: isinstance(a.action,
-                                                        GenTokenAction),
+    #primitive_tokens = [map(lambda a: a.action.token,
+                            #filter(lambda a: isinstance(a.action,
+                                                        #GenTokenAction),
+                                   #e.tgt_actions))
+                        #for e in train_examples]
+    primitive_tokens = [map(lambda a: a.token,
+                            filter(lambda a: isinstance(a, GenTokenAction),
                                    e.tgt_actions))
                         for e in train_examples]
     primitive_vocab = VocabEntry.from_corpus(primitive_tokens, size=vocab_size,
@@ -122,7 +128,8 @@ def preprocess_concode_dataset(train_file, test_file, grammar_file, src_freq=3,
         vocab_name = (f'vocab.src_freq{src_freq}.code_freq{code_freq}'
                       f'.mined_{num_mined}.bin')
     elif api_examples:
-        vocab_name = f'vocab.src_freq{src_freq}.code_freq{code_freq}.{name}.bin'
+        vocab_name = f'vocab.src_freq{src_freq}.code_freq{code_freq}'
+        f'.{name}.bin'
     else:
         vocab_name = f'vocab.src_freq{src_freq}.code_freq{code_freq}.bin'
     pickle.dump(vocab, open(os.path.join(out_dir, vocab_name), 'wb'))
@@ -132,7 +139,7 @@ def preprocess_dataset(file_path, transition_system, name='train',
                        firstk=None):
     try:
         dataset = json.load(open(file_path))
-    except:
+    except Exception as e:
         # TODO handle opening errors
         dataset = [json.loads(jline) for jline in open(file_path).readlines()]
     if firstk:
@@ -143,17 +150,22 @@ def preprocess_dataset(file_path, transition_system, name='train',
     f = open(file_path + '.debug', 'w')
     skipped_list = []
     for i, example_json in enumerate(dataset):
-        print(f"preprocess_dataset example n°{i+1}", file=sys.stderr)
+        print(f"preprocess_dataset example n°{i+1}/{len(dataset)}", file=sys.stderr)
         try:
             example_dict = preprocess_example(example_json)
+            snippet = example_dict['canonical_snippet']
+            print(f"canonical_snippet:\n{snippet}",
+                  file=sys.stderr)
 
             try:
-                java_ast = javalang.parse.parse_member_declaration(example_dict['canonical_snippet'])
+                java_ast = javalang.parse.parse_member_declaration(snippet)
             except JavaSyntaxError as e:
-                print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
+                print(f"Java syntax error: {e.description}, at {e.at} "
+                      f"in:\n{snippet}",
+                      file=sys.stderr)
                 raise
             canonical_code = jastor.to_source(java_ast).strip()
-            print(canonical_code, file=sys.stderr)
+            print(f"canonical_code:\n{canonical_code}", file=sys.stderr)
             tgt_ast = java_ast_to_asdl_ast(java_ast, transition_system.grammar)
             tgt_actions = transition_system.get_actions(tgt_ast)
 
@@ -187,33 +199,41 @@ def preprocess_dataset(file_path, transition_system, name='train',
               #transition_system.surface_code_to_ast(decanonicalized_code_from_hyp),
               #transition_system.surface_code_to_ast(example_json['snippet']))
 
-            tgt_action_infos = get_action_infos(example_dict['intent_tokens'],
-                                                tgt_actions)
-        except (AssertionError, SyntaxError, ValueError, OverflowError) as e:
+            #tgt_action_infos = get_action_infos(example_dict['intent_tokens'],
+                                                #tgt_actions)
+        #except (AssertionError, JavaSyntaxError, ValueError, OverflowError) as e:
+        except (ValueError, OverflowError) as e:
+            print(f"Intercpting exception: {e} in:\n{snippet}",
+                  file=sys.stderr)
             skipped_list.append(example_json['question_id'])
             continue
         example = Example(idx=f'{i}-{example_json["question_id"]}',
                           src_sent=example_dict['intent_tokens'],
-                          tgt_actions=tgt_action_infos,
+                          #tgt_actions=tgt_action_infos,
+                          tgt_actions=tgt_actions,
                           tgt_code=canonical_code,
                           tgt_ast=tgt_ast,
                           meta=dict(example_dict=example_json,
                                     slot_map=example_dict['slot_map']))
-        #assert evaluator.is_hyp_correct(example, hyp)
+        # assert evaluator.is_hyp_correct(example, hyp)
 
         examples.append(example)
 
         # log!
         f.write(f'Example: {example.idx}\n')
         if 'rewritten_intent' in example.meta['example_dict']:
-            f.write(f"Original Utterance: {example.meta['example_dict']['rewritten_intent']}\n")
+            f.write(f"Original Utterance: "
+                    f"{example.meta['example_dict']['rewritten_intent']}\n")
         else:
-            f.write(f"Original Utterance: {example.meta['example_dict']['intent']}\n")
-        f.write(f"Original Snippet: {example.meta['example_dict']['snippet']}\n")
+            f.write(f"Original Utterance: "
+                    f"{example.meta['example_dict']['intent']}\n")
+        f.write(f"Original Snippet: "
+                f"{example.meta['example_dict']['snippet']}\n")
         f.write(f"\n")
         f.write(f"Utterance: {' '.join(example.src_sent)}\n")
         f.write(f"Snippet: {example.tgt_code}\n")
-        f.write(f"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+        f.write(
+          f"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
 
     f.close()
     print('Skipped due to exceptions: %d' % len(skipped_list), file=sys.stderr)
@@ -297,9 +317,18 @@ def preprocess_example(example_json):
             #'slot_map': slot_map,
             #'canonical_snippet': canonical_snippet}
 
+
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    #### General configuration ####
+    arg_parser.add_argument('--train', type=str,
+                            help='Path to train file',
+                            default='data/concode/concode_train.json')
+    arg_parser.add_argument('--test', type=str,
+                            help='Path to test file',
+                            default='data/concode/concode_test.json')
+    arg_parser.add_argument('--grammar', type=str,
+                            help='Path to grammar file',
+                            default='asdl/lang/java/java_asdl.simplified.txt')
     arg_parser.add_argument('--pretrain', type=str,
                             help='Path to pretrain file')
     arg_parser.add_argument('--out_dir', type=str, default='data/concode',
@@ -314,16 +343,16 @@ if __name__ == '__main__':
                             help='Path to apidocs file')
     args = arg_parser.parse_args()
 
-
     # the json files can converted from the concode format using the script
     # data/concode/concode2conala.py
     preprocess_concode_dataset(
-      train_file='data/concode/concode_train.json',
-      test_file='data/concode/concode_test.json',
+      train_file=args.train,
+      test_file=args.test,
       mined_data_file=args.pretrain,
       api_data_file=args.include_api,
-      grammar_file='asdl/lang/java/java_asdl.simplified.txt',
-      src_freq=args.freq, code_freq=args.freq,
+      grammar_file=args.grammar,
+      src_freq=args.freq,
+      code_freq=args.freq,
       vocab_size=args.vocabsize,
       num_mined=args.topk,
       out_dir=args.out_dir)
