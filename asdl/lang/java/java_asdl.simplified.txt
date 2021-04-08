@@ -67,7 +67,7 @@ catch = CatchClause(identifier? label, catch_clause_parameter parameter, stateme
 
 catch_clause_parameter = CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
 
-forcontrol = ForControl(expression* init, expression condition, expression* update)
+forcontrol = ForControl(expression* init, expression? condition, expression* update)
       | EnhancedForControl(expression var, statement iterable)
 
 
@@ -90,11 +90,11 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | SuperMethodInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments, identifier member)
       | SuperMemberReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, identifier member)
       | ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
-      | VoidClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
+      | VoidClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
       | Creator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
       | ArrayCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, expression* dimensions, expression? initializer)
       | ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement* body)
-      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement body)
+      | InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, type_argument* constructor_type_arguments, argument* arguments, statement* body)
       | ArrayInitializer(expression* initializers, constant comma)
       | ElementValuePair(identifier name, expression value)
       | NoExpression(identifier? null)
