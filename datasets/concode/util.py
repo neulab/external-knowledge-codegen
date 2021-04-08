@@ -9,9 +9,11 @@ import sys
 import javalang
 from javalang import ast
 from asdl.lang.java import jastor
-from aymara import lima
+# from aymara import lima
+import nltk
 
-
+# Used in Conala to mark python code items (variable names…) present in
+# rewritten_intent between quotes
 QUOTED_TOKEN_RE = re.compile(r"(?P<quote>''|[`'\"])(?P<string>.*?)(?P=quote)")
 
 
@@ -34,7 +36,8 @@ def compare_ast(node1, node2):
 
 def tokenize_intent(intent):
     lower_intent = intent.lower()
-    tokens = lima.word_tokenize(lower_intent)
+    # tokens = lima.word_tokenize(lower_intent)
+    tokens = nltk.word_tokenize(lower_intent)
 
     return tokens
 
@@ -57,14 +60,6 @@ def canonicalize_intent(intent):
         value = match[1]
         quoted_value = quote + value + quote
 
-        # try:
-        #     # if it's a number, then keep it and leave it to the copy mechanism
-        #     float(value)
-        #     intent = intent.replace(quoted_value, value)
-        #     continue
-        # except:
-        #     pass
-
         slot_type = infer_slot_type(quote, value)
 
         if slot_type == 'var':
@@ -76,15 +71,11 @@ def canonicalize_intent(intent):
             str_id += 1
             slot_type = 'str'
 
-        # slot_id = len(slot_map)
-        # slot_name = 'slot_%d' % slot_id
-        # # make sure slot_name is also unicode
-        # slot_name = unicode(slot_name)
-
         intent = intent.replace(quoted_value, slot_name)
-        slot_map[slot_name] = {'value': value.strip().encode().decode('unicode_escape', 'ignore'),
-                               'quote': quote,
-                               'type': slot_type}
+        slot_map[slot_name] = {
+            'value': value.strip().encode().decode('unicode_escape', 'ignore'),
+            'quote': quote,
+            'type': slot_type}
 
     return intent, slot_map
 
@@ -113,28 +104,26 @@ def is_enumerable_str(identifier_value):
     Test if the quoted identifier value is a list
     """
 
-    return len(identifier_value) > 2 and identifier_value[0] in ('{', '(', '[') and identifier_value[-1] in ('}', ']', ')')
+    return (len(identifier_value) > 2
+            and identifier_value[0] in ('{', '(', '[')
+            and identifier_value[-1] in ('}', ']', ')'))
 
 
 def canonicalize_code(code, slot_map):
-    string2slot = {x['value']: slot_name for slot_name, x in list(slot_map.items())}
+    string2slot = {x['value']: slot_name
+                   for slot_name, x in list(slot_map.items())}
 
     java_ast = javalang.parse.parse_member_declaration(code)
 
     replace_identifiers_in_ast(java_ast, string2slot)
     canonical_code = jastor.to_source(java_ast).strip()
 
-    # the following code handles the special case that
-    # a list/dict/set mentioned in the intent, like
-    # Intent: zip two lists `[1, 2]` and `[3, 4]` into a list of two tuples containing elements at the same index in each list
-    # Code: zip([1, 2], [3, 4])
-
     entries_that_are_lists = [slot_name for slot_name, val in slot_map.items()
                               if is_enumerable_str(val['value'])]
     if entries_that_are_lists:
         for slot_name in entries_that_are_lists:
             list_repr = slot_map[slot_name]['value']
-            #if list_repr[0] == '[' and list_repr[-1] == ']':
+            # if list_repr[0] == '[' and list_repr[-1] == ']':
             first_token = list_repr[0]  # e.g. `[`
             last_token = list_repr[-1]  # e.g., `]`
             fake_list = first_token + slot_name + last_token
