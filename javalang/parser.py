@@ -1844,7 +1844,7 @@ class Parser(object):
     def parse_method_reference_expression(self):
         created_name = tree.ReferenceType()
         created_name.name = self.parse_identifier()
-
+        created_name.dimensions = self.parse_array_dimension()
         if self.would_accept('<'):
             created_name.arguments = self.parse_type_arguments_or_diamond()
         if self.try_accept('::'):
