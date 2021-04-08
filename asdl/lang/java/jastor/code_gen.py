@@ -1198,7 +1198,6 @@ class SourceGenerator(ExplicitNodeVisitor):
             for op in node.postfix_operators:
                 self.write(op)
 
-    ## Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors)
-    #def visit_Primary(self, node):
-        #raise Exception("TODO Primary")
+    def visit_VoidClassReference(self, node):
+        self.write("void.class")
 
