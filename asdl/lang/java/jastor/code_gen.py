@@ -808,8 +808,9 @@ class SourceGenerator(ExplicitNodeVisitor):
     # postfix_operator* postfix_operators, identifier? qualifier,
     # selector* selectors)
     def visit_This(self, node):
-        for op in node.prefix_operators:
-            self.write(op.operator)
+        if node.prefix_operators:
+            for op in node.prefix_operators:
+                self.write(op.operator)
         if node.qualifier:
             self.write(node.qualifier, ".")
         self.write("this")
@@ -819,8 +820,9 @@ class SourceGenerator(ExplicitNodeVisitor):
                     self.write(selector)
                 else:
                     self.write(".", selector)
-        for op in node.postfix_operators:
-            self.write(op.operator)
+        if node.postfix_operators:
+            for op in node.postfix_operators:
+                self.write(op.operator)
 
     # ReturnStatement(identifier* label, expression expression)
     def visit_ReturnStatement(self, node):
@@ -842,8 +844,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("{", "\n")
-        for statement in node.statements:
-            self.write(statement)
+        if node.statements:
+          for statement in node.statements:
+              self.write(statement)
         self.write("}", "\n")
 
     # EnhancedForControl(expression var, statement iterable)
@@ -970,7 +973,6 @@ class SourceGenerator(ExplicitNodeVisitor):
                 else:
                     self.write(".", selector)
 
-
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
@@ -999,8 +1001,9 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write("case ", case, ":", "\n")
         else:
             self.write("default:", "\n")
-        for statement in node.statements:
-            self.write(statement)
+        if node.statements:
+            for statement in node.statements:
+                self.write(statement)
 
     def visit_StaticInitializer(self, node):
         self.write("static", node.block)
@@ -1011,8 +1014,9 @@ class SourceGenerator(ExplicitNodeVisitor):
     # ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
     def visit_ClassReference(self, node):
         # TypeExtractor.class.getCanonicalName()
-        for op in node.prefix_operators:
-            self.write(op)
+        if node.prefix_operators:
+            for op in node.prefix_operators:
+                self.write(op)
         if node.qualifier:
             self.write(node.qualifier, ".")
         self.write(node.type, ".class")
@@ -1022,8 +1026,9 @@ class SourceGenerator(ExplicitNodeVisitor):
                     self.write(selector)
                 else:
                     self.write(".", selector)
-        for op in node.postfix_operators:
-            self.write(op)
+        if node.postfix_operators:
+            for op in node.postfix_operators:
+                self.write(op)
 
     # MethodReference(expression expression, identifier method, type_argument* type_arguments)
     def visit_MethodReference(self, node):
