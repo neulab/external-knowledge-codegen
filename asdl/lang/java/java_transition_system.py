@@ -1,6 +1,7 @@
 # coding=utf-8
 
-import ast
+import javalang.parse
+from javalang.parser import JavaSyntaxError
 
 from asdl.lang.java import jastor
 from asdl.lang.java.java_asdl_helper import (asdl_ast_to_java_ast,
@@ -10,14 +11,16 @@ from asdl.transition_system import TransitionSystem, GenTokenAction
 
 from common.registerable import Registrable
 
-
 @Registrable.register('java')
 class JavaTransitionSystem(TransitionSystem):
     def tokenize_code(self, code, mode=None):
         return tokenize_code(code, mode)
 
     def surface_code_to_ast(self, code):
-        java_ast = ast.parse(code)
+        try:
+            java_ast = javalang.parse.parse(code)
+        except JavaSyntaxError as e:
+            java_ast = javalang.parse.parse_member_declaration(code)
         return java_ast_to_asdl_ast(java_ast, self.grammar)
 
     def ast_to_surface_code(self, asdl_ast):
@@ -64,7 +67,10 @@ class JavaTransitionSystem(TransitionSystem):
     def is_valid_hypothesis(self, hyp, **kwargs):
         try:
             hyp_code = self.ast_to_surface_code(hyp.tree)
-            ast.parse(hyp_code)
+            try:
+                java_ast = javalang.parse.parse(hyp_code)
+            except JavaSyntaxError as e:
+                java_ast = javalang.parse.parse_member_declaration(hyp_code)
             self.tokenize_code(hyp_code)
         except Exception:
             return False
