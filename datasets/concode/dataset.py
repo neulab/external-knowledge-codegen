@@ -90,13 +90,9 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     src_vocab = VocabEntry.from_corpus([e.src_sent for e in train_examples],
                                        size=vocab_size,
                                        freq_cutoff=src_freq)
-    #primitive_tokens = [map(lambda a: a.action.token,
-                            #filter(lambda a: isinstance(a.action,
-                                                        #GenTokenAction),
-                                   #e.tgt_actions))
-                        #for e in train_examples]
-    primitive_tokens = [map(lambda a: a.token,
-                            filter(lambda a: isinstance(a, GenTokenAction),
+    primitive_tokens = [map(lambda a: a.action.token,
+                            filter(lambda a: isinstance(a.action,
+                                                        GenTokenAction),
                                    e.tgt_actions))
                         for e in train_examples]
     primitive_vocab = VocabEntry.from_corpus(primitive_tokens, size=vocab_size,
@@ -156,7 +152,8 @@ def preprocess_dataset(file_path, transition_system, name='train',
     f = open(file_path + '.debug', 'w')
     skipped_list = []
     for i, example_json in enumerate(dataset):
-        print(f"preprocess_dataset example n°{i+1}/{len(dataset)}", file=sys.stderr)
+        print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
+              file=sys.stderr)
         try:
             example_dict = preprocess_example(example_json)
             snippet = example_dict['canonical_snippet']
@@ -175,48 +172,55 @@ def preprocess_dataset(file_path, transition_system, name='train',
             tgt_ast = java_ast_to_asdl_ast(java_ast, transition_system.grammar)
             tgt_actions = transition_system.get_actions(tgt_ast)
 
-            ## sanity check
-            #hyp = Hypothesis()
-            #for t, action in enumerate(tgt_actions):
-                #assert action.__class__ in transition_system.get_valid_continuation_types(hyp)
-                #if isinstance(action, ApplyRuleAction):
-                    #assert action.production in transition_system.get_valid_continuating_productions(hyp)
-                ## p_t = -1
-                ## f_t = None
-                ## if hyp.frontier_node:
-                ##     p_t = hyp.frontier_node.created_time
-                ##     f_t = hyp.frontier_field.field.__repr__(plain=True)
-                ##
-                ## # print('\t[%d] %s, frontier field: %s, parent: %d' % (t, action, f_t, p_t))
-                #hyp = hyp.clone_and_apply_action(action)
+            # # sanity check
+            hyp = Hypothesis()
+            for t, action in enumerate(tgt_actions):
+                valid_continuating_types = transition_system.get_valid_continuation_types(hyp)
+                if action.__class__ not in valid_continuating_types:
+                    assert action.__class__ in valid_continuating_types
+                if isinstance(action, ApplyRuleAction):
+                    valid_continuating_productions = transition_system.get_valid_continuating_productions(hyp)
+                    assert action.production in valid_continuating_productions
+                p_t = -1
+                f_t = None
+                if hyp.frontier_node:
+                    p_t = hyp.frontier_node.created_time
+                    f_t = hyp.frontier_field.field.__repr__(plain=True)
 
-            #assert hyp.frontier_node is None and hyp.frontier_field is None
-            #hyp.code = code_from_hyp = jastor.to_source(asdl_ast_to_java_ast(
-                #hyp.tree, transition_system.grammar)).strip()
-            ## print(code_from_hyp)
-            ## print(canonical_code)
-            #assert code_from_hyp == canonical_code
+                print('\t[%d] %s, frontier field: %s, parent: %d' % (t, action, f_t, p_t))
+                hyp = hyp.clone_and_apply_action(action)
 
-            #decanonicalized_code_from_hyp = decanonicalize_code(
-              #code_from_hyp, example_dict['slot_map'])
-            #assert compare_ast(ast.parse(example_json['snippet']),
-                               #ast.parse(decanonicalized_code_from_hyp))
-            #assert transition_system.compare_ast(
-              #transition_system.surface_code_to_ast(decanonicalized_code_from_hyp),
-              #transition_system.surface_code_to_ast(example_json['snippet']))
+            assert hyp.frontier_node is None and hyp.frontier_field is None
+            hyp.code = code_from_hyp = jastor.to_source(asdl_ast_to_java_ast(
+                hyp.tree, transition_system.grammar)).strip()
+            # print(code_from_hyp)
+            # print(canonical_code)
+            assert code_from_hyp == canonical_code
 
-            #tgt_action_infos = get_action_infos(example_dict['intent_tokens'],
-                                                #tgt_actions)
-        #except (AssertionError, JavaSyntaxError, ValueError, OverflowError) as e:
-        except (ValueError, OverflowError) as e:
-            print(f"Intercpting exception: {e} in:\n{snippet}",
+            decanonicalized_code_from_hyp = decanonicalize_code(
+              code_from_hyp, example_dict['slot_map'])
+            assert compare_ast(
+              javalang.parse.parse_member_declaration(
+                example_json['snippet']),
+              javalang.parse.parse_member_declaration(
+                decanonicalized_code_from_hyp))
+            assert transition_system.compare_ast(
+              transition_system.surface_code_to_ast(
+                decanonicalized_code_from_hyp),
+              transition_system.surface_code_to_ast(
+                example_json['snippet']))
+
+            tgt_action_infos = get_action_infos(example_dict['intent_tokens'],
+                                                tgt_actions)
+        except (AssertionError, JavaSyntaxError, ValueError, OverflowError) as e:
+        #except (ValueError, OverflowError) as e:
+            print(f"Intercepting exception: {e} in:\n{snippet}",
                   file=sys.stderr)
             skipped_list.append(example_json['question_id'])
             continue
         example = Example(idx=f'{i}-{example_json["question_id"]}',
                           src_sent=example_dict['intent_tokens'],
-                          #tgt_actions=tgt_action_infos,
-                          tgt_actions=tgt_actions,
+                          tgt_actions=tgt_action_infos,
                           tgt_code=canonical_code,
                           tgt_ast=tgt_ast,
                           meta=dict(example_dict=example_json,

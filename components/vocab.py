@@ -55,7 +55,8 @@ class VocabEntry(object):
     def from_corpus(corpus, size, freq_cutoff=0):
         vocab_entry = VocabEntry()
 
-        word_freq = Counter(chain(*corpus))
+        a_chain = chain(*corpus)
+        word_freq = Counter(a_chain)
         non_singletons = [w for w in word_freq if word_freq[w] > 1]
         singletons = [w for w in word_freq if word_freq[w] == 1]
         print('number of word types: %d, number of word types w/ frequency > 1: %d' % (len(word_freq),
