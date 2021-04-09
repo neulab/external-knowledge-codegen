@@ -23,7 +23,7 @@ def compare_ast(node1, node2):
             return False
     if isinstance(node1, javalang.ast.Node):
         for k, v in list(vars(node1).items()):
-            if k in ('lineno', 'col_offset', 'ctx'):
+            if k in ('lineno', 'col_offset', 'ctx', '_position'):
                 continue
             if not compare_ast(v, getattr(node2, k)):
                 return False
