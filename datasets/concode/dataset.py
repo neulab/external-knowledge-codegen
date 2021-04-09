@@ -30,7 +30,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     np.random.seed(1234)
 
     asdl_text = open(grammar_file).read()
-    grammar = ASDLGrammar.from_text(asdl_text)
+    grammar = ASDLGrammar.from_text(asdl_text,
+                                    ("typedeclaration", "MethodDeclaration"))
     transition_system = JavaTransitionSystem(grammar)
 
     print('process gold training data...', file=sys.stderr)

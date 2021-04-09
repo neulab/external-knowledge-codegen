@@ -9,17 +9,22 @@ class ASDLGrammar(object):
     """
     Collection of types, constructors and productions
     """
-    def __init__(self, productions):
+    def __init__(self, productions, root_production=None):
         # productions are indexed by their head types
         self._productions = OrderedDict()
         self._constructor_production_map = dict()
+        self.root_type = None
         for prod in productions:
             if prod.type not in self._productions:
                 self._productions[prod.type] = list()
             self._productions[prod.type].append(prod)
             self._constructor_production_map[prod.constructor.name] = prod
-
-        self.root_type = productions[0].type
+            if (root_production is not None
+                    and root_production[0] == prod.type.name
+                    and root_production[1] == prod.constructor.name):
+                self.root_type = prod.type
+        if self.root_type is None and productions:
+            self.root_type = productions[0].type
         # number of constructors
         self.size = sum(len(head) for head in self._productions.values())
 
@@ -86,7 +91,7 @@ class ASDLGrammar(object):
         return asdl_type in self.primitive_types
 
     @staticmethod
-    def from_text(text):
+    def from_text(text, root_production=None):
         def _parse_field_from_text(_text):
             d = _text.strip().split(' ')
             name = d[1].strip()
@@ -154,7 +159,7 @@ class ASDLGrammar(object):
             if line_no == len(lines):
                 break
 
-        grammar = ASDLGrammar(all_productions)
+        grammar = ASDLGrammar(all_productions, root_production)
 
         return grammar
 
