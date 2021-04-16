@@ -62,13 +62,13 @@ def train(args):
     print("loading files")
     print(f"Loading Train at {args.train_file}")
     train_set = Dataset.from_bin_file(args.train_file)
-    train_ids = [e.idx for e in train_set.examples]
+    train_ids = [e.idx.split('-')[-1] for e in train_set.examples]
     print('Checking ids:')
-    for idx in ['2-4170655','4-13704860','2-4170655']:
-        print(f"\t{idx} is {'not in' if idx not in  train_ids else 'in'} train")
+    for idx in ['4170655', '13704860', '4170655', '13704860', '3862010']:
+        print(f"\t{idx} is {'not in' if idx not in train_ids else 'in'} train")
     print("")
     print(f"First 5 Examples in Train:")
-    for i in range(5):
+    for i in range(10):
         print(f'\tExample {i + 1}(idx:{train_set.examples[i].idx}):')
         print(f"\t\tSource:{repr(' '.join(train_set.all_source[i])[:100])}")
         print(f"\t\tTarget:{repr(train_set.all_targets[i][:100])}")
