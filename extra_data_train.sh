@@ -2,15 +2,16 @@
 set -e
 
 seed=0
-mined_num=10000
+mined_num=10000 
 freq=3
 vocab="data/conala/vocab.src_freq${freq}.code_freq${freq}.mined_${mined_num}.bin"
+#vocab="data/conala/vocab.src_freq3.code_freq3.mined_100000.goldmine_snippet_count100k_topk1_temp2.bin"
 train_file=$1
 dev_file="data/conala/dev.bin"
 dropout=0.3
 hidden_size=256
 embed_size=512
-action_embed_size=128
+action_embed_size=512
 field_embed_size=64
 type_embed_size=64
 lr=0.001

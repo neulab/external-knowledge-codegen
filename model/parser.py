@@ -142,6 +142,11 @@ class Parser(nn.Module):
         # bias for predicting ApplyConstructor and GenToken actions
         self.production_readout_b = nn.Parameter(
             torch.FloatTensor(len(transition_system.grammar) + 1).zero_())
+
+
+        print(len(transition_system.grammar)+1)
+        print(self.production_embed.weight.shape)
+        print(self.production_readout_b.shape)
         self.tgt_token_readout_b = nn.Parameter(
             torch.FloatTensor(len(vocab.primitive)).zero_())
 
@@ -184,7 +189,7 @@ class Parser(nn.Module):
 
             self.production_readout = lambda q: F.linear(
                 self.read_out_act(self.query_vec_to_action_embed(q)),
-                self.production_embed.weight, self.production_readout_b)
+                    self.production_embed.weight, self.production_readout_b)
             self.tgt_token_readout = lambda q: F.linear(
                 self.read_out_act(self.query_vec_to_primitive_embed(q)),
                 self.primitive_embed.weight, self.tgt_token_readout_b)
