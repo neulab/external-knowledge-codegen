@@ -30,11 +30,10 @@ def decode(examples, model, args, verbose=False, **kwargs):
                 if verbose:
                     print("Exception in converting tree to code:", file=sys.stdout)
                     print('-' * 60, file=sys.stdout)
-                    print('Example: %s\nIntent: %s\nTarget Code:\n%s\nHypothesis[%d]:\n%s' % (example.idx,
-                                                                                             ' '.join(example.src_sent),
-                                                                                             example.tgt_code,
-                                                                                             hyp_id,
-                                                                                             hyp.tree.to_string()), file=sys.stdout)
+                    print(f"Example: {example.idx}"
+                          f"\nIntent:\n\t{' '.join(example.src_sent)}"
+                          f"\nTarget Code:\n\t{example.tgt_code}"
+                          f"\nHypothesis[{hyp_id}]:\n\t{hyp.tree.to_string()}", file=sys.stdout)
                     if got_code:
                         print()
                         print(hyp.code)
@@ -50,10 +49,12 @@ def decode(examples, model, args, verbose=False, **kwargs):
     return decode_results
 
 
-def evaluate(examples, parser, evaluator, args, verbose=False, return_decode_result=False, eval_top_pred_only=False):
+def evaluate(examples, parser, evaluator, args, verbose=False, return_decode_result=False,
+             eval_top_pred_only=False):
     decode_results = decode(examples, parser, args, verbose=verbose)
 
-    eval_result = evaluator.evaluate_dataset(examples, decode_results, fast_mode=eval_top_pred_only, args=args)
+    eval_result = evaluator.evaluate_dataset(examples, decode_results, fast_mode=eval_top_pred_only,
+                                             args=args)
 
     if return_decode_result:
         return eval_result, decode_results

@@ -509,6 +509,9 @@ def test(args):
     print(eval_results)
     if args.save_decode_to:
         pickle.dump(decode_results, open(args.save_decode_to, 'wb'))
+    # with open('decoded_results.txt','w',encoding='utf-8') as f:
+    #     for
+
 
 
 def interactive_mode(args):

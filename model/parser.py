@@ -32,8 +32,10 @@ class Parser(nn.Module):
     """Implementation of a semantic parser
 
     The parser translates a natural language utterance into an AST defined under
-    the ASDL specification, using the transition system described in https://arxiv.org/abs/1810.02720
+    the ASDL specification, using the transition system described in
+    https://arxiv.org/abs/1810.02720
     """
+
     def __init__(self, args, vocab, transition_system):
         super(Parser, self).__init__()
 
@@ -48,18 +50,23 @@ class Parser(nn.Module):
         # source token embedding
         self.src_embed = nn.Embedding(len(vocab.source), args.embed_size)
 
-        # embedding table of ASDL production rules (constructors), one for each ApplyConstructor action,
+        # embedding table of ASDL production rules (constructors), one for each
+        # ApplyConstructor
+        # action,
         # the last entry is the embedding for Reduce action
-        self.production_embed = nn.Embedding(len(transition_system.grammar) + 1, args.action_embed_size)
+        self.production_embed = nn.Embedding(len(transition_system.grammar) + 1,
+                                             args.action_embed_size)
 
         # embedding table for target primitive tokens
         self.primitive_embed = nn.Embedding(len(vocab.primitive), args.action_embed_size)
 
         # embedding table for ASDL fields in constructors
-        self.field_embed = nn.Embedding(len(transition_system.grammar.fields), args.field_embed_size)
+        self.field_embed = nn.Embedding(len(transition_system.grammar.fields),
+                                        args.field_embed_size)
 
         # embedding table for ASDL types
-        self.type_embed = nn.Embedding(len(transition_system.grammar.types), args.type_embed_size)
+        self.type_embed = nn.Embedding(len(transition_system.grammar.types),
+                                       args.type_embed_size)
 
         nn.init.xavier_normal_(self.src_embed.weight.data)
         nn.init.xavier_normal_(self.production_embed.weight.data)
@@ -69,7 +76,8 @@ class Parser(nn.Module):
 
         # LSTMs
         if args.lstm == 'lstm':
-            self.encoder_lstm = nn.LSTM(args.embed_size, int(args.hidden_size / 2), bidirectional=True)
+            self.encoder_lstm = nn.LSTM(args.embed_size, int(args.hidden_size / 2),
+                                        bidirectional=True)
 
             input_dim = args.action_embed_size  # previous action
             # frontier info
@@ -82,7 +90,8 @@ class Parser(nn.Module):
 
             self.decoder_lstm = nn.LSTMCell(input_dim, args.hidden_size)
         elif args.lstm == 'parent_feed':
-            self.encoder_lstm = nn.LSTM(args.embed_size, int(args.hidden_size / 2), bidirectional=True)
+            self.encoder_lstm = nn.LSTM(args.embed_size, int(args.hidden_size / 2),
+                                        bidirectional=True)
             from .lstm import ParentFeedingLSTMCell
 
             input_dim = args.action_embed_size  # previous action
@@ -98,15 +107,20 @@ class Parser(nn.Module):
 
         if args.no_copy is False:
             # pointer net for copying tokens from source side
-            self.src_pointer_net = PointerNet(query_vec_size=args.att_vec_size, src_encoding_size=args.hidden_size)
+            self.src_pointer_net = PointerNet(query_vec_size=args.att_vec_size,
+                                              src_encoding_size=args.hidden_size)
 
-            # given the decoder's hidden state, predict whether to copy or generate a target primitive token
+            # given the decoder's hidden state, predict whether to copy or generate a
+            # target
+            # primitive token
             # output: [p(gen(token)) | s_t, p(copy(token)) | s_t]
 
             self.primitive_predictor = nn.Linear(args.att_vec_size, 2)
 
         if args.primitive_token_label_smoothing:
-            self.label_smoothing = LabelSmoothing(args.primitive_token_label_smoothing, len(self.vocab.primitive), ignore_indices=[0, 1, 2])
+            self.label_smoothing = LabelSmoothing(args.primitive_token_label_smoothing,
+                                                  len(self.vocab.primitive),
+                                                  ignore_indices=[0, 1, 2])
 
         # initialize the decoder's state and cells with encoder hidden states
         self.decoder_cell_init = nn.Linear(args.hidden_size, args.hidden_size)
@@ -116,41 +130,64 @@ class Parser(nn.Module):
 
         self.att_src_linear = nn.Linear(args.hidden_size, args.hidden_size, bias=False)
 
-        # transformation of decoder hidden states and context vectors before reading out target words
+        # transformation of decoder hidden states and context vectors before reading
+        # out target
+        # words
         # this produces the `attentional vector` in (Luong et al., 2015)
 
-        self.att_vec_linear = nn.Linear(args.hidden_size + args.hidden_size, args.att_vec_size, bias=False)
+        self.att_vec_linear = nn.Linear(args.hidden_size + args.hidden_size,
+                                        args.att_vec_size,
+                                        bias=False)
 
         # bias for predicting ApplyConstructor and GenToken actions
-        self.production_readout_b = nn.Parameter(torch.FloatTensor(len(transition_system.grammar) + 1).zero_())
-        self.tgt_token_readout_b = nn.Parameter(torch.FloatTensor(len(vocab.primitive)).zero_())
+        self.production_readout_b = nn.Parameter(
+            torch.FloatTensor(len(transition_system.grammar) + 1).zero_())
+        self.tgt_token_readout_b = nn.Parameter(
+            torch.FloatTensor(len(vocab.primitive)).zero_())
 
         if args.no_query_vec_to_action_map:
-            # if there is no additional linear layer between the attentional vector (i.e., the query vector)
-            # and the final softmax layer over target actions, we use the attentional vector to compute action
+            # if there is no additional linear layer between the attentional vector (i.e.,
+            # the query vector)
+            # and the final softmax layer over target actions, we use the attentional
+            # vector to
+            # compute action
             # probabilities
 
             assert args.att_vec_size == args.action_embed_size
-            self.production_readout = lambda q: F.linear(q, self.production_embed.weight, self.production_readout_b)
-            self.tgt_token_readout = lambda q: F.linear(q, self.primitive_embed.weight, self.tgt_token_readout_b)
+            self.production_readout = lambda q: F.linear(q, self.production_embed.weight,
+                                                         self.production_readout_b)
+            self.tgt_token_readout = lambda q: F.linear(q, self.primitive_embed.weight,
+                                                        self.tgt_token_readout_b)
         else:
-            # by default, we feed the attentional vector (i.e., the query vector) into a linear layer without bias, and
-            # compute action probabilities by dot-producting the resulting vector and (GenToken, ApplyConstructor) action embeddings
+            # by default, we feed the attentional vector (i.e., the query vector) into
+            # a linear
+            # layer without bias, and
+            # compute action probabilities by dot-producting the resulting vector and (
+            # GenToken,
+            # ApplyConstructor) action embeddings
             # i.e., p(action) = query_vec^T \cdot W \cdot embedding
 
-            self.query_vec_to_action_embed = nn.Linear(args.att_vec_size, args.embed_size, bias=args.readout == 'non_linear')
+            self.query_vec_to_action_embed = nn.Linear(args.att_vec_size, args.embed_size,
+                                                       bias=args.readout == 'non_linear')
             if args.query_vec_to_action_diff_map:
-                # use different linear transformations for GenToken and ApplyConstructor actions
-                self.query_vec_to_primitive_embed = nn.Linear(args.att_vec_size, args.embed_size, bias=args.readout == 'non_linear')
+                # use different linear transformations for GenToken and
+                # ApplyConstructor actions
+                self.query_vec_to_primitive_embed = nn.Linear(args.att_vec_size,
+                                                              args.embed_size,
+                                                              bias=args.readout ==
+                                                                   'non_linear')
             else:
                 self.query_vec_to_primitive_embed = self.query_vec_to_action_embed
 
-            self.read_out_act = torch.tanh if args.readout == 'non_linear' else nn_utils.identity
+            self.read_out_act = torch.tanh if args.readout == 'non_linear' else \
+                nn_utils.identity
 
-            self.production_readout = lambda q: F.linear(self.read_out_act(self.query_vec_to_action_embed(q)),
-                                                         self.production_embed.weight, self.production_readout_b)
-            self.tgt_token_readout = lambda q: F.linear(self.read_out_act(self.query_vec_to_primitive_embed(q)),
-                                                        self.primitive_embed.weight, self.tgt_token_readout_b)
+            self.production_readout = lambda q: F.linear(
+                self.read_out_act(self.query_vec_to_action_embed(q)),
+                self.production_embed.weight, self.production_readout_b)
+            self.tgt_token_readout = lambda q: F.linear(
+                self.read_out_act(self.query_vec_to_primitive_embed(q)),
+                self.primitive_embed.weight, self.tgt_token_readout_b)
 
         # dropout layer
         self.dropout = nn.Dropout(args.dropout)
@@ -166,11 +203,15 @@ class Parser(nn.Module):
         """Encode the input natural language utterance
 
         Args:
-            src_sents_var: a variable of shape (src_sent_len, batch_size), representing word ids of the input
-            src_sents_len: a list of lengths of input source sentences, sorted by descending order
+            src_sents_var: a variable of shape (src_sent_len, batch_size), representing
+            word ids
+            of the input
+            src_sents_len: a list of lengths of input source sentences, sorted by
+            descending order
 
         Returns:
-            src_encodings: source encodings of shape (batch_size, src_sent_len, hidden_size * 2)
+            src_encodings: source encodings of shape (batch_size, src_sent_len,
+            hidden_size * 2)
             last_state, last_cell: the last hidden state and cell state of the encoder,
                                    of shape (batch_size, hidden_size)
         """
@@ -178,7 +219,8 @@ class Parser(nn.Module):
         # (tgt_query_len, batch_size, embed_size)
         # apply word dropout
         if self.training and self.args.word_dropout:
-            mask = Variable(self.new_tensor(src_sents_var.size()).fill_(1. - self.args.word_dropout).bernoulli().long())
+            mask = Variable(self.new_tensor(src_sents_var.size()).fill_(
+                1. - self.args.word_dropout).bernoulli().long())
             src_sents_var = src_sents_var * mask + (1 - mask) * self.vocab.source.unk_id
 
         src_token_embed = self.src_embed(src_sents_var)
@@ -205,7 +247,8 @@ class Parser(nn.Module):
         return h_0, Variable(self.new_tensor(h_0.size()).zero_())
 
     def score(self, examples, return_encode_state=False):
-        """Given a list of examples, compute the log-likelihood of generating the target AST
+        """Given a list of examples, compute the log-likelihood of generating the
+        target AST
 
         Args:
             examples: a batch of examples
@@ -213,11 +256,13 @@ class Parser(nn.Module):
         output: score for each training example: Variable(batch_size)
         """
 
-        batch = Batch(examples, self.grammar, self.vocab, copy=self.args.no_copy is False, cuda=self.args.cuda)
+        batch = Batch(examples, self.grammar, self.vocab, copy=self.args.no_copy is False,
+                      cuda=self.args.cuda)
 
         # src_encodings: (batch_size, src_sent_len, hidden_size * 2)
         # (last_state, last_cell, dec_init_vec): (batch_size, hidden_size)
-        src_encodings, (last_state, last_cell) = self.encode(batch.src_sents_var, batch.src_sents_len)
+        src_encodings, (last_state, last_cell) = self.encode(batch.src_sents_var,
+                                                             batch.src_sents_len)
         dec_init_vec = self.init_decoder_state(last_state, last_cell)
 
         # query vectors are sufficient statistics used to compute action probabilities
@@ -236,7 +281,9 @@ class Parser(nn.Module):
         # probabilities of target (gold-standard) ApplyRule actions
         # (tgt_action_len, batch_size)
         tgt_apply_rule_prob = torch.gather(apply_rule_prob, dim=2,
-                                           index=batch.apply_rule_idx_matrix.unsqueeze(2)).squeeze(2)
+                                           index=batch.apply_rule_idx_matrix.unsqueeze(
+                                               2)).squeeze(
+            2)
 
         #### compute generation and copying probabilities
 
@@ -252,7 +299,8 @@ class Parser(nn.Module):
 
             if self.training and self.args.primitive_token_label_smoothing:
                 # (tgt_action_len, batch_size)
-                # this is actually the negative KL divergence size we will flip the sign later
+                # this is actually the negative KL divergence size we will flip the
+                # sign later
                 # tgt_primitive_gen_from_vocab_log_prob = -self.label_smoothing(
                 #     gen_from_vocab_prob.view(-1, gen_from_vocab_prob.size(-1)).log(),
                 #     batch.primitive_idx_matrix.view(-1)).view(-1, len(batch))
@@ -261,7 +309,8 @@ class Parser(nn.Module):
                     gen_from_vocab_prob.log(),
                     batch.primitive_idx_matrix)
             else:
-                tgt_primitive_gen_from_vocab_log_prob = tgt_primitive_gen_from_vocab_prob.log()
+                tgt_primitive_gen_from_vocab_log_prob = \
+                    tgt_primitive_gen_from_vocab_prob.log()
 
             # (tgt_action_len, batch_size)
             action_prob = tgt_apply_rule_prob.log() * batch.apply_rule_mask + \
@@ -269,25 +318,34 @@ class Parser(nn.Module):
         else:
             # binary gating probabilities between generating or copying a primitive token
             # (tgt_action_len, batch_size, 2)
-            primitive_predictor = F.softmax(self.primitive_predictor(query_vectors), dim=-1)
+            primitive_predictor = F.softmax(self.primitive_predictor(query_vectors),
+                                            dim=-1)
 
             # pointer network copying scores over source tokens
             # (tgt_action_len, batch_size, src_sent_len)
-            primitive_copy_prob = self.src_pointer_net(src_encodings, batch.src_token_mask, query_vectors)
+            primitive_copy_prob = self.src_pointer_net(src_encodings,
+                                                       batch.src_token_mask,
+                                                       query_vectors)
 
             # marginalize over the copy probabilities of tokens that are same
             # (tgt_action_len, batch_size)
-            tgt_primitive_copy_prob = torch.sum(primitive_copy_prob * batch.primitive_copy_token_idx_mask, dim=-1)
+            tgt_primitive_copy_prob = torch.sum(
+                primitive_copy_prob * batch.primitive_copy_token_idx_mask, dim=-1)
 
             # mask positions in action_prob that are not used
             # (tgt_action_len, batch_size)
-            action_mask_pad = torch.eq(batch.apply_rule_mask + batch.gen_token_mask + batch.primitive_copy_mask, 0.)
+            action_mask_pad = torch.eq(
+                batch.apply_rule_mask + batch.gen_token_mask + batch.primitive_copy_mask,
+                0.)
             action_mask = 1. - action_mask_pad.float()
 
             # (tgt_action_len, batch_size)
             action_prob = tgt_apply_rule_prob * batch.apply_rule_mask + \
-                          primitive_predictor[:, :, 0] * tgt_primitive_gen_from_vocab_prob * batch.gen_token_mask + \
-                          primitive_predictor[:, :, 1] * tgt_primitive_copy_prob * batch.primitive_copy_mask
+                          primitive_predictor[:, :,
+                          0] * tgt_primitive_gen_from_vocab_prob * batch.gen_token_mask\
+                          + \
+                          primitive_predictor[:, :,
+                          1] * tgt_primitive_copy_prob * batch.primitive_copy_mask
 
             # avoid nan in log
             action_prob.data.masked_fill_(action_mask_pad.data, 1.e-7)
@@ -303,16 +361,21 @@ class Parser(nn.Module):
 
         return returns
 
-    def step(self, x, h_tm1, src_encodings, src_encodings_att_linear, src_token_mask=None, return_att_weight=False):
+    def step(self, x, h_tm1, src_encodings, src_encodings_att_linear, src_token_mask=None,
+             return_att_weight=False):
         """Perform a single time-step of computation in decoder LSTM
 
         Args:
             x: variable of shape (batch_size, hidden_size), input
-            h_tm1: Tuple[Variable(batch_size, hidden_size), Variable(batch_size, hidden_size)], previous
+            h_tm1: Tuple[Variable(batch_size, hidden_size), Variable(batch_size,
+            hidden_size)],
+            previous
                    hidden and cell states
-            src_encodings: variable of shape (batch_size, src_sent_len, hidden_size * 2), encodings of source utterances
+            src_encodings: variable of shape (batch_size, src_sent_len, hidden_size * 2),
+            encodings of source utterances
             src_encodings_att_linear: linearly transformed source encodings
-            src_token_mask: mask over source tokens (Note: unused entries are masked to **one**)
+            src_token_mask: mask over source tokens (Note: unused entries are masked to
+            **one**)
             return_att_weight: return attention weights
 
         Returns:
@@ -323,7 +386,8 @@ class Parser(nn.Module):
         h_t, cell_t = self.decoder_lstm(x, h_tm1)
 
         ctx_t, alpha_t = nn_utils.dot_prod_attention(h_t,
-                                                     src_encodings, src_encodings_att_linear,
+                                                     src_encodings,
+                                                     src_encodings_att_linear,
                                                      mask=src_token_mask)
 
         att_t = torch.tanh(self.att_vec_linear(torch.cat([h_t, ctx_t], 1)))  # E.q. (5)
@@ -331,7 +395,8 @@ class Parser(nn.Module):
 
         if return_att_weight:
             return (h_t, cell_t), att_t, alpha_t
-        else: return (h_t, cell_t), att_t
+        else:
+            return (h_t, cell_t), att_t
 
     def decode(self, batch, src_encodings, dec_init_vec):
         """Given a batch of examples and their encodings of input utterances,
@@ -340,12 +405,14 @@ class Parser(nn.Module):
 
         Args:
             batch: a `Batch` object storing input examples
-            src_encodings: variable of shape (batch_size, src_sent_len, hidden_size * 2), encodings of source utterances
+            src_encodings: variable of shape (batch_size, src_sent_len, hidden_size * 2),
+            encodings of source utterances
             dec_init_vec: a tuple of variables representing initial decoder states
 
         Returns:
             Query vectors, a variable of shape (tgt_action_len, batch_size, hidden_size)
-            Also return the attention weights over candidate tokens if using supervised attention
+            Also return the attention weights over candidate tokens if using supervised
+            attention
         """
 
         batch_size = len(batch)
@@ -373,24 +440,31 @@ class Parser(nn.Module):
             # [
             #   embedding of previous action -> `a_tm1_embed`,
             #   previous attentional vector -> `att_tm1`,
-            #   embedding of the current frontier (parent) constructor (rule) -> `parent_production_embed`,
+            #   embedding of the current frontier (parent) constructor (rule) ->
+            #   `parent_production_embed`,
             #   embedding of the frontier (parent) field -> `parent_field_embed`,
-            #   embedding of the ASDL type of the frontier field -> `parent_field_type_embed`,
+            #   embedding of the ASDL type of the frontier field ->
+            #   `parent_field_type_embed`,
             #   LSTM state of the parent action -> `parent_states`
             # ]
 
             if t == 0:
-                x = Variable(self.new_tensor(batch_size, self.decoder_lstm.input_size).zero_(), requires_grad=False)
+                x = Variable(
+                    self.new_tensor(batch_size, self.decoder_lstm.input_size).zero_(),
+                    requires_grad=False)
 
                 # initialize using the root type embedding
                 if args.no_parent_field_type_embed is False:
                     offset = args.action_embed_size  # prev_action
                     offset += args.att_vec_size * (not args.no_input_feed)
-                    offset += args.action_embed_size * (not args.no_parent_production_embed)
+                    offset += args.action_embed_size * (
+                        not args.no_parent_production_embed)
                     offset += args.field_embed_size * (not args.no_parent_field_embed)
 
-                    x[:, offset: offset + args.type_embed_size] = self.type_embed(Variable(self.new_long_tensor(
-                        [self.grammar.type2id[self.grammar.root_type] for e in batch.examples])))
+                    x[:, offset: offset + args.type_embed_size] = self.type_embed(
+                        Variable(self.new_long_tensor(
+                            [self.grammar.type2id[self.grammar.root_type] for e in
+                             batch.examples])))
             else:
                 a_tm1_embeds = []
                 for example in batch.examples:
@@ -398,11 +472,13 @@ class Parser(nn.Module):
                     if t < len(example.tgt_actions):
                         a_tm1 = example.tgt_actions[t - 1]
                         if isinstance(a_tm1.action, ApplyRuleAction):
-                            a_tm1_embed = self.production_embed.weight[self.grammar.prod2id[a_tm1.action.production]]
+                            a_tm1_embed = self.production_embed.weight[
+                                self.grammar.prod2id[a_tm1.action.production]]
                         elif isinstance(a_tm1.action, ReduceAction):
                             a_tm1_embed = self.production_embed.weight[len(self.grammar)]
                         else:
-                            a_tm1_embed = self.primitive_embed.weight[self.vocab.primitive[a_tm1.action.token]]
+                            a_tm1_embed = self.primitive_embed.weight[
+                                self.vocab.primitive[a_tm1.action.token]]
                     else:
                         a_tm1_embed = zero_action_embed
 
@@ -414,25 +490,32 @@ class Parser(nn.Module):
                 if args.no_input_feed is False:
                     inputs.append(att_tm1)
                 if args.no_parent_production_embed is False:
-                    parent_production_embed = self.production_embed(batch.get_frontier_prod_idx(t))
+                    parent_production_embed = self.production_embed(
+                        batch.get_frontier_prod_idx(t))
                     inputs.append(parent_production_embed)
                 if args.no_parent_field_embed is False:
                     parent_field_embed = self.field_embed(batch.get_frontier_field_idx(t))
                     inputs.append(parent_field_embed)
                 if args.no_parent_field_type_embed is False:
-                    parent_field_type_embed = self.type_embed(batch.get_frontier_field_type_idx(t))
+                    parent_field_type_embed = self.type_embed(
+                        batch.get_frontier_field_type_idx(t))
                     inputs.append(parent_field_type_embed)
 
                 # append history states
-                actions_t = [e.tgt_actions[t] if t < len(e.tgt_actions) else None for e in batch.examples]
+                actions_t = [e.tgt_actions[t] if t < len(e.tgt_actions) else None for e in
+                             batch.examples]
                 if args.no_parent_state is False:
                     parent_states = torch.stack([history_states[p_t][0][batch_id]
                                                  for batch_id, p_t in
-                                                 enumerate(a_t.parent_t if a_t else 0 for a_t in actions_t)])
+                                                 enumerate(
+                                                     a_t.parent_t if a_t else 0 for a_t in
+                                                     actions_t)])
 
                     parent_cells = torch.stack([history_states[p_t][1][batch_id]
                                                 for batch_id, p_t in
-                                                enumerate(a_t.parent_t if a_t else 0 for a_t in actions_t)])
+                                                enumerate(
+                                                    a_t.parent_t if a_t else 0 for a_t in
+                                                    actions_t)])
 
                     if args.lstm == 'parent_feed':
                         h_tm1 = (h_tm1[0], h_tm1[1], parent_states, parent_cells)
@@ -451,11 +534,15 @@ class Parser(nn.Module):
                 for e_id, example in enumerate(batch.examples):
                     if t < len(example.tgt_actions):
                         action_t = example.tgt_actions[t].action
-                        cand_src_tokens = AttentionUtil.get_candidate_tokens_to_attend(example.src_sent, action_t)
+                        cand_src_tokens = AttentionUtil.get_candidate_tokens_to_attend(
+                            example.src_sent, action_t)
                         if cand_src_tokens:
-                            att_prob = [att_weight[e_id, token_id] for token_id in cand_src_tokens]
-                            if len(att_prob) > 1: att_prob = torch.cat(att_prob).sum()
-                            else: att_prob = att_prob[0]
+                            att_prob = [att_weight[e_id, token_id] for token_id in
+                                        cand_src_tokens]
+                            if len(att_prob) > 1:
+                                att_prob = torch.cat(att_prob).sum()
+                            else:
+                                att_prob = att_prob[0]
                             att_probs.append(att_prob)
 
             history_states.append((h_t, cell_t))
@@ -468,7 +555,8 @@ class Parser(nn.Module):
         att_vecs = torch.stack(att_vecs, dim=0)
         if args.sup_attention:
             return att_vecs, att_probs
-        else: return att_vecs
+        else:
+            return att_vecs
 
     def parse(self, src_sent, context=None, beam_size=5, debug=False):
         """Perform beam search to infer the target AST given a source utterance
@@ -486,10 +574,13 @@ class Parser(nn.Module):
         primitive_vocab = self.vocab.primitive
         T = torch.cuda if args.cuda else torch
 
-        src_sent_var = nn_utils.to_input_variable([src_sent], self.vocab.source, cuda=args.cuda, training=False)
+        src_sent_var = nn_utils.to_input_variable([src_sent], self.vocab.source,
+                                                  cuda=args.cuda,
+                                                  training=False)
 
         # Variable(1, src_sent_len, hidden_size * 2)
-        src_encodings, (last_state, last_cell) = self.encode(src_sent_var, [len(src_sent)])
+        src_encodings, (last_state, last_cell) = self.encode(src_sent_var,
+                                                             [len(src_sent)])
         # (1, src_sent_len, hidden_size)
         src_encodings_att_linear = self.att_src_linear(src_encodings)
 
@@ -506,8 +597,10 @@ class Parser(nn.Module):
         with torch.no_grad():
             hyp_scores = Variable(self.new_tensor([0.]))
 
-        # For computing copy probabilities, we marginalize over tokens with the same surface form
-        # `aggregated_primitive_tokens` stores the position of occurrence of each source token
+        # For computing copy probabilities, we marginalize over tokens with the same
+        # surface form
+        # `aggregated_primitive_tokens` stores the position of occurrence of each
+        # source token
         aggregated_primitive_tokens = OrderedDict()
         for token_pos, token in enumerate(src_sent):
             aggregated_primitive_tokens.setdefault(token, []).append(token_pos)
@@ -521,9 +614,12 @@ class Parser(nn.Module):
             hyp_num = len(hypotheses)
 
             # (hyp_num, src_sent_len, hidden_size * 2)
-            exp_src_encodings = src_encodings.expand(hyp_num, src_encodings.size(1), src_encodings.size(2))
+            exp_src_encodings = src_encodings.expand(hyp_num, src_encodings.size(1),
+                                                     src_encodings.size(2))
             # (hyp_num, src_sent_len, hidden_size)
-            exp_src_encodings_att_linear = src_encodings_att_linear.expand(hyp_num, src_encodings_att_linear.size(1), src_encodings_att_linear.size(2))
+            exp_src_encodings_att_linear = src_encodings_att_linear.expand(
+                hyp_num, src_encodings_att_linear.size(1),
+                src_encodings_att_linear.size(2))
 
             if t == 0:
                 with torch.no_grad():
@@ -531,11 +627,13 @@ class Parser(nn.Module):
                 if args.no_parent_field_type_embed is False:
                     offset = args.action_embed_size  # prev_action
                     offset += args.att_vec_size * (not args.no_input_feed)
-                    offset += args.action_embed_size * (not args.no_parent_production_embed)
+                    offset += args.action_embed_size * (
+                        not args.no_parent_production_embed)
                     offset += args.field_embed_size * (not args.no_parent_field_embed)
 
                     x[0, offset: offset + args.type_embed_size] = \
-                        self.type_embed.weight[self.grammar.type2id[self.grammar.root_type]]
+                        self.type_embed.weight[
+                            self.grammar.type2id[self.grammar.root_type]]
             else:
                 actions_tm1 = [hyp.actions[-1] for hyp in hypotheses]
 
@@ -543,11 +641,13 @@ class Parser(nn.Module):
                 for a_tm1 in actions_tm1:
                     if a_tm1:
                         if isinstance(a_tm1, ApplyRuleAction):
-                            a_tm1_embed = self.production_embed.weight[self.grammar.prod2id[a_tm1.production]]
+                            a_tm1_embed = self.production_embed.weight[
+                                self.grammar.prod2id[a_tm1.production]]
                         elif isinstance(a_tm1, ReduceAction):
                             a_tm1_embed = self.production_embed.weight[len(self.grammar)]
                         else:
-                            a_tm1_embed = self.primitive_embed.weight[self.vocab.primitive[a_tm1.token]]
+                            a_tm1_embed = self.primitive_embed.weight[
+                                self.vocab.primitive[a_tm1.token]]
 
                         a_tm1_embeds.append(a_tm1_embed)
                     else:
@@ -560,28 +660,34 @@ class Parser(nn.Module):
                 if args.no_parent_production_embed is False:
                     # frontier production
                     frontier_prods = [hyp.frontier_node.production for hyp in hypotheses]
-                    frontier_prod_embeds = self.production_embed(Variable(self.new_long_tensor(
-                        [self.grammar.prod2id[prod] for prod in frontier_prods])))
+                    frontier_prod_embeds = self.production_embed(
+                        Variable(self.new_long_tensor(
+                            [self.grammar.prod2id[prod] for prod in frontier_prods])))
                     inputs.append(frontier_prod_embeds)
                 if args.no_parent_field_embed is False:
                     # frontier field
                     frontier_fields = [hyp.frontier_field.field for hyp in hypotheses]
-                    frontier_field_embeds = self.field_embed(Variable(self.new_long_tensor([
-                        self.grammar.field2id[field] for field in frontier_fields])))
+                    frontier_field_embeds = self.field_embed(
+                        Variable(self.new_long_tensor([
+                            self.grammar.field2id[field] for field in frontier_fields])))
 
                     inputs.append(frontier_field_embeds)
                 if args.no_parent_field_type_embed is False:
                     # frontier field type
                     frontier_field_types = [hyp.frontier_field.type for hyp in hypotheses]
-                    frontier_field_type_embeds = self.type_embed(Variable(self.new_long_tensor([
-                        self.grammar.type2id[type] for type in frontier_field_types])))
+                    frontier_field_type_embeds = self.type_embed(
+                        Variable(self.new_long_tensor([
+                            self.grammar.type2id[type] for type in
+                            frontier_field_types])))
                     inputs.append(frontier_field_type_embeds)
 
                 # parent states
                 if args.no_parent_state is False:
                     p_ts = [hyp.frontier_node.created_time for hyp in hypotheses]
-                    parent_states = torch.stack([hyp_states[hyp_id][p_t][0] for hyp_id, p_t in enumerate(p_ts)])
-                    parent_cells = torch.stack([hyp_states[hyp_id][p_t][1] for hyp_id, p_t in enumerate(p_ts)])
+                    parent_states = torch.stack(
+                        [hyp_states[hyp_id][p_t][0] for hyp_id, p_t in enumerate(p_ts)])
+                    parent_cells = torch.stack(
+                        [hyp_states[hyp_id][p_t][1] for hyp_id, p_t in enumerate(p_ts)])
 
                     if args.lstm == 'parent_feed':
                         h_tm1 = (h_tm1[0], h_tm1[1], parent_states, parent_cells)
@@ -595,7 +701,8 @@ class Parser(nn.Module):
                                              src_token_mask=None)
 
             # Variable(batch_size, grammar_size)
-            # apply_rule_log_prob = torch.log(F.softmax(self.production_readout(att_t), dim=-1))
+            # apply_rule_log_prob = torch.log(F.softmax(self.production_readout(att_t),
+            # dim=-1))
             apply_rule_log_prob = F.log_softmax(self.production_readout(att_t), dim=-1)
 
             # Variable(batch_size, primitive_vocab_size)
@@ -605,13 +712,16 @@ class Parser(nn.Module):
                 primitive_prob = gen_from_vocab_prob
             else:
                 # Variable(batch_size, src_sent_len)
-                primitive_copy_prob = self.src_pointer_net(src_encodings, None, att_t.unsqueeze(0)).squeeze(0)
+                primitive_copy_prob = self.src_pointer_net(src_encodings, None,
+                                                           att_t.unsqueeze(0)).squeeze(0)
 
                 # Variable(batch_size, 2)
-                primitive_predictor_prob = F.softmax(self.primitive_predictor(att_t), dim=-1)
+                primitive_predictor_prob = F.softmax(self.primitive_predictor(att_t),
+                                                     dim=-1)
 
                 # Variable(batch_size, primitive_vocab_size)
-                primitive_prob = primitive_predictor_prob[:, 0].unsqueeze(1) * gen_from_vocab_prob
+                primitive_prob = primitive_predictor_prob[:, 0].unsqueeze(
+                    1) * gen_from_vocab_prob
 
                 # if src_unk_pos_list:
                 #     primitive_prob[:, primitive_vocab.unk_id] = 1.e-10
@@ -628,7 +738,9 @@ class Parser(nn.Module):
 
                 for action_type in action_types:
                     if action_type == ApplyRuleAction:
-                        productions = self.transition_system.get_valid_continuating_productions(hyp)
+                        productions = \
+                            self.transition_system.get_valid_continuating_productions(
+                            hyp)
                         for production in productions:
                             prod_id = self.grammar.prod2id[production]
                             prod_score = apply_rule_log_prob[hyp_id, prod_id].data.item()
@@ -638,7 +750,8 @@ class Parser(nn.Module):
                             applyrule_new_hyp_prod_ids.append(prod_id)
                             applyrule_prev_hyp_ids.append(hyp_id)
                     elif action_type == ReduceAction:
-                        action_score = apply_rule_log_prob[hyp_id, len(self.grammar)].data.item()
+                        action_score = apply_rule_log_prob[
+                            hyp_id, len(self.grammar)].data.item()
                         new_hyp_score = hyp.score + action_score
 
                         applyrule_new_hyp_scores.append(new_hyp_score)
@@ -651,42 +764,68 @@ class Parser(nn.Module):
                         hyp_unk_copy_info = []
 
                         if args.no_copy is False:
-                            for token, token_pos_list in aggregated_primitive_tokens.items():
-                                sum_copy_prob = torch.gather(primitive_copy_prob[hyp_id], 0, Variable(T.LongTensor(token_pos_list))).sum()
-                                gated_copy_prob = primitive_predictor_prob[hyp_id, 1] * sum_copy_prob
+                            for token, token_pos_list in \
+                                    aggregated_primitive_tokens.items():
+                                sum_copy_prob = torch.gather(primitive_copy_prob[hyp_id],
+                                                             0,
+                                                             Variable(T.LongTensor(
+                                                                 token_pos_list))).sum()
+                                gated_copy_prob = primitive_predictor_prob[
+                                                      hyp_id, 1] * sum_copy_prob
 
                                 if token in primitive_vocab:
                                     token_id = primitive_vocab[token]
-                                    primitive_prob[hyp_id, token_id] = primitive_prob[hyp_id, token_id] + gated_copy_prob
+                                    primitive_prob[hyp_id, token_id] = primitive_prob[
+                                                                           hyp_id,
+                                                                           token_id] + \
+                                                                       gated_copy_prob
 
-                                    hyp_copy_info[token] = (token_pos_list, gated_copy_prob.data.item())
+                                    hyp_copy_info[token] = (
+                                        token_pos_list, gated_copy_prob.data.item())
                                 else:
-                                    hyp_unk_copy_info.append({'token': token, 'token_pos_list': token_pos_list,
-                                                              'copy_prob': gated_copy_prob.data.item()})
+                                    hyp_unk_copy_info.append({
+                                        'token'         : token,
+                                        'token_pos_list': token_pos_list,
+                                        'copy_prob'     :
+                                            gated_copy_prob.data.item()
+                                    })
 
                         if args.no_copy is False and len(hyp_unk_copy_info) > 0:
-                            unk_i = np.array([x['copy_prob'] for x in hyp_unk_copy_info]).argmax()
+                            unk_i = np.array(
+                                [x['copy_prob'] for x in hyp_unk_copy_info]).argmax()
                             token = hyp_unk_copy_info[unk_i]['token']
-                            primitive_prob[hyp_id, primitive_vocab.unk_id] = hyp_unk_copy_info[unk_i]['copy_prob']
+                            primitive_prob[hyp_id, primitive_vocab.unk_id] = \
+                                hyp_unk_copy_info[unk_i]['copy_prob']
                             gentoken_new_hyp_unks.append(token)
 
-                            hyp_copy_info[token] = (hyp_unk_copy_info[unk_i]['token_pos_list'], hyp_unk_copy_info[unk_i]['copy_prob'])
+                            hyp_copy_info[token] = (
+                            hyp_unk_copy_info[unk_i]['token_pos_list'],
+                            hyp_unk_copy_info[unk_i]['copy_prob'])
 
             new_hyp_scores = None
             if applyrule_new_hyp_scores:
                 new_hyp_scores = Variable(self.new_tensor(applyrule_new_hyp_scores))
             if gentoken_prev_hyp_ids:
                 primitive_log_prob = torch.log(primitive_prob)
-                gen_token_new_hyp_scores = (hyp_scores[gentoken_prev_hyp_ids].unsqueeze(1) + primitive_log_prob[gentoken_prev_hyp_ids, :]).view(-1)
+                gen_token_new_hyp_scores = (
+                        hyp_scores[gentoken_prev_hyp_ids].unsqueeze(
+                            1) + primitive_log_prob[
+                                 gentoken_prev_hyp_ids,
+                                 :]).view(-1)
 
-                if new_hyp_scores is None: new_hyp_scores = gen_token_new_hyp_scores
-                else: new_hyp_scores = torch.cat([new_hyp_scores, gen_token_new_hyp_scores])
+                if new_hyp_scores is None:
+                    new_hyp_scores = gen_token_new_hyp_scores
+                else:
+                    new_hyp_scores = torch.cat([new_hyp_scores, gen_token_new_hyp_scores])
             top_new_hyp_scores, top_new_hyp_pos = torch.topk(new_hyp_scores,
-                                                             k=min(new_hyp_scores.size(0), beam_size - len(completed_hypotheses)))
+                                                             k=min(new_hyp_scores.size(0),
+                                                                   beam_size - len(
+                                                                       completed_hypotheses)))
 
             live_hyp_ids = []
             new_hypotheses = []
-            for new_hyp_score, new_hyp_pos in zip(top_new_hyp_scores.data.cpu(), top_new_hyp_pos.data.cpu()):
+            for new_hyp_score, new_hyp_pos in zip(top_new_hyp_scores.data.cpu(),
+                                                  top_new_hyp_pos.data.cpu()):
                 action_info = ActionInfo()
                 if new_hyp_pos < len(applyrule_new_hyp_scores):
                     # it's an ApplyRule or Reduce action
@@ -703,26 +842,38 @@ class Parser(nn.Module):
                         action = ReduceAction()
                 else:
                     # it's a GenToken action
-                    token_id = (new_hyp_pos - len(applyrule_new_hyp_scores)) % primitive_prob.size(1)
+                    token_id = (new_hyp_pos - len(
+                        applyrule_new_hyp_scores)) % primitive_prob.size(
+                        1)
 
-                    k = (new_hyp_pos - len(applyrule_new_hyp_scores)) // primitive_prob.size(1)
+                    k = (new_hyp_pos - len(
+                        applyrule_new_hyp_scores)) // primitive_prob.size(1)
                     # try:
                     # copy_info = gentoken_copy_infos[k]
                     prev_hyp_id = gentoken_prev_hyp_ids[k]
                     prev_hyp = hypotheses[prev_hyp_id]
                     # except:
                     #     print('k=%d' % k, file=sys.stderr)
-                    #     print('primitive_prob.size(1)=%d' % primitive_prob.size(1), file=sys.stderr)
-                    #     print('len copy_info=%d' % len(gentoken_copy_infos), file=sys.stderr)
-                    #     print('prev_hyp_id=%s' % ', '.join(str(i) for i in gentoken_prev_hyp_ids), file=sys.stderr)
-                    #     print('len applyrule_new_hyp_scores=%d' % len(applyrule_new_hyp_scores), file=sys.stderr)
-                    #     print('len gentoken_prev_hyp_ids=%d' % len(gentoken_prev_hyp_ids), file=sys.stderr)
+                    #     print('primitive_prob.size(1)=%d' % primitive_prob.size(1),
+                    #     file=sys.stderr)
+                    #     print('len copy_info=%d' % len(gentoken_copy_infos),
+                    #     file=sys.stderr)
+                    #     print('prev_hyp_id=%s' % ', '.join(str(i) for i in
+                    #     gentoken_prev_hyp_ids), file=sys.stderr)
+                    #     print('len applyrule_new_hyp_scores=%d' % len(
+                    #     applyrule_new_hyp_scores), file=sys.stderr)
+                    #     print('len gentoken_prev_hyp_ids=%d' % len(
+                    #     gentoken_prev_hyp_ids),
+                    #     file=sys.stderr)
                     #     print('top_new_hyp_pos=%s' % top_new_hyp_pos, file=sys.stderr)
-                    #     print('applyrule_new_hyp_scores=%s' % applyrule_new_hyp_scores, file=sys.stderr)
+                    #     print('applyrule_new_hyp_scores=%s' % applyrule_new_hyp_scores,
+                    #     file=sys.stderr)
                     #     print('new_hyp_scores=%s' % new_hyp_scores, file=sys.stderr)
-                    #     print('top_new_hyp_scores=%s' % top_new_hyp_scores, file=sys.stderr)
+                    #     print('top_new_hyp_scores=%s' % top_new_hyp_scores,
+                    #     file=sys.stderr)
                     #
-                    #     torch.save((applyrule_new_hyp_scores, primitive_prob), 'data.bin')
+                    #     torch.save((applyrule_new_hyp_scores, primitive_prob),
+                    #     'data.bin')
                     #
                     #     # exit(-1)
                     #     raise ValueError()
@@ -739,17 +890,26 @@ class Parser(nn.Module):
 
                     if token in aggregated_primitive_tokens:
                         action_info.copy_from_src = True
-                        action_info.src_token_position = aggregated_primitive_tokens[token]
+                        action_info.src_token_position = aggregated_primitive_tokens[
+                            token]
 
                     if debug:
-                        action_info.gen_copy_switch = 'n/a' if args.no_copy else primitive_predictor_prob[prev_hyp_id, :].log().cpu().data.numpy()
+                        action_info.gen_copy_switch = 'n/a' if args.no_copy else \
+                            primitive_predictor_prob[prev_hyp_id,
+                            :].log().cpu().data.numpy()
                         action_info.in_vocab = token in primitive_vocab
-                        action_info.gen_token_prob = gen_from_vocab_prob[prev_hyp_id, token_id].log().cpu().data.item() \
+                        action_info.gen_token_prob = gen_from_vocab_prob[
+                            prev_hyp_id, token_id].log().cpu().data.item() \
                             if token in primitive_vocab else 'n/a'
-                        action_info.copy_token_prob = torch.gather(primitive_copy_prob[prev_hyp_id],
-                                                                   0,
-                                                                   Variable(T.LongTensor(action_info.src_token_position))).sum().log().cpu().data.item() \
-                            if args.no_copy is False and action_info.copy_from_src else 'n/a'
+                        action_info.copy_token_prob = torch.gather(
+                            primitive_copy_prob[prev_hyp_id],
+                            0,
+                            Variable(T.LongTensor(
+                                action_info.src_token_position))).sum().log().cpu(
+
+                        ).data.item() \
+                            if args.no_copy is False and action_info.copy_from_src else\
+                            'n/a'
 
                 action_info.action = action
                 action_info.t = t
@@ -766,7 +926,7 @@ class Parser(nn.Module):
 
                 if new_hyp.completed:
                     # add length normalization
-                    new_hyp.score /= (t+1)
+                    new_hyp.score /= (t + 1)
                     completed_hypotheses.append(new_hyp)
                 else:
                     new_hypotheses.append(new_hyp)
@@ -792,10 +952,10 @@ class Parser(nn.Module):
             os.makedirs(dir_name)
 
         params = {
-            'args': self.args,
+            'args'             : self.args,
             'transition_system': self.transition_system,
-            'vocab': self.vocab,
-            'state_dict': self.state_dict()
+            'vocab'            : self.vocab,
+            'state_dict'       : self.state_dict()
         }
         torch.save(params, path)
 
