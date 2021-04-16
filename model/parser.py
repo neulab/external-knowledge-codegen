@@ -144,9 +144,9 @@ class Parser(nn.Module):
             torch.FloatTensor(len(transition_system.grammar) + 1).zero_())
 
 
-        print(len(transition_system.grammar)+1)
-        print(self.production_embed.weight.shape)
-        print(self.production_readout_b.shape)
+        # print(len(transition_system.grammar)+1)
+        # print(self.production_embed.weight.shape)
+        # print(self.production_readout_b.shape)
         self.tgt_token_readout_b = nn.Parameter(
             torch.FloatTensor(len(vocab.primitive)).zero_())
 

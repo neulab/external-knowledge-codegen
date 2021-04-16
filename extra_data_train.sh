@@ -2,7 +2,7 @@
 set -e
 
 seed=0
-mined_num=10000 
+mined_num=10000
 freq=3
 vocab="data/conala/vocab.src_freq${freq}.code_freq${freq}.mined_${mined_num}.bin"
 #vocab="data/conala/vocab.src_freq3.code_freq3.mined_100000.goldmine_snippet_count100k_topk1_temp2.bin"
@@ -17,10 +17,10 @@ type_embed_size=64
 lr=0.001
 lr_decay=0.5
 batch_size=$4
-max_epoch=80
+max_epoch=32
 beam_size=15
 lstm='lstm'  # lstm
-lr_decay_after_epoch=15
+lr_decay_after_epoch=10
 #model_name=conala.${lstm}.hidden${hidden_size}.embed${embed_size}.action${action_embed_size}.field${field_embed_size}.type${type_embed_size}.dr${dropout}.lr${lr}.lr_de${lr_decay}.lr_da${lr_decay_after_epoch}.beam${beam_size}.$(basename ${vocab}).$(basename ${train_file}).glorot.par_state.seed${seed}
 model_name=$3
 
