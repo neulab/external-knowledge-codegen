@@ -63,6 +63,7 @@ def train(args):
     print(f"Loading Train at {args.train_file}")
     train_set = Dataset.from_bin_file(args.train_file)
     train_ids = [e.idx.split('-')[-1] for e in train_set.examples]
+    print(f"{len(train_set.examples)} total examples")
     print('Checking ids:')
     for idx in ['4170655', '13704860', '4170655', '13704860', '3862010']:
         print(f"\t{idx} is {'not in' if idx not in train_ids else 'in'} train")
