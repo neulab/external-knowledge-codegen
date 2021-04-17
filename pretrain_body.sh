@@ -22,7 +22,7 @@ lstm='lstm'  # lstm
 lr_decay_after_epoch=15
 model_name=$3
 
-#valid_every_epoch=5
+valid_every_epoch=5
 echo "**** Writing results to logs/conala/${model_name}.log ****"
 mkdir -p logs/conala
 echo commit hash: `git rev-parse HEAD` > logs/conala/${model_name}.log
@@ -41,6 +41,7 @@ python -u exp.py \
     --lstm ${lstm} \
     --no_parent_field_type_embed \
     --no_parent_production_embed \
+    --valid_every_epoch ${valid_every_epoch} \
     --hidden_size ${hidden_size} \
     --embed_size ${embed_size} \
     --action_embed_size ${action_embed_size} \
