@@ -5,6 +5,7 @@ test_file=data/conala/test.bin
 seed=0
 beam_size=15
 model_name=$1
+decode_name=$2
 echo $model_path
 echo "**** Writing results to logs/conala/${model_name}.log ****"
 mkdir -p logs/conala
@@ -17,7 +18,5 @@ python -u exp.py \
     --beam_size 15 \
     --test_file ${test_file} \
     --evaluator conala_evaluator \
-    --save_decode_to decodes/conala/${model_name}.test.decode \
+    --save_decode_to decodes/conala/${decode_name}.test.decode \
     --decode_max_time_step 100 | tee -a logs/conala/${model_name}.log
-
-$SHELL

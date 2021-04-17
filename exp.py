@@ -566,9 +566,9 @@ def train_reranker_and_test(args):
 
         features.append(feat_inst)
         i += 1
-
-    transition_system = next(
-        feat.transition_system for feat in features if hasattr(feat, 'transition_system'))
+    print(features)
+    grammar = ASDLGrammar.from_text(open(args.asdl_file).read())
+    transition_system = Registrable.by_name(args.parser)(grammar)
     evaluator = Registrable.by_name(args.evaluator)(transition_system)
 
     print('load dev decode results [%s]' % args.dev_decode_file)

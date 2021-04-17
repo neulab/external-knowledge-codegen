@@ -2,15 +2,12 @@
 set -e
 
 seed=0
-#vocab="data/conala/vocab.src_freq3.code_freq3.mined_100000.snippet5.bin"
-vocab=$1
+mined_num=$1
+ret_method=$2
+freq=3
+vocab="data/conala/vocab.src_freq${freq}.code_freq${freq}.mined_${mined_num}.goldmine_${ret_method}.bin"
+train_file="data/conala/pre_${mined_num}_goldmine_${ret_method}.bin"
 dev_file="data/conala/dev.bin"
-test_file=$2
-dev_decode_file=$3".dev.bin.decode"
-test_decode_file=$3".test.decode"
-reranker_file=$4".bin"
-paraphrase_file=$4".bin.paraphrase_identifier"
-reconstructor_file=$4".bin.reconstructor"
 dropout=0.3
 hidden_size=256
 embed_size=512
@@ -19,13 +16,12 @@ field_embed_size=64
 type_embed_size=64
 lr=0.001
 lr_decay=0.5
-batch_size=16
+batch_size=64
 max_epoch=80
 beam_size=15
 lstm='lstm'  # lstm
 lr_decay_after_epoch=15
-num_workers=70
-model_name=reranker.conala.$3
+model_name=retdistsmpl.dr${dropout}.lr${lr}.lr_de${lr_decay}.lr_da${lr_decay_after_epoch}.beam${beam_size}.$(basename ${vocab}).$(basename ${train_file}).seed${seed}
 
 echo "**** Writing results to logs/conala/${model_name}.log ****"
 mkdir -p logs/conala
@@ -34,23 +30,15 @@ echo commit hash: `git rev-parse HEAD` > logs/conala/${model_name}.log
 python -u exp.py \
     --cuda \
     --seed ${seed} \
-    --mode rerank \
+    --mode train \
     --batch_size ${batch_size} \
     --evaluator conala_evaluator \
     --asdl_file asdl/lang/py3/py3_asdl.simplified.txt \
-    --parser python3 \
-    --load_reranker ${reranker_file} \
-    --load_reconstruction_model ${reconstructor_file} \
-    --load_paraphrase_model ${paraphrase_file} \
-    --save_decode_to decodes/conala/${model_name}.best \
+    --transition_system python3 \
+    --train_file ${train_file} \
     --dev_file ${dev_file} \
-    --test_file ${test_file} \
-    --dev_decode_file decodes/conala/${dev_decode_file} \
-    --test_decode_file decodes/conala/${test_decode_file} \
     --vocab ${vocab} \
-    --features word_cnt parser_score \
     --lstm ${lstm} \
-    --num_workers ${num_workers} \
     --no_parent_field_type_embed \
     --no_parent_production_embed \
     --hidden_size ${hidden_size} \
@@ -70,3 +58,4 @@ python -u exp.py \
     --log_every 50 \
     --save_to saved_models/conala/${model_name} 2>&1 | tee logs/conala/${model_name}.log
 
+. scripts/conala/test.sh saved_models/conala/${model_name}.bin 2>&1 | tee -a logs/conala/${model_name}.log
