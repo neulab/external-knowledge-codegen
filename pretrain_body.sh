@@ -49,7 +49,6 @@ python -u exp.py \
     --dropout ${dropout} \
     --patience 5 \
     --max_num_trial 5 \
-    --valid_every_epoch ${valid_every_epoch} \
     --glorot_init \
     --lr ${lr} \
     --lr_decay ${lr_decay} \
