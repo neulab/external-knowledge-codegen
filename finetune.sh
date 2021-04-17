@@ -28,7 +28,7 @@ python -u exp.py \
     --cuda \
     --seed ${seed} \
     --mode train \
-    --batch_size 10 \
+    --batch_size 32 \
     --evaluator conala_evaluator \
     --asdl_file asdl/lang/py3/py3_asdl.simplified.txt \
     --transition_system python3 \
