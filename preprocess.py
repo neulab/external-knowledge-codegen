@@ -32,7 +32,7 @@ if __name__ == '__main__':
     preprocess_conala_dataset(train_file='data/conala/conala-train.json',
                               test_file='data/conala/conala-test.json',
                               mined_data_file=args.pretrain,
-                              api_data_file=args.include_api,
+                              api_data_file='apidocs/processed/distsmpl/snippet_15k/goldmine_snippet_count100k_topk1_temp2.jsonl',
                               grammar_file='asdl/lang/py3/py3_asdl.simplified.txt',
                               src_freq=args.freq, code_freq=args.freq,
                               vocab_size=args.vocabsize,
