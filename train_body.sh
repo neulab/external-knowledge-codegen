@@ -17,12 +17,12 @@ type_embed_size=64
 lr=0.001
 lr_decay=0.5
 batch_size=32
-max_epoch=${4:32}
+max_epoch=$4
 beam_size=15
 lstm='lstm'  # lstm
 lr_decay_after_epoch=10
 model_name=$2
-valid_every_epoch=${5:4}
+valid_every_epoch=$5
 echo "**** Writing results to logs/conala/${model_name}.log ****"
 echo $valid_every_epoch
 mkdir -p logs/conala
