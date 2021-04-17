@@ -39,6 +39,7 @@ python -u exp.py \
     --dev_file ${dev_file} \
     --vocab ${vocab} \
     --lstm ${lstm} \
+    --valid_every_epoch valid_every_epoch \ 
     --no_parent_field_type_embed \
     --no_parent_production_embed \
     --hidden_size ${hidden_size} \
