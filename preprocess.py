@@ -23,6 +23,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vocabsize', type=int, default=20000,
                             help='First k number from pretrain file')
     arg_parser.add_argument('--include_api', type=str, help='Path to apidocs file')
+    arg_parser.add_argument('--seed', type=int, help='Seed to use', default=1234)
     args = arg_parser.parse_args()
 
     args.out_dir = os.path.join(os.getcwd(), *args.out_dir.split(
@@ -36,4 +37,5 @@ if __name__ == '__main__':
                               src_freq=args.freq, code_freq=args.freq,
                               vocab_size=args.vocabsize,
                               num_mined=args.topk,
-                              out_dir=args.out_dir)
+                              out_dir=args.out_dir,
+                              seed=args.seed)

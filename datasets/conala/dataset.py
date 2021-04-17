@@ -26,8 +26,8 @@ assert astor.__version__ == '0.7.1'
 
 def preprocess_conala_dataset(train_file, test_file, grammar_file, src_freq=3, code_freq=3,
                               mined_data_file=None, api_data_file=None,
-                              vocab_size=20000, num_mined=0, out_dir='data/conala'):
-    np.random.seed(1234)
+                              vocab_size=20000, num_mined=0, out_dir='data/conala', seed=1234):
+    np.random.seed(seed)
 
     asdl_text = open(grammar_file).read()
     grammar = ASDLGrammar.from_text(asdl_text)
