@@ -1,6 +1,6 @@
 # coding=utf-8
 from __future__ import print_function
-
+from datetime import datetime
 import time
 
 import astor
@@ -609,6 +609,7 @@ def train_reranker_and_test(args):
 
 if __name__ == '__main__':
     print(os.getcwd())
+    print(f"Begins run at {datetime.utcnow().isoformat()}")
     arg_parser = init_arg_parser()
     args = init_config()
     # print(args)

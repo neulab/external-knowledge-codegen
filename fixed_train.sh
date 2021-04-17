@@ -1,36 +1,37 @@
 #!/bin/bash
-WDIR=`pwd`
+set -e
 
-test_file=$WDIR/data/conala/test.bin
 seed=0
-mined_num=100000
-ret_method=snippet_count100k_topk1_temp2
+mined_num=$3
 freq=3
-vocab="data/conala/vocab.src_freq${freq}.code_freq${freq}.mined_${mined_num}.goldmine_${ret_method}.bin"
-train_file="data/conala/pre_${mined_num}_goldmine_${ret_method}.bin"
+vocab="data/conala/vocab.src_freq${freq}.code_freq${freq}.mined_${mined_num}.bin"
+#vocab="data/conala/vocab.src_freq3.code_freq3.mined_100000.goldmine_snippet_count100k_topk1_temp2.bin"
+train_file=$1
 dev_file="data/conala/dev.bin"
 dropout=0.3
 hidden_size=256
-embed_size=128
-action_embed_size=128
+embed_size=512
+action_embed_size=512
 field_embed_size=64
 type_embed_size=64
 lr=0.001
 lr_decay=0.5
-batch_size=64
-max_epoch=80
+batch_size=32
+max_epoch=${4:32}
 beam_size=15
 lstm='lstm'  # lstm
-lr_decay_after_epoch=15
-model_name=retdistsmpl.dr${dropout}.lr${lr}.lr_de${lr_decay}.lr_da${lr_decay_after_epoch}.beam${beam_size}.$(basename ${vocab}).$(basename ${train_file}).seed${seed}
-
+lr_decay_after_epoch=10
+model_name=$2
+valid_every_epoch=${5:4}
 echo "**** Writing results to logs/conala/${model_name}.log ****"
+echo $valid_every_epoch
 mkdir -p logs/conala
-#echo commit hash: `git rev-parse HEAD` > logs/conala/${model_name}.log
+echo commit hash: `git rev-parse HEAD` > logs/conala/${model_name}.log
 
 python -u exp.py \
+    --cuda \
     --seed ${seed} \
-    --mode test \
+    --mode train \
     --batch_size ${batch_size} \
     --evaluator conala_evaluator \
     --asdl_file asdl/lang/py3/py3_asdl.simplified.txt \
@@ -57,4 +58,3 @@ python -u exp.py \
     --beam_size ${beam_size} \
     --log_every 50 \
     --save_to saved_models/conala/${model_name} 2>&1 | tee logs/conala/${model_name}.log
-
