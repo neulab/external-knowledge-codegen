@@ -2,9 +2,8 @@
 set -e
 
 seed=0
-mined_num=$3
 freq=3
-vocab="data/conala/vocab.src_freq${freq}.code_freq${freq}.mined_${mined_num}.bin"
+vocab=$3
 #vocab="data/conala/vocab.src_freq3.code_freq3.mined_100000.goldmine_snippet_count100k_topk1_temp2.bin"
 train_file=$1
 dev_file="data/conala/dev.bin"
