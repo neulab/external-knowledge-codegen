@@ -22,7 +22,7 @@ lstm='lstm'  # lstm
 lr_decay_after_epoch=15
 model_name=$3
 
-valid_every_epoch=5
+#valid_every_epoch=5
 echo "**** Writing results to logs/conala/${model_name}.log ****"
 mkdir -p logs/conala
 echo commit hash: `git rev-parse HEAD` > logs/conala/${model_name}.log
