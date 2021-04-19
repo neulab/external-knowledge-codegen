@@ -613,7 +613,8 @@ if __name__ == '__main__':
     arg_parser = init_arg_parser()
     args = init_config()
     # print(args)
-    print(args.mode)
+    # print(args.mode)
+    print(f"Seed: {args.seed}")
     if args.mode == 'train':
         train(args)
     elif args.mode in ('train_reconstructor', 'train_paraphrase_identifier'):
