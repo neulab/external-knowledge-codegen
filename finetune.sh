@@ -46,7 +46,7 @@ python -u exp.py \
     --type_embed_size ${type_embed_size} \
     --dropout ${dropout} \
     --valid_every_epoch ${valid_every_epoch} \
-    --patience ${6:-3} \
+    --patience $6 \
     --max_num_trial 5 \
     --glorot_init \
     --lr ${lr} \
