@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-seed=$5
+seed=$6
 pretrained_model_name=$1
 vocab=$2
 finetune_file=$3
