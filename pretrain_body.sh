@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-seed=0
+seed=$5
 freq=3
 vocab=$1
 train_file=$2

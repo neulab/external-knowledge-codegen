@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-seed=0
+seed=$6
 freq=3
 vocab=$3
 #vocab="data/conala/vocab.src_freq3.code_freq3.mined_100000.goldmine_snippet_count100k_topk1_temp2.bin"
