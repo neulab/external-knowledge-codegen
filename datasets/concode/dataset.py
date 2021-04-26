@@ -31,7 +31,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
 
     asdl_text = open(grammar_file).read()
     grammar = ASDLGrammar.from_text(asdl_text,
-                                    ("typedeclaration", "MethodDeclaration"))
+                                    root_production=("typedeclaration",
+                                                     "MethodDeclaration"))
     transition_system = JavaTransitionSystem(grammar)
 
     print('process gold training data...', file=sys.stderr)
@@ -43,8 +44,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     # TODO use the Concode valid corpus instead
     full_train_examples = train_examples[:]
     np.random.shuffle(train_examples)
-    #dev_examples = train_examples[:200]
-    #train_examples = train_examples[200:]
+    # dev_examples = train_examples[:200]
+    # train_examples = train_examples[200:]
 
     dev_examples = preprocess_dataset(valid_file, name='dev',
                                       transition_system=transition_system,
@@ -177,6 +178,7 @@ def preprocess_dataset(file_path, transition_system, name='train',
             for t, action in enumerate(tgt_actions):
                 valid_continuating_types = transition_system.get_valid_continuation_types(hyp)
                 if action.__class__ not in valid_continuating_types:
+                    transition_system.get_valid_continuation_types(hyp)
                     assert action.__class__ in valid_continuating_types
                 if isinstance(action, ApplyRuleAction):
                     valid_continuating_productions = transition_system.get_valid_continuating_productions(hyp)
@@ -187,7 +189,8 @@ def preprocess_dataset(file_path, transition_system, name='train',
                     p_t = hyp.frontier_node.created_time
                     f_t = hyp.frontier_field.field.__repr__(plain=True)
 
-                print('\t[%d] %s, frontier field: %s, parent: %d' % (t, action, f_t, p_t))
+                print(f'\t[{t}] {action}, frontier field: {f_t}, '
+                      f'parent: {p_t}')
                 hyp = hyp.clone_and_apply_action(action)
 
             assert hyp.frontier_node is None and hyp.frontier_field is None
@@ -212,8 +215,9 @@ def preprocess_dataset(file_path, transition_system, name='train',
 
             tgt_action_infos = get_action_infos(example_dict['intent_tokens'],
                                                 tgt_actions)
-        except (AssertionError, JavaSyntaxError, ValueError, OverflowError) as e:
-        #except (ValueError, OverflowError) as e:
+        # except (AssertionError, JavaSyntaxError, ValueError, OverflowError)
+        # as e:
+        except () as e:
             print(f"Intercepting exception: {e} in:\n{snippet}",
                   file=sys.stderr)
             skipped_list.append(example_json['question_id'])
