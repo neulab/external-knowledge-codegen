@@ -42,7 +42,8 @@ class ASDLGrammar(object):
 
     @property
     def productions(self):
-        return sorted(chain.from_iterable(self._productions.values()), key=lambda x: repr(x))
+        return sorted(chain.from_iterable(self._productions.values()),
+                      key=lambda x: repr(x))
 
     def __getitem__(self, datum):
         if isinstance(datum, str):
@@ -59,7 +60,8 @@ class ASDLGrammar(object):
             all_types = set()
             for prod in self.productions:
                 all_types.add(prod.type)
-                all_types.update(map(lambda x: x.type, prod.constructor.fields))
+                all_types.update(map(lambda x: x.type,
+                                     prod.constructor.fields))
 
             self._types = sorted(all_types, key=lambda x: x.name)
 
@@ -72,7 +74,9 @@ class ASDLGrammar(object):
             for prod in self.productions:
                 all_fields.update(prod.constructor.fields)
 
-            self._fields = sorted(all_fields, key=lambda x: (x.name, x.type.name, x.cardinality))
+            self._fields = sorted(all_fields, key=lambda x: (x.name,
+                                                             x.type.name,
+                                                             x.cardinality))
 
         return self._fields
 
@@ -105,21 +109,25 @@ class ASDLGrammar(object):
                 cardinality = 'optional'
 
             if type_str in primitive_type_names:
-                return Field(name, ASDLPrimitiveType(type_str), cardinality=cardinality)
+                return Field(name, ASDLPrimitiveType(type_str),
+                             cardinality=cardinality)
             else:
-                return Field(name, ASDLCompositeType(type_str), cardinality=cardinality)
+                return Field(name, ASDLCompositeType(type_str),
+                             cardinality=cardinality)
 
         def _parse_constructor_from_text(_text):
             _text = _text.strip()
             fields = None
             if '(' in _text:
                 name = _text[:_text.find('(')]
-                field_blocks = _text[_text.find('(') + 1:_text.find(')')].split(',')
+                field_blocks = _text[
+                  _text.find('(') + 1:_text.find(')')].split(',')
                 fields = map(_parse_field_from_text, field_blocks)
             else:
                 name = _text
 
-            if name == '': name = None
+            if name == '':
+                name = None
 
             return ASDLConstructor(name, fields)
 
@@ -129,7 +137,8 @@ class ASDLGrammar(object):
         line_no = 0
 
         # first line is always the primitive types
-        primitive_type_names = list(map(lambda x: x.strip(), lines[line_no].split(',')))
+        primitive_type_names = list(map(lambda x: x.strip(),
+                                        lines[line_no].split(',')))
         line_no += 1
 
         all_productions = list()
@@ -137,7 +146,8 @@ class ASDLGrammar(object):
         while True:
             type_block = lines[line_no]
             type_name = type_block[:type_block.find('=')].strip()
-            constructors_blocks = type_block[type_block.find('=') + 1:].split('|')
+            constructors_blocks = type_block[
+              type_block.find('=') + 1:].split('|')
             i = line_no + 1
             while i < len(lines) and lines[i].strip().startswith('|'):
                 t = lines[i].strip()
@@ -146,13 +156,18 @@ class ASDLGrammar(object):
 
                 i += 1
 
-            constructors_blocks = filter(lambda x: x and x.strip(), constructors_blocks)
+            constructors_blocks = filter(lambda x: x and x.strip(),
+                                         constructors_blocks)
 
             # parse type name
-            new_type = ASDLPrimitiveType(type_name) if type_name in primitive_type_names else ASDLCompositeType(type_name)
-            constructors = map(_parse_constructor_from_text, constructors_blocks)
+            new_type = (ASDLPrimitiveType(type_name)
+                        if type_name in primitive_type_names
+                        else ASDLCompositeType(type_name))
+            constructors = map(_parse_constructor_from_text,
+                               constructors_blocks)
 
-            productions = list(map(lambda c: ASDLProduction(new_type, c), constructors))
+            productions = list(map(lambda c: ASDLProduction(new_type, c),
+                                   constructors))
             all_productions.extend(productions)
 
             line_no = i
@@ -190,7 +205,8 @@ class ASDLProduction(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return '%s -> %s' % (self.type.__repr__(plain=True), self.constructor.__repr__(plain=True))
+        return '%s -> %s' % (self.type.__repr__(plain=True),
+                             self.constructor.__repr__(plain=True))
 
 
 class ASDLConstructor(object):
@@ -202,7 +218,8 @@ class ASDLConstructor(object):
 
     def __getitem__(self, field_name):
         for field in self.fields:
-            if field.name == field_name: return field
+            if field.name == field_name:
+                return field
 
         raise KeyError
 
@@ -223,9 +240,12 @@ class ASDLConstructor(object):
 
     def __repr__(self, plain=False):
         plain_repr = '%s(%s)' % (self.name,
-                                 ', '.join(f.__repr__(plain=True) for f in self.fields))
-        if plain: return plain_repr
-        else: return 'Constructor(%s)' % plain_repr
+                                 ', '.join(f.__repr__(plain=True)
+                                           for f in self.fields))
+        if plain:
+            return plain_repr
+        else:
+            return 'Constructor(%s)' % plain_repr
 
 
 class Field(object):
@@ -255,12 +275,15 @@ class Field(object):
         plain_repr = '%s%s %s' % (self.type.__repr__(plain=True),
                                   Field.get_cardinality_repr(self.cardinality),
                                   self.name)
-        if plain: return plain_repr
-        else: return 'Field(%s)' % plain_repr
+        if plain:
+            return plain_repr
+        else:
+            return 'Field(%s)' % plain_repr
 
     @staticmethod
     def get_cardinality_repr(cardinality):
-        return '' if cardinality == 'single' else '?' if cardinality == 'optional' else '*'
+        return '' if cardinality == 'single' else (
+               '?' if cardinality == 'optional' else '*')
 
 
 class ASDLType(object):
@@ -278,8 +301,10 @@ class ASDLType(object):
 
     def __repr__(self, plain=False):
         plain_repr = self.name
-        if plain: return plain_repr
-        else: return '%s(%s)' % (self.__class__.__name__, plain_repr)
+        if plain:
+            return plain_repr
+        else:
+            return '%s(%s)' % (self.__class__.__name__, plain_repr)
 
 
 class ASDLCompositeType(ASDLType):

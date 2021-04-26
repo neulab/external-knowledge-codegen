@@ -11,6 +11,7 @@ from asdl.transition_system import TransitionSystem, GenTokenAction
 
 from common.registerable import Registrable
 
+
 @Registrable.register('java')
 class JavaTransitionSystem(TransitionSystem):
     def tokenize_code(self, code, mode=None):
@@ -57,11 +58,8 @@ class JavaTransitionSystem(TransitionSystem):
 
             for tok in tokens:
                 actions.append(GenTokenAction(tok))
-        elif (realized_field.type.name == 'singleton'
-              and realized_field.value is None):
-            # singleton can be None
-            actions.append(GenTokenAction('None'))
-
+        else:
+            pass
         return actions
 
     def is_valid_hypothesis(self, hyp, **kwargs):

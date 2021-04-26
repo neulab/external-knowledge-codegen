@@ -13,7 +13,8 @@ class ApplyRuleAction(Action):
         return hash(self.production)
 
     def __eq__(self, other):
-        return isinstance(other, ApplyRuleAction) and self.production == other.production
+        return (isinstance(other, ApplyRuleAction)
+                and self.production == other.production)
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -34,8 +35,8 @@ class GenTokenAction(Action):
 
 
 class ReduceAction(Action):
-   def __repr__(self):
-       return 'Reduce'
+    def __repr__(self):
+        return 'Reduce'
 
 
 class TransitionSystem(object):
@@ -49,8 +50,8 @@ class TransitionSystem(object):
 
         actions = []
 
-        #if asdl_ast is None:
-            #return actions
+        # if asdl_ast is None:
+        # return actions
         parent_action = ApplyRuleAction(asdl_ast.production)
         actions.append(parent_action)
 
@@ -59,8 +60,8 @@ class TransitionSystem(object):
             if self.grammar.is_composite_type(field.type):
                 if field.cardinality == 'single':
                     field_actions = self.get_actions(field.value)
-                    #if not field_actions:
-                        #field_actions.append(ReduceAction())
+                    # if not field_actions:
+                    # field_actions.append(ReduceAction())
                 else:
                     field_actions = []
 
@@ -72,14 +73,20 @@ class TransitionSystem(object):
                         elif field.cardinality == 'optional':
                             field_actions = self.get_actions(field.value)
 
-                    # if an optional field is filled, then do not need Reduce action
-                    if field.cardinality == 'multiple' or field.cardinality == 'optional' and not field_actions:
+                    # if an optional field is filled, then do not need Reduce
+                    # action
+                    if (field.cardinality == 'multiple'
+                            or field.cardinality == 'optional'
+                            and not field_actions):
                         field_actions.append(ReduceAction())
             else:  # is a primitive field
                 field_actions = self.get_primitive_field_actions(field)
 
-                # if an optional field is filled, then do not need Reduce action
-                if field.cardinality == 'multiple' or field.cardinality == 'optional' and not field_actions:
+                # if an optional field is filled, then do not need Reduce
+                # action
+                if (field.cardinality == 'multiple'
+                        or field.cardinality == 'optional'
+                        and not field_actions):
                     # reduce action
                     field_actions.append(ReduceAction())
 

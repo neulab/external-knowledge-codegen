@@ -283,7 +283,10 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_SingleElementAnnotation(self, node: tree.SingleElementAnnotation):
         self.write("@", node.name)
-        self.write("(", node.element, ")")
+        self.write("(")
+        if node.element is not None:
+            self.write(node.element)
+        self.write(")")
 
     #### Declarations
 
@@ -768,8 +771,8 @@ class SourceGenerator(ExplicitNodeVisitor):
             for _ in node.dimensions:
                 self.write("[]")
 
-    def visit_Void(self, node):
-        self.write("void")
+    #def visit_Void(self, node):
+        #self.write("void")
 
     def visit_ArraySelector(self, node):
         self.write("[", node.index, "]")
@@ -991,8 +994,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("switch (", node.expression, ") {", "\n")
-        for case in node.cases:
-            self.write(case)
+        if node.cases is not None:
+            for case in node.cases:
+                self.write(case)
         self.write("}")
 
     def visit_SwitchStatementCase(self, node):

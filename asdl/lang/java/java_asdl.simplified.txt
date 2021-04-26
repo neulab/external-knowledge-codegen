@@ -10,7 +10,7 @@ importdeclaration = Import(identifier path, constant? static, constant? wildcard
 
 annotation = NormalAnnotation(expression* element, identifier name)
       | MarkerAnnotation(identifier name)
-      | SingleElementAnnotation(expression element, identifier name)
+      | SingleElementAnnotation(expression? element, identifier name)
 
 dottedname = Identifier(identifier id)
       | PackageOrTypeName(dottedname left, dotop op, identifier right)
@@ -29,12 +29,12 @@ typedeclaration = EmptyDeclaration(string? documentation)
       | InstanceInitializer(statement block)
       | StaticInitializer(statement block)
       | ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement body)
-      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type return_type, identifier name, int* dimensions, parameter* parameters, identifier* throws, statement body)
+      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type? return_type, identifier name, int* dimensions, parameter* parameters, identifier* throws, statement? body)
       | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
       | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
 
-annotationbodydeclaration = AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type return_type, int* dimensions, identifier? default)
+annotationbodydeclaration = AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type? return_type, int* dimensions, identifier? default)
 
 type_parameter = TypeParameter(identifier name, type* extends)
 
@@ -71,7 +71,6 @@ forcontrol = ForControl(expression* init, expression? condition, expression* upd
       | EnhancedForControl(expression var, statement iterable)
 
 
-# | Primary(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, expression* selectors)
 expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | Literal(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, expression* selectors, string value)
       | BinaryOperation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, expression* selectors, infix_operator operator, member_reference operandl, member_reference operandr)
@@ -100,8 +99,7 @@ expression = VariableDeclaration(fieldmodifier* modifiers, annotation* annotatio
       | NoExpression(identifier? null)
       | Identifier(identifier id)
 
-type = Void(constant void)
-      |BasicType(identifier name, int* dimensions)
+type = BasicType(identifier name, int* dimensions)
       | ReferenceType(identifier name, int* dimensions, type_argument* arguments, identifier? sub_type)
 
 declarator = VariableDeclarator(identifier name, int* dimensions, array_initializer? initializer)
