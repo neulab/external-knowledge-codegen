@@ -939,7 +939,7 @@ class Parser(object):
         return tree.MethodDeclaration(parameters=formal_parameters,
                                       throws=throws,
                                       body=body,
-                                      return_type=tree.Void())
+                                      return_type=tree.BasicType(name="void"))
 
     @parse_debug
     def parse_constructor_declarator_rest(self):
