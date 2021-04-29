@@ -525,6 +525,12 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(node.declarators)
         self.write(";", "\n")
 
+    def visit_TypeDeclarationStatement(self, node):
+        self.write(node.declaration)
+
+    def visit_ReferenceTypeExpression(self, node):
+        self.write(node.type)
+
     def visit_VariableDeclaration(self, node):
         #if node.documentation:
             #self.write(node.documentation, "\n")
@@ -537,6 +543,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.type, " ")
         self.comma_list(node.declarators)
 
+    def visit_LocalVariableDeclarationStatement(self, node):
+        self.write(node.variable)
+
     def visit_LocalVariableDeclaration(self, node):
         if node.annotations:
             for annotation in node.annotations:
@@ -548,23 +557,29 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.comma_list(node.declarators)
         self.write(";", "\n")
 
+    # ### Declarators
 
-    ### Declarators
+    def visit_DiamondType(self, node):
+        self.write(node.name)
+        if node.sub_type is not None:
+            self.write(".", node.sub_type)
+        self.write("<>")
+        if node.dimensions:
+            for dim in node.dimensions:
+                self.write("[", dim, "]")
 
     def visit_ReferenceType(self, node):
         self.write(node.name)
         if node.sub_type is not None:
             self.write(".", node.sub_type)
         if node.arguments is not None:
-            #self.write(" bépo ")
+            #print(" bépo ", file=sys.stderr)
             self.write("<")
             self.comma_list(node.arguments)
             self.write(">")
         if node.dimensions:
             for dim in node.dimensions:
-                self.write("[")
-                self.write(dim)
-                self.write("]")
+                self.write("[", dim, "]")
 
     def visit_VariableDeclarator(self, node):
         self.write(" ", node.name)
@@ -575,6 +590,14 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write("]")
         if node.initializer:
             self.write(" = ", node.initializer)
+
+    def visit_VariableInitializer(self, node):
+        if node.array and node.expression is None:
+            self.write(node.array)
+        elif node.expression and node.array is None:
+            self.write(node.expression)
+        else:
+            raise Exception("VariableInitializer must have exactly one of its attributes not none.")
 
     def visit_ArrayInitializer(self, node):
         self.write("{")
@@ -629,10 +652,14 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.label, ": ", "\n")
         self.write(";", "\n")
 
-    def visit_StatementExpression(self, node):
+    def visit_ExpressionStatement(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
-        self.write(node.expression, ";", "\n")
+        self.write(node.expression)
+        self.write(";", "\n")
+
+    def visit_BlockExpression(self, node):
+        self.write(node.block)
 
     def visit_TernaryExpression(self, node):
         if node.prefix_operators:
@@ -953,7 +980,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("new ")
         if node.qualifier:
             self.write(node.qualifier, ".")
-        if node.constructor_type_arguments:
+        if node.constructor_type_arguments is not None:
             self.write(" < ")
             self.comma_list(node.constructor_type_arguments)
             self.write(" > ")

@@ -16,15 +16,19 @@ class Documented(Node):
     attrs = ("documentation",)
 
 
-class EmptyDeclaration(Documented):
+class Declaration(Documented):
     attrs = ()
 
 
-class Declaration(Node):
+class EmptyDeclaration(Declaration):
+    attrs = ()
+
+
+class NonEmptyDeclaration(Declaration):
     attrs = ("modifiers", "annotations")
 
 
-class TypeDeclaration(Declaration, Documented):
+class TypeDeclaration(NonEmptyDeclaration):
     attrs = ("name", "body")
 
     @property
@@ -43,7 +47,7 @@ class TypeDeclaration(Declaration, Documented):
           decl, ConstructorDeclaration)]
 
 
-class PackageDeclaration(Declaration, Documented):
+class PackageDeclaration(NonEmptyDeclaration):
     attrs = ("name",)
 
 
@@ -101,8 +105,12 @@ class BasicType(Type):
     attrs = ()
 
 
+class DiamondType(Type):
+    attrs = ("sub_type",)
+
+
 class ReferenceType(Type):
-    attrs = ("arguments", "sub_type")
+    attrs = ("arguments", "sub_type",)
 
 
 class TypeArgument(Node):
@@ -143,20 +151,20 @@ class ElementArrayValue(Node):
 # ------------------------------------------------------------------------------
 
 
-class Member(Documented):
+class Member(NonEmptyDeclaration):
     attrs = ()
 
 
-class MethodDeclaration(Member, Declaration):
+class MethodDeclaration(Member):
     attrs = ("type_parameters", "return_type", "name", "dimensions",
              "parameters", "throws", "body")
 
 
-class FieldDeclaration(Member, Declaration):
+class FieldDeclaration(Member):
     attrs = ("type", "declarators")
 
 
-class ConstructorDeclaration(Declaration, Documented):
+class ConstructorDeclaration(NonEmptyDeclaration):
     attrs = ("type_parameters", "name", "parameters", "throws", "body")
 
 # ------------------------------------------------------------------------------
@@ -166,11 +174,19 @@ class ConstantDeclaration(FieldDeclaration):
     attrs = ()
 
 
+class VariableInitializer(Node):
+    """
+    A VariableInitializer is either an expression or an array initializer
+    https://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3
+    """
+    attrs = ("expression", "array")
+
+
 class ArrayInitializer(Node):
     attrs = ("initializers", "comma")
 
 
-class VariableDeclaration(Declaration):
+class VariableDeclaration(NonEmptyDeclaration):
     attrs = ("type", "declarators")
 
 
@@ -182,7 +198,7 @@ class VariableDeclarator(Node):
     attrs = ("name", "dimensions", "initializer")
 
 
-class FormalParameter(Declaration):
+class FormalParameter(NonEmptyDeclaration):
     attrs = ("type", "name", "dimensions", "varargs")
 
 
@@ -194,6 +210,14 @@ class InferredFormalParameter(Node):
 
 class Statement(Node):
     attrs = ("label",)
+
+
+class LocalVariableDeclarationStatement(Statement):
+    attrs = ("variable",)
+
+
+class TypeDeclarationStatement(Statement):
+    attrs = ("declaration",)
 
 
 class IfStatement(Statement):
@@ -248,13 +272,13 @@ class BlockStatement(Statement):
     attrs = ("statements",)
 
 
-class StatementExpression(Statement):
+class ExpressionStatement(Statement):
     attrs = ("expression",)
 
 # ------------------------------------------------------------------------------
 
 
-class TryResource(Declaration):
+class TryResource(NonEmptyDeclaration):
     attrs = ("type", "name", "value")
 
 
@@ -262,7 +286,7 @@ class CatchClause(Statement):
     attrs = ("parameter", "block")
 
 
-class CatchClauseParameter(Declaration):
+class CatchClauseParameter(NonEmptyDeclaration):
     attrs = ("types", "name")
 
 # ------------------------------------------------------------------------------
@@ -284,6 +308,14 @@ class EnhancedForControl(Node):
 
 class Expression(Node):
     attrs = ()
+
+
+class ReferenceTypeExpression(Node):
+    attrs = ("type",)
+
+
+class BlockExpression(Node):
+    attrs = ("block",)
 
 
 class NoExpression(Node):
@@ -396,10 +428,10 @@ class EnumBody(Node):
     attrs = ("constants", "separator", "declarations", "comma")
 
 
-class EnumConstantDeclaration(Declaration, Documented):
+class EnumConstantDeclaration(NonEmptyDeclaration):
     attrs = ("name", "arguments", "body")
 
 
-class AnnotationMethod(Declaration):
+class AnnotationMethod(NonEmptyDeclaration):
     attrs = ("name", "return_type", "dimensions", "default")
 

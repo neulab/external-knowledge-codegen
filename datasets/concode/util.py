@@ -22,10 +22,11 @@ def compare_ast(node1, node2):
         if type(node1) is not type(node2):
             return False
     if isinstance(node1, javalang.ast.Node):
-        for k, v in list(vars(node1).items()):
+        for k, v1 in list(vars(node1).items()):
             if k in ('lineno', 'col_offset', 'ctx', '_position'):
                 continue
-            if not compare_ast(v, getattr(node2, k)):
+            v2 = getattr(node2, k)
+            if not compare_ast(v1, v2):
                 return False
         return True
     elif isinstance(node1, list):

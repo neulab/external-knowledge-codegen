@@ -74,8 +74,10 @@ def asdl_ast_to_java_ast(asdl_ast_node, grammar):
     for field in asdl_ast_node.fields:
         # for composite node
         field_value = None
+        #if field.name == 'arguments':
+            #print(f'arguments {field.value} {field.cardinality}', file=sys.stderr)
         if grammar.is_composite_type(field.type):
-            if field.value is not None and field.cardinality == 'multiple':
+            if (field.value is not None) and (field.cardinality == 'multiple'):
                 field_value = []
                 for val in field.value:
                     node = asdl_ast_to_java_ast(val, grammar)
