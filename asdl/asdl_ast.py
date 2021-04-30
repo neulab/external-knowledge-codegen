@@ -138,11 +138,12 @@ class AbstractSyntaxTree(object):
     def size(self):
         node_num = 1
         for field in self.fields:
-            for val in field.as_value_list:
-                if isinstance(val, AbstractSyntaxTree):
-                    node_num += val.size
-                else:
-                    node_num += 1
+            if field.as_value_list is not None:
+                for val in field.as_value_list:
+                    if isinstance(val, AbstractSyntaxTree):
+                        node_num += val.size
+                    else:
+                        node_num += 1
 
         return node_num
 
@@ -162,7 +163,6 @@ class RealizedField(Field):
         # initialize value to correct type
         if self.cardinality == 'multiple':
             self.value = None
-            # self.value = []
             if value is not None:
                 for child_node in value:
                     self.add_value(child_node)
@@ -196,7 +196,6 @@ class RealizedField(Field):
     @property
     def as_value_list(self):
         """get value as an iterable"""
-        self.init_empty()
         if self.cardinality == 'multiple':
             return self.value
         elif self.value is not None:
