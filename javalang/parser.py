@@ -2185,10 +2185,16 @@ class Parser(object):
             return rest
         else:
             arguments, body = self.parse_class_creator_rest()
-            return tree.ClassCreator(constructor_type_arguments=constructor_type_arguments,
-                                     type=created_name,
-                                     arguments=arguments,
-                                     body=body)
+            if body is not None and len(body) == 0:
+                return tree.ClassCreator(constructor_type_arguments=constructor_type_arguments,
+                                        type=created_name,
+                                        arguments=arguments,
+                                        body=tree.EmptyClassBody())
+            else:
+                return tree.ClassCreator(constructor_type_arguments=constructor_type_arguments,
+                                        type=created_name,
+                                        arguments=arguments,
+                                        body=tree.ClassBody(declarations=body))
 
     @parse_debug
     def parse_created_name(self):

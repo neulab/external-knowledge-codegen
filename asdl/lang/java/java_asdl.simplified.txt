@@ -17,6 +17,9 @@ catch = CatchClause(identifier? label, catch_clause_parameter parameter, stateme
 
 catch_clause_parameter = CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
 
+classbody = ClassBody(typedeclaration* declarations)
+      | EmptyClassBody
+
 cu = CompilationUnit(package? package, importdeclaration* imports, typedeclaration* types)
 
 declarator = VariableDeclarator(identifier name, int* dimensions, expression? initializer)
@@ -31,7 +34,7 @@ expression = ArrayCreator(operator* prefix_operators, operator* postfix_operator
       | BinaryOperation(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, operator operator, expression operandl, expression operandr)
       | BlockExpression(statement block)
       | Cast(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type, expression expression)
-      | ClassCreator(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type, type_argument* constructor_type_arguments, expression* arguments, typedeclaration* body)
+      | ClassCreator(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type, type_argument* constructor_type_arguments, expression* arguments, classbody? body)
       | ClassReference(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type)
       | Creator(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type)
       | ElementValuePair(identifier name, expression value)

@@ -990,12 +990,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(node.arguments)
         self.write(")")
         if node.body is not None:
-            self.write("{")
-        if node.body:
-            for statement in node.body:
-                self.write(statement)
-        if node.body is not None:
-            self.write("}")
+            self.write(node.body)
         if node.selectors:
             for selector in node.selectors:
                 if type(selector) == tree.ArraySelector:
@@ -1225,15 +1220,22 @@ class SourceGenerator(ExplicitNodeVisitor):
                     self.write(selector)
                 else:
                     self.write(".", selector)
-        if node.body:
-            self.write("{", "\n")
-            for statement in node.body:
-                self.write(statement)
-            self.write("}", "\n")
+        if node.body is not None:
+            self.write(node.body)
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
 
     def visit_VoidClassReference(self, node):
         self.write("void.class")
+
+    def visit_ClassBody(self, node):
+        if node.declarations is not None:
+            self.write("{", "\n")
+            for declaration in node.declarations:
+                self.write(declaration)
+            self.write("}", "\n")
+
+    def visit_EmptyClassBody(self, node):
+        self.write("{", "}", "\n")
 

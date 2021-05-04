@@ -421,6 +421,14 @@ class ClassCreator(Creator):
 class InnerClassCreator(Creator):
     attrs = ("constructor_type_arguments", "arguments", "body")
 
+
+class ClassBody(Node):
+    attrs = ("declarations",)
+
+
+class EmptyClassBody(Node):
+    attrs = ()
+
 # ------------------------------------------------------------------------------
 
 
