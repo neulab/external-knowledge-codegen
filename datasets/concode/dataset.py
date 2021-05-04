@@ -200,18 +200,22 @@ def preprocess_dataset(file_path, transition_system, name='train',
             # print(canonical_code)
             assert code_from_hyp == canonical_code
 
+            parsed_snippet_ast = javalang.parse.parse_member_declaration(
+                example_json['snippet'])
+            surface_snippet_ast = transition_system.surface_code_to_ast(
+                example_json['snippet'])
+
             decanonicalized_code_from_hyp = decanonicalize_code(
               code_from_hyp, example_dict['slot_map'])
-            assert compare_ast(
-              javalang.parse.parse_member_declaration(
-                example_json['snippet']),
-              javalang.parse.parse_member_declaration(
-                decanonicalized_code_from_hyp))
-            assert transition_system.compare_ast(
-              transition_system.surface_code_to_ast(
-                decanonicalized_code_from_hyp),
-              transition_system.surface_code_to_ast(
-                example_json['snippet']))
+            parsed_decanon_ast = javalang.parse.parse_member_declaration(
+                decanonicalized_code_from_hyp)
+            surface_decanon_ast = transition_system.surface_code_to_ast(
+                decanonicalized_code_from_hyp)
+            print(f"example_json['snippet']:\n{example_json['snippet']}\n==========")
+            print(f"decanonicalized_code_from_hyp:\n{decanonicalized_code_from_hyp}\n==========")
+            assert compare_ast(parsed_snippet_ast, parsed_decanon_ast)
+            assert transition_system.compare_ast(surface_snippet_ast,
+                                                 surface_decanon_ast)
 
             tgt_action_infos = get_action_infos(example_dict['intent_tokens'],
                                                 tgt_actions)
