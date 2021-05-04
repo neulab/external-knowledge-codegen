@@ -97,6 +97,13 @@ def simplify(code: str) -> str:
             .lower())
 
 
+def common_prefix(str1: str, str2: str) -> None:
+    common_prefix = os.path.commonprefix([str1, str2])
+    percent_ok = int(float(len(common_prefix))*100/len(str1))
+    print(f"Common prefix end: {common_prefix[-100:]} ({percent_ok}%)",
+          file=sys.stderr)
+
+
 def test(java_code, check_hypothesis=False, fail_on_error=False, member=False,
          debug=False):
     # get the (domain-specific) java AST of the example Java code snippet
@@ -141,10 +148,7 @@ def test(java_code, check_hypothesis=False, fail_on_error=False, member=False,
                    f"}}}}}}}}}}}}}} Java AST                :\n{src1}\n"
                    f"{{{{{{{{{{{{{{\n",
                    file=sys.stderr)
-            common_prefix = os.path.commonprefix([simp0, simp1])
-            percent_ok = int(float(len(common_prefix))*100/len(simp0))
-            print(f"Common prefix end: {common_prefix[-100:]} ({percent_ok}%)",
-                  file=sys.stderr)
+            common_prefix(simp0, simp1)
         elif simp1 != simp2:
             cprint(bcolors.CYAN,
                    f"}}}}}}}}}}}}}} Java AST                :\n{src1}"
@@ -153,10 +157,7 @@ def test(java_code, check_hypothesis=False, fail_on_error=False, member=False,
             cprint(bcolors.GREEN,
                    f"]]]]]]] Java AST from ASDL      :\n{src2}\n[[[[[[[\n",
                    file=sys.stderr)
-            common_prefix = os.path.commonprefix([simp1, simp2])
-            percent_ok = int(float(len(common_prefix))*100/len(simp1))
-            print(f"Common prefix end: {common_prefix[-100:]} ({percent_ok}%)",
-                  file=sys.stderr)
+            common_prefix(simp1, simp2)
         elif check_hypothesis:
             cprint(bcolors.BLUE,
                    f"))))))) Original Java code      :\n{src0}\n(((((((\n",
@@ -168,6 +169,7 @@ def test(java_code, check_hypothesis=False, fail_on_error=False, member=False,
             cprint(bcolors.MAGENTA,
                    f">>>>>>> Java AST from hyp       :\n{src3}\n<<<<<<<\n",
                    file=sys.stderr)
+            common_prefix(simp1, simp3)
         # if fail_on_error:
             # raise Exception("Test failed")
         # else:
