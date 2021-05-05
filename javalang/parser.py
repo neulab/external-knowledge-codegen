@@ -345,14 +345,14 @@ class Parser(object):
                            wildcard=import_all)
 
     @parse_debug
-    def parse_type_declaration(self):
+    def parse_type_declaration(self) -> tree.TypeDeclaration:
         if self.try_accept(';'):
             return None
         else:
             return self.parse_class_or_interface_declaration()
 
     @parse_debug
-    def parse_class_or_interface_declaration(self):
+    def parse_class_or_interface_declaration(self) -> tree.TypeDeclaration:
         modifiers, annotations, javadoc = self.parse_modifiers()
         type_declaration = None
 
@@ -775,7 +775,7 @@ class Parser(object):
 # -- Class body --
 
     @parse_debug
-    def parse_class_body(self):
+    def parse_class_body(self) -> List[tree.Declaration]:
         declarations = list()
 
         self.accept('{')
@@ -790,7 +790,7 @@ class Parser(object):
         return declarations
 
     @parse_debug
-    def parse_class_body_declaration(self):
+    def parse_class_body_declaration(self) -> tree.Declaration:
         token = self.tokens.look()
 
         if self.try_accept(';'):
@@ -807,7 +807,7 @@ class Parser(object):
             return self.parse_member_declaration()
 
     @parse_debug
-    def parse_member_declaration(self):
+    def parse_member_declaration(self) -> tree.TypeDeclaration:
         modifiers, annotations, javadoc = self.parse_modifiers()
         member = None
 
@@ -848,17 +848,13 @@ class Parser(object):
         return member
 
     @parse_debug
-    def parse_method_or_field_declaraction(self):
+    def parse_method_or_field_declaraction(self) -> tree.NonEmptyDeclaration:
         member_type = self.parse_type()
         member_name = self.parse_identifier()
 
         member = self.parse_method_or_field_rest()
 
         if isinstance(member, tree.MethodDeclaration):
-            #member_type.dimensions = self.update_array_dimensions(
-                #member_type.dimensions)
-            #if member.return_type.dimensions:
-                #member_type.dimensions = member.return_type.dimensions
             member.name = member_name
             member.return_type = member_type
         else:
@@ -868,7 +864,7 @@ class Parser(object):
         return member
 
     @parse_debug
-    def parse_method_or_field_rest(self):
+    def parse_method_or_field_rest(self) -> tree.NonEmptyDeclaration:
         token = self.tokens.look()
 
         if self.would_accept('('):
@@ -1317,7 +1313,8 @@ class Parser(object):
 
             if isinstance(token, Modifier):
                 if not token.value == 'final':
-                    return self.parse_class_or_interface_declaration()
+                    return tree.TypeDeclarationStatement(
+                        declaration=self.parse_class_or_interface_declaration())
 
             elif self.is_annotation(i):
                 found_annotations = True
@@ -2454,7 +2451,7 @@ class Parser(object):
         return declarations
 
     @parse_debug
-    def parse_annotation_type_element_declaration(self):
+    def parse_annotation_type_element_declaration(self) -> tree.NonEmptyDeclaration:
         modifiers, annotations, javadoc = self.parse_modifiers()
         declaration = None
 
@@ -2488,7 +2485,7 @@ class Parser(object):
         return declaration
 
     @parse_debug
-    def parse_annotation_method_or_constant_rest(self):
+    def parse_annotation_method_or_constant_rest(self) -> tree.NonEmptyDeclaration:
         if self.try_accept('('):
             self.accept(')')
 

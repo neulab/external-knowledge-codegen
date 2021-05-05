@@ -77,11 +77,11 @@ class AnnotationDeclaration(TypeDeclaration):
     attrs = ()
 
 
-class StaticInitializer(Node):
+class StaticInitializer(NonEmptyDeclaration):
     attrs = ("block",)
 
 
-class InstanceInitializer(Node):
+class InstanceInitializer(NonEmptyDeclaration):
     attrs = ("block",)
 
 # ------------------------------------------------------------------------------
