@@ -114,9 +114,10 @@ def test(java_code, check_hypothesis=False, fail_on_error=False, member=False,
 
     # convert the java AST into general-purpose ASDL AST used by tranX
     asdl_ast = java_ast_to_asdl_ast(java_ast, grammar)
-    # print('String representation of the ASDL AST: \n%s' % asdl_ast.to_string())
-    # print('Size of the AST: %d' % asdl_ast.size)
-    # print(f"ASDL AST: {asdl_ast.to_string()}", file=sys.stderr)
+    if debug:
+        print('String representation of the ASDL AST: \n%s' % asdl_ast.to_string())
+        print('Size of the AST: %d' % asdl_ast.size)
+        print(f"ASDL AST: {asdl_ast.to_string()}", file=sys.stderr)
 
     # we can also convert the ASDL AST back into Java AST
     java_ast_reconstructed = asdl_ast_to_java_ast(asdl_ast, grammar)
