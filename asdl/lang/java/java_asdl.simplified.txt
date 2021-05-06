@@ -5,8 +5,6 @@ annotation = MarkerAnnotation(identifier name)
       | NormalAnnotation(expression* element, identifier name)
       | SingleElementAnnotation(expression? element, identifier name)
 
-annotationbodydeclaration = AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type? return_type, int* dimensions, identifier? default)
-
 arrayinitializer = ArrayInitializer(expression* initializers, constant comma)
 
 boolean = True | False
@@ -29,6 +27,7 @@ enumbody = EnumBody(enumconstant* constants, constant? separator, typedeclaratio
 enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, expression* arguments, typedeclaration* body)
 
 expression = ArrayCreator(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type, expression* dimensions, arrayinitializer? initializer)
+      | ElementValueArrayInitializer(arrayinitializer initializer)
       | ArraySelector(expression index)
       | Assignment(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, expression expressionl, expression value, operator type)
       | BinaryOperation(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, operator operator, expression operandl, expression operandr)
@@ -98,7 +97,8 @@ type = BasicType(identifier name, int* dimensions)
 
 type_argument = TypeArgument(type? type, identifier? pattern_type)
 
-typedeclaration = AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, annotationbodydeclaration* body)
+typedeclaration = AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, typedeclaration* body)
+      | AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type? return_type, int* dimensions, identifier? default)
       | ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, type* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
       | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement body)

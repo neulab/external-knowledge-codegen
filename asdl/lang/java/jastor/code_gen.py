@@ -1239,3 +1239,6 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_EmptyClassBody(self, node):
         self.write("{", "}", "\n")
 
+
+    def visit_ElementValueArrayInitializer(self, node):
+        self.write(node.initializer)

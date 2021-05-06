@@ -310,15 +310,19 @@ class Expression(Node):
     attrs = ()
 
 
-class ReferenceTypeExpression(Node):
+class ElementValueArrayInitializer(Expression):
+    attrs = ("initializer",)
+
+
+class ReferenceTypeExpression(Expression):
     attrs = ("type",)
 
 
-class BlockExpression(Node):
+class BlockExpression(Expression):
     attrs = ("block",)
 
 
-class NoExpression(Node):
+class NoExpression(Expression):
     attrs = ("null",)
 
 

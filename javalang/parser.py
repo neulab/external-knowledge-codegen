@@ -170,7 +170,7 @@ class Parser(object):
 
         return True
 
-    def build_binary_operation(self, parts, start_level=0):
+    def build_binary_operation(self, parts, start_level=0) -> tree.BinaryOperation:
         if len(parts) == 1:
             return parts[0]
 
@@ -743,21 +743,22 @@ class Parser(object):
                                      value=value)
 
     @parse_debug
-    def parse_element_value(self):
+    def parse_element_value(self) -> tree.Expression:
         token = self.tokens.look()
         if self.is_annotation():
             annotation = self.parse_annotation()
             annotation._position = token.position
-            return annotation
+            return tree.AnnotationExpression(annotation)
 
         elif self.would_accept('{'):
-            return self.parse_array_initializer()
+            return tree.ElementValueArrayInitializer(
+                initializer=self.parse_array_initializer())
 
         else:
             return self.parse_expressionl()
 
     @parse_debug
-    def parse_element_values(self):
+    def parse_element_values(self) -> List[tree.Expression]:
         element_values = list()
 
         while True:
@@ -1795,7 +1796,7 @@ class Parser(object):
 # -- Expressions --
 
     @parse_debug
-    def parse_expression(self):
+    def parse_expression(self) -> tree.Primary:
         try:
             self.tokens.push_marker()
             method_reference_expression = self.parse_method_reference_expression()
@@ -1818,7 +1819,7 @@ class Parser(object):
             return expressionl
 
     @parse_debug
-    def parse_method_reference_expression(self):
+    def parse_method_reference_expression(self) -> tree.MethodReference:
         created_name = tree.ReferenceType()
         created_name.name = self.parse_identifier()
         created_name.dimensions = self.parse_array_dimension()
@@ -1834,7 +1835,7 @@ class Parser(object):
             self.illegal("nope")
 
     @parse_debug
-    def parse_expressionl(self):
+    def parse_expressionl(self) -> tree.Primary:
         expression_2 = self.parse_expression_2()
         true_expression = None
         false_expression = None
@@ -1861,7 +1862,7 @@ class Parser(object):
         return expression_2
 
     @parse_debug
-    def parse_expression_2(self):
+    def parse_expression_2(self) -> tree.Primary:
         expression_3 = self.parse_expression_3()
         token = self.tokens.look()
         if token.value in Operator.INFIX or token.value == 'instanceof':
@@ -1894,7 +1895,7 @@ class Parser(object):
 # -- Expression operators --
 
     @parse_debug
-    def parse_expression_3(self):
+    def parse_expression_3(self) -> tree.Primary:
         prefix_operators = list()
         while self.tokens.look().value in Operator.PREFIX:
             prefix_operators.append(
@@ -2231,7 +2232,7 @@ class Parser(object):
         return (arguments, class_body)
 
     @parse_debug
-    def parse_array_creator_rest(self):
+    def parse_array_creator_rest(self) -> tree.ArrayCreator:
         if self.would_accept('[', ']'):
             array_dimension = self.parse_array_dimension()
             array_initializer = self.parse_array_initializer()
