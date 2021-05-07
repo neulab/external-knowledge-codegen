@@ -770,6 +770,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.prefix_operators:
             for op in node.prefix_operators:
                 self.write(op.operator)
+        if node.prefix_operators or node.postfix_operators:
+            self.write("(")
         if self._needsParentheses(node.operandl):
             self.write("(")
         self.write(node.operandl)
@@ -780,6 +782,8 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write("(")
         self.write(node.operandr)
         if self._needsParentheses(node.operandr) and node.operator.operator != "instanceof":
+            self.write(")")
+        if node.prefix_operators or node.postfix_operators:
             self.write(")")
         if node.postfix_operators:
             for op in node.postfix_operators:
