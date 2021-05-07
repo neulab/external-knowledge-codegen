@@ -90,6 +90,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     print('process testing data...', flush=True)
     test_examples = preprocess_dataset(test_file, name='test',
                                        transition_system=transition_system,
+                                        num_examples=num_examples,
                                        start_at=start_at)
     print(f'{len(test_examples)} testing instances', file=sys.stderr)
 
