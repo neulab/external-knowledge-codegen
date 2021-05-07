@@ -35,7 +35,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
                                                      "MethodDeclaration"))
     transition_system = JavaTransitionSystem(grammar)
 
-    print('process gold training data...', file=sys.stderr)
+    print(f'process gold training data... {train_file}', file=sys.stderr)
     train_examples = preprocess_dataset(train_file, name='train',
                                         transition_system=transition_system,
                                         num_examples=num_examples)
@@ -178,7 +178,9 @@ def preprocess_dataset(file_path, transition_system, name='train',
             for t, action in enumerate(tgt_actions):
                 valid_continuating_types = transition_system.get_valid_continuation_types(hyp)
                 if action.__class__ not in valid_continuating_types:
-                    transition_system.get_valid_continuation_types(hyp)
+                    print(f"Error: Valid continuation types are {valid_continuating_types} "
+                          f"but current action class is {action.__class__}",
+                          file=sys.stderr)
                     assert action.__class__ in valid_continuating_types
                 if isinstance(action, ApplyRuleAction):
                     valid_continuating_productions = transition_system.get_valid_continuating_productions(hyp)
@@ -213,6 +215,8 @@ def preprocess_dataset(file_path, transition_system, name='train',
                 decanonicalized_code_from_hyp)
             print(f"example_json['snippet']:\n{example_json['snippet']}\n==========")
             print(f"decanonicalized_code_from_hyp:\n{decanonicalized_code_from_hyp}\n==========")
+            if i == 23:
+                print(i)
             assert compare_ast(parsed_snippet_ast, parsed_decanon_ast)
             assert transition_system.compare_ast(surface_snippet_ast,
                                                  surface_decanon_ast)
@@ -366,6 +370,7 @@ if __name__ == '__main__':
                             help='Path to apidocs file')
     args = arg_parser.parse_args()
 
+    print(f"args.train: {args.train}", file=sys.stderr)
     # the json files can converted from the concode format using the script
     # data/concode/concode2conala.py
     preprocess_concode_dataset(

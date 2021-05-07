@@ -196,7 +196,7 @@ class RealizedField(Field):
     @property
     def as_value_list(self):
         """get value as an iterable"""
-        if self.cardinality == 'multiple':
+        if self.cardinality == 'multiple' and self.value is not None:
             return self.value
         elif self.value is not None:
             return [self.value]

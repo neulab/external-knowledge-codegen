@@ -758,18 +758,28 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_StatementExpressionList(self, node):
         self.comma_list(node.statement)
 
+    def _needsParentheses(self, node: tree.Primary) -> bool:
+        if type(node) in [tree.BinaryOperation,
+                          tree.Assignment,
+                          tree.TernaryExpression,
+                          tree.LambdaExpression]:
+            return True
+        return False
+
     def visit_BinaryOperation(self, node):
         if node.prefix_operators:
             for op in node.prefix_operators:
                 self.write(op.operator)
-        self.write("(")
+        if self._needsParentheses(node.operandl):
+            self.write("(")
         self.write(node.operandl)
-        self.write(")")
+        if self._needsParentheses(node.operandl):
+            self.write(")")
         self.write(" ", node.operator, " ")
-        if node.operator.operator != "instanceof":
+        if self._needsParentheses(node.operandr) and node.operator.operator != "instanceof":
             self.write("(")
         self.write(node.operandr)
-        if node.operator.operator != "instanceof":
+        if self._needsParentheses(node.operandr) and node.operator.operator != "instanceof":
             self.write(")")
         if node.postfix_operators:
             for op in node.postfix_operators:
@@ -888,7 +898,13 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.prefix_operators:
             for op in node.prefix_operators:
                 self.write(op)
-        self.write("(", "(", node.type, ") ", node.expression, ")")
+        self.write("(", "(", node.type, ") ")
+        if self._needsParentheses(node.expression):
+            self.write("(")
+        self.write(node.expression)
+        if self._needsParentheses(node.expression):
+            self.write(")")
+        self.write(")")
         if node.selectors:
             for selector in node.selectors:
                 if type(selector) == tree.ArraySelector:

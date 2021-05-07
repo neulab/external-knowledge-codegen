@@ -1190,16 +1190,16 @@ class Parser(object):
         return formal_parameters
 
     @parse_debug
-    def parse_variable_modifiers(self) -> Tuple[Set[tree.Modifier],
+    def parse_variable_modifiers(self) -> Tuple[List[tree.Modifier],
                                                 List[tree.Annotation]]:
-        modifiers = set()
+        modifiers = list()
         annotations = list()
 
         while True:
             token = self.tokens.look()
             if self.would_accept(Modifier):
                 modifier = self.accept(Modifier)
-                modifiers.add(tree.Modifier(value=modifier))
+                modifiers.append(tree.Modifier(value=modifier))
             elif self.is_annotation():
                 annotation = self.parse_annotation()
                 annotation._position = token.position
@@ -1896,10 +1896,12 @@ class Parser(object):
 
     @parse_debug
     def parse_expression_3(self) -> tree.Primary:
-        prefix_operators = list()
-        while self.tokens.look().value in Operator.PREFIX:
-            prefix_operators.append(
-              tree.Operator(operator=self.tokens.next().value))
+        prefix_operators = None
+        if self.tokens.look().value in Operator.PREFIX:
+            prefix_operators = list()
+            while self.tokens.look().value in Operator.PREFIX:
+                prefix_operators.append(
+                  tree.Operator(operator=self.tokens.next().value))
 
         if self.would_accept('('):
             try:
@@ -1922,23 +1924,24 @@ class Parser(object):
                 pass
 
         primary = self.parse_primary()
-        if primary.prefix_operators is not None:
-            primary.prefix_operators.extend(prefix_operators)
-        else:
-            primary.prefix_operators = prefix_operators
-        if primary.selectors is None:
-            primary.selectors = list()
-        if primary.postfix_operators is None:
-            primary.postfix_operators = list()
+        if prefix_operators is not None:
+            if primary.prefix_operators is not None:
+                primary.prefix_operators.extend(prefix_operators)
+            else:
+                primary.prefix_operators = prefix_operators
 
         token = self.tokens.look()
         while token.value in '[.':
             selector = self.parse_selector()
             selector._position = token.position
+            if primary.selectors is None:
+                primary.selectors = list()
             primary.selectors.append(selector)
 
             token = self.tokens.look()
 
+        if primary.postfix_operators is None and token.value in Operator.POSTFIX:
+            primary.postfix_operators = list()
         while token.value in Operator.POSTFIX:
             primary.postfix_operators.append(
                 tree.Operator(operator=self.tokens.next().value))
