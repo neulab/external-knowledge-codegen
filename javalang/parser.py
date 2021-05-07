@@ -1851,7 +1851,7 @@ class Parser(object):
         if self.would_accept('->'):
             body = self.parse_lambda_method_body()
             parameter = tree.InferredFormalParameter(name=expression_2)
-            return tree.LambdaExpression(parameters=[parameter],
+            return tree.LambdaExpression(parameter=parameter,
                                          body=body)
         if self.try_accept('::'):
             method_reference, type_arguments = self.parse_method_reference()

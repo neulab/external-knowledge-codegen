@@ -1014,14 +1014,12 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # LambdaExpression(parameter* parameters, statement body)
     def visit_LambdaExpression(self, node):
-        if node.parameters:
-            if len(node.parameters) >= 2:
-                self.write("(")
-            self.comma_list(node.parameters)
-            if len(node.parameters) >= 2:
-                self.write(")")
+        if node.parameter is not None:
+            self.write(node.parameter)
         else:
-            self.write("( )")
+            self.write("(")
+            self.comma_list(node.parameters)
+            self.write(")")
         self.write(" -> ", node.body)
 
     def visit_InferredFormalParameter(self, node):

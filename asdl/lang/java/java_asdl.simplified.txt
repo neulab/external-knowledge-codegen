@@ -42,7 +42,7 @@ expression = ArrayCreator(operator* prefix_operators, operator* postfix_operator
       | Identifier(identifier id)
       | InnerClassCreator(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type, type_argument* constructor_type_arguments, expression* arguments, statement* body)
       | Invocation(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments)
-      | LambdaExpression(parameter* parameters, expression body)
+      | LambdaExpression(parameter? parameter, parameter* parameters, expression body)
       | Literal(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, string value)
       | FieldReference(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, identifier field)
       | MemberReference(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, identifier member)

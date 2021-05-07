@@ -355,7 +355,7 @@ class MethodReference(Primary):
 
 
 class LambdaExpression(Primary):
-    attrs = ('parameters', 'body')
+    attrs = ('parameter', 'parameters', 'body')
 
 # ------------------------------------------------------------------------------
 

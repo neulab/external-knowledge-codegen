@@ -165,7 +165,7 @@ def preprocess_dataset(file_path, transition_system, name='train',
             print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
                   end='\n', file=sys.stderr)
         else:
-            print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
+            print(f">>>>>>>> preprocess_dataset example n°{i+1}/{len(dataset)}",
                   end='\r', file=sys.stderr)
         try:
             example_dict = preprocess_example(example_json)
