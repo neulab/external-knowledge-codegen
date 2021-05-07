@@ -26,7 +26,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
                                src_freq=3, code_freq=3, mined_data_file=None,
                                api_data_file=None, vocab_size=20000,
                                num_mined=0, out_dir='data/concode',
-                               num_examples=0, debug=False):
+                               num_examples=0, debug=False, start_at=0):
     np.random.seed(1234)
 
     asdl_text = open(grammar_file).read()
@@ -39,7 +39,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     train_examples = preprocess_dataset(train_file, name='train',
                                         transition_system=transition_system,
                                         num_examples=num_examples,
-                                        debug=debug)
+                                        debug=debug,
+                                        start_at=start_at)
 
     # held out 200 examples for development
     # TODO use the Concode valid corpus instead
@@ -50,7 +51,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
 
     dev_examples = preprocess_dataset(valid_file, name='dev',
                                       transition_system=transition_system,
-                                      num_examples=num_examples)
+                                      num_examples=num_examples,
+                                      start_at=start_at)
     mined_examples = []
     api_examples = []
     if mined_data_file and num_mined > 0:
@@ -58,7 +60,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
         print("from file: ", mined_data_file)
         mined_examples = preprocess_dataset(
           mined_data_file, name='mined', transition_system=transition_system,
-          num_examples=num_mined)
+          num_examples=num_mined, start_at=start_at)
         pickle.dump(mined_examples,
                     open(os.path.join(out_dir,
                                       'mined_{}.bin'.format(num_mined)), 'wb'))
@@ -68,7 +70,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
         name = os.path.splitext(os.path.basename(api_data_file))[0]
         api_examples = preprocess_dataset(api_data_file, name='api',
                                           transition_system=transition_system,
-                                          num_examples=num_examples)
+                                          num_examples=num_examples,
+                                          start_at=start_at)
         pickle.dump(api_examples,
                     open(os.path.join(out_dir, name + '.bin'), 'wb'))
 
@@ -86,7 +89,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
 
     print('process testing data...', flush=True)
     test_examples = preprocess_dataset(test_file, name='test',
-                                       transition_system=transition_system)
+                                       transition_system=transition_system,
+                                       start_at=start_at)
     print(f'{len(test_examples)} testing instances', file=sys.stderr)
 
     src_vocab = VocabEntry.from_corpus([e.src_sent for e in train_examples],
@@ -140,7 +144,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
 
 
 def preprocess_dataset(file_path, transition_system, name='train',
-                       num_examples=None, debug=False):
+                       num_examples=None, debug=False,
+                       start_at=0):
     try:
         dataset = json.load(open(file_path))
     except Exception as e:
@@ -154,6 +159,8 @@ def preprocess_dataset(file_path, transition_system, name='train',
     f = open(file_path + '.debug', 'w')
     skipped_list = []
     for i, example_json in enumerate(dataset):
+        if i < start_at:
+            continue
         if debug:
             print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
                   end='\n', file=sys.stderr)
@@ -164,7 +171,7 @@ def preprocess_dataset(file_path, transition_system, name='train',
             example_dict = preprocess_example(example_json)
             snippet = example_dict['canonical_snippet']
             if debug:
-              print(f"canonical_snippet:\n{snippet}", file=sys.stderr)
+                print(f"canonical_snippet:\n{snippet}", file=sys.stderr)
 
             try:
                 java_ast = javalang.parse.parse_member_declaration(snippet)
@@ -353,32 +360,34 @@ if __name__ == '__main__':
     arg_parser.add_argument('-D', '--debug', default=False,
                             action='store_true',
                             help='If set, print additional debug messages.')
+    arg_parser.add_argument('--freq', type=int, default=3,
+                            help='minimum frequency of tokens')
+    arg_parser.add_argument('--include_api', type=str,
+                            help='Path to apidocs file')
+    arg_parser.add_argument('--grammar', type=str,
+                            help='Path to grammar file',
+                            default='asdl/lang/java/java_asdl.simplified.txt')
+    arg_parser.add_argument('--num_examples', type=int, default=0,
+                            help='Max number of examples to use in any set')
+    arg_parser.add_argument('--num_mined', type=int, default=0,
+                            help='First k number from mined file')
+    arg_parser.add_argument('--out_dir', type=str, default='data/concode',
+                            help='Path to output file')
+    arg_parser.add_argument('--pretrain', type=str,
+                            help='Path to pretrain file')
+    arg_parser.add_argument('--start-at', '-s', type=int, default=0,
+                            help='Start at this example')
+    arg_parser.add_argument('--test', type=str,
+                            help='Path to test file',
+                            default='data/concode/concode_test.json')
     arg_parser.add_argument('--train', type=str,
                             help='Path to train file',
                             default='data/concode/concode_train.json')
     arg_parser.add_argument('--valid', type=str,
                             help='Path to valid file',
                             default='data/concode/concode_valid.json')
-    arg_parser.add_argument('--test', type=str,
-                            help='Path to test file',
-                            default='data/concode/concode_test.json')
-    arg_parser.add_argument('--grammar', type=str,
-                            help='Path to grammar file',
-                            default='asdl/lang/java/java_asdl.simplified.txt')
-    arg_parser.add_argument('--pretrain', type=str,
-                            help='Path to pretrain file')
-    arg_parser.add_argument('--out_dir', type=str, default='data/concode',
-                            help='Path to output file')
-    arg_parser.add_argument('--num_examples', type=int, default=0,
-                            help='Max number of examples to use in any set')
-    arg_parser.add_argument('--num_mined', type=int, default=0,
-                            help='First k number from mined file')
-    arg_parser.add_argument('--freq', type=int, default=3,
-                            help='minimum frequency of tokens')
     arg_parser.add_argument('--vocabsize', type=int, default=20000,
                             help='First k number from pretrain file')
-    arg_parser.add_argument('--include_api', type=str,
-                            help='Path to apidocs file')
     args = arg_parser.parse_args()
 
     print(f"args.train: {args.train}", file=sys.stderr)
@@ -397,4 +406,5 @@ if __name__ == '__main__':
       num_mined=args.num_mined,
       out_dir=args.out_dir,
       num_examples=args.num_examples,
-      debug=args.debug)
+      debug=args.debug,
+      start_at=args.start_at)

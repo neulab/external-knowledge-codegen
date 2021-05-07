@@ -561,22 +561,22 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_DiamondType(self, node):
         self.write(node.name)
+        self.write("<>")
         if node.sub_type is not None:
             self.write(".", node.sub_type)
-        self.write("<>")
         if node.dimensions:
             for dim in node.dimensions:
                 self.write("[", dim, "]")
 
     def visit_ReferenceType(self, node):
         self.write(node.name)
-        if node.sub_type is not None:
-            self.write(".", node.sub_type)
         if node.arguments is not None:
             #print(" bépo ", file=sys.stderr)
             self.write("<")
             self.comma_list(node.arguments)
             self.write(">")
+        if node.sub_type is not None:
+            self.write(".", node.sub_type)
         if node.dimensions:
             for dim in node.dimensions:
                 self.write("[", dim, "]")
