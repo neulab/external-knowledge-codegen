@@ -154,8 +154,12 @@ def preprocess_dataset(file_path, transition_system, name='train',
     f = open(file_path + '.debug', 'w')
     skipped_list = []
     for i, example_json in enumerate(dataset):
-        print(f"preprocess_dataset example n°{i+1}/{len(dataset)}", end='\r',
-              file=sys.stderr)
+        if debug:
+            print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
+                  end='\n', file=sys.stderr)
+        else:
+            print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
+                  end='\r', file=sys.stderr)
         try:
             example_dict = preprocess_example(example_json)
             snippet = example_dict['canonical_snippet']
@@ -198,10 +202,12 @@ def preprocess_dataset(file_path, transition_system, name='train',
                 hyp = hyp.clone_and_apply_action(action)
 
             assert hyp.frontier_node is None and hyp.frontier_field is None
-            hyp.code = code_from_hyp = jastor.to_source(asdl_ast_to_java_ast(
-                hyp.tree, transition_system.grammar)).strip()
-            # print(code_from_hyp)
-            # print(canonical_code)
+            java_ast = asdl_ast_to_java_ast(hyp.tree, transition_system.grammar)
+            code_from_hyp = jastor.to_source(java_ast).strip()
+
+            hyp.code = code_from_hyp
+            if debug:
+                print(f"code_from_hyp:\n{code_from_hyp}", file=sys.stderr)
             assert code_from_hyp == canonical_code
 
             parsed_snippet_ast = javalang.parse.parse_member_declaration(

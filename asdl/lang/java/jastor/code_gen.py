@@ -710,9 +710,8 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_WhileStatement(self, node):
         if node.label:
             self.write(node.label, ":", "\n")
-        self.write("while (")
+        self.write("while")
         self.write(node.condition)
-        self.write(")")
         self.write(node.body)
 
     def visit_DoStatement(self, node):
@@ -720,9 +719,8 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.label, ":", "\n")
         self.write("do ")
         self.write(node.body)
-        self.write(" while (")
+        self.write(" while")
         self.write(node.condition)
-        self.write(") ")
         self.write(";")
         self.newline()
 
@@ -739,11 +737,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_SynchronizedStatement(self, node):
         if node.label:
             self.write(node.label, ":", "\n")
-        self.write("synchronized")
-        self.write("(")
-        self.write(node.lock)
-        self.write(") ")
-        self.write(node.block)
+        self.write("synchronized", node.lock, node.block)
 
     def visit_ForControl(self, node):
         if node.init:
@@ -758,31 +752,15 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_StatementExpressionList(self, node):
         self.comma_list(node.statement)
 
-    def _needsParentheses(self, node: tree.Primary) -> bool:
-        if type(node) in [tree.BinaryOperation,
-                          tree.Assignment,
-                          tree.TernaryExpression,
-                          tree.LambdaExpression]:
-            return True
-        return False
-
     def visit_BinaryOperation(self, node):
         if node.prefix_operators:
             for op in node.prefix_operators:
                 self.write(op.operator)
         if node.prefix_operators or node.postfix_operators:
             self.write("(")
-        if self._needsParentheses(node.operandl):
-            self.write("(")
         self.write(node.operandl)
-        if self._needsParentheses(node.operandl):
-            self.write(")")
         self.write(" ", node.operator, " ")
-        if self._needsParentheses(node.operandr) and node.operator.operator != "instanceof":
-            self.write("(")
         self.write(node.operandr)
-        if self._needsParentheses(node.operandr) and node.operator.operator != "instanceof":
-            self.write(")")
         if node.prefix_operators or node.postfix_operators:
             self.write(")")
         if node.postfix_operators:
@@ -796,6 +774,23 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.qualifier:
             self.write(node.qualifier, ".")
         self.write(node.member)
+        if node.selectors:
+            for selector in node.selectors:
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
+        if node.postfix_operators:
+            for op in node.postfix_operators:
+                self.write(op.operator)
+
+    def visit_FieldReference(self, node):
+        if node.prefix_operators:
+            for op in node.prefix_operators:
+                self.write(op.operator)
+        if node.qualifier:
+            self.write(node.qualifier, ".")
+        self.write(node.field)
         if node.selectors:
             for selector in node.selectors:
                 if type(selector) == tree.ArraySelector:
@@ -878,7 +873,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_IfStatement(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
-        self.write("if (", node.condition, ") ", "\n")
+        self.write("if", node.condition, "\n")
         self.write(node.then_statement)
         if node.else_statement:
             self.write("else ", node.else_statement)
@@ -902,13 +897,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.prefix_operators:
             for op in node.prefix_operators:
                 self.write(op)
-        self.write("(", "(", node.type, ") ")
-        if self._needsParentheses(node.expression):
-            self.write("(")
+        self.write("(", node.type, ") ")
         self.write(node.expression)
-        if self._needsParentheses(node.expression):
-            self.write(")")
-        self.write(")")
         if node.selectors:
             for selector in node.selectors:
                 if type(selector) == tree.ArraySelector:
@@ -1024,10 +1014,11 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # LambdaExpression(parameter* parameters, statement body)
     def visit_LambdaExpression(self, node):
-        self.write("(")
         if node.parameters:
             self.comma_list(node.parameters)
-        self.write(") -> ", node.body)
+        else:
+            self.write("( )")
+        self.write(" -> ", node.body)
 
     def visit_InferredFormalParameter(self, node):
         self.write(node.name)
@@ -1035,7 +1026,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_SwitchStatement(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
-        self.write("switch (", node.expression, ") {", "\n")
+        self.write("switch", node.expression, "{", "\n")
         if node.cases is not None:
             for case in node.cases:
                 self.write(case)
@@ -1259,6 +1250,24 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_EmptyClassBody(self, node):
         self.write("{", "}", "\n")
 
-
     def visit_ElementValueArrayInitializer(self, node):
         self.write(node.initializer)
+
+    # prefix_operators, "postfix_operators", "qualifier", "selectors
+    def visit_ParenthesizedExpression(self, node):
+        if node.prefix_operators:
+            for op in node.prefix_operators:
+                self.write(op)
+        if node.qualifier:
+            self.write(node.qualifier, ".")
+        self.write("(", node.expression, ")")
+        if node.selectors:
+            for selector in node.selectors:
+                if type(selector) == tree.ArraySelector:
+                    self.write(selector)
+                else:
+                    self.write(".", selector)
+        if node.postfix_operators:
+            for op in node.postfix_operators:
+                self.write(op)
+

@@ -1850,7 +1850,7 @@ class Parser(object):
                                           if_false=false_expression)
         if self.would_accept('->'):
             body = self.parse_lambda_method_body()
-            parameter = tree.InferredFormalParameter(name=expression_2.member)
+            parameter = tree.InferredFormalParameter(name=expression_2)
             return tree.LambdaExpression(parameters=[parameter],
                                          body=body)
         if self.try_accept('::'):
@@ -1950,7 +1950,8 @@ class Parser(object):
         return primary
 
     @parse_debug
-    def parse_method_reference(self):
+    def parse_method_reference(self) -> Tuple[tree.MemberReference,
+                                              List[tree.TypeArgument]]:
         type_arguments = list()
         if self.would_accept('<'):
             type_arguments = self.parse_nonwildcard_type_arguments()
@@ -2058,11 +2059,15 @@ class Parser(object):
 
             identifier_suffix = self.parse_identifier_suffix()
 
-            if (isinstance(identifier_suffix, (tree.MemberReference, tree.MethodInvocation))
+            if (isinstance(identifier_suffix, tree.MethodInvocation)
                 and identifier_suffix.member is None):
-            #if isinstance(identifier_suffix, (tree.MemberReference)):
                 # Take the last identifer as the member and leave the rest for the qualifier
                 identifier_suffix.member = qualified_identifier.pop()
+
+            elif (isinstance(identifier_suffix, tree.FieldReference)
+                and identifier_suffix.field is None):
+                # Take the last identifer as the member and leave the rest for the qualifier
+                identifier_suffix.field = qualified_identifier.pop()
 
             elif isinstance(identifier_suffix, tree.ClassReference):
                 identifier_suffix.type = tree.ReferenceType(
@@ -2071,7 +2076,8 @@ class Parser(object):
                         if identifier_suffix.type is not None  else None)
 
             identifier_suffix._position = token.position
-            identifier_suffix.qualifier = '.'.join(qualified_identifier)
+            if qualified_identifier:
+                identifier_suffix.qualifier = '.'.join(qualified_identifier)
 
             return identifier_suffix
 
@@ -2099,7 +2105,7 @@ class Parser(object):
         expression = self.parse_expression()
         self.accept(')')
 
-        return expression
+        return tree.ParenthesizedExpression(expression=expression)
 
     @parse_debug
     def parse_arguments(self):
@@ -2293,7 +2299,9 @@ class Parser(object):
             return tree.SuperConstructorInvocation(arguments=arguments)
 
         else:
-            return tree.MemberReference()
+            # There is no suffix so it was a field (or local variable)
+            # reference
+            return tree.FieldReference()
 
     @parse_debug
     def parse_explicit_generic_invocation(self):
@@ -2344,7 +2352,7 @@ class Parser(object):
                     return tree.MethodInvocation(member=identifier,
                                                  arguments=arguments)
                 else:
-                    return tree.MemberReference(member=identifier)
+                   return tree.MemberReference(member=identifier)
             elif self.would_accept('super', '::'):
                 self.accept('super')
                 return token

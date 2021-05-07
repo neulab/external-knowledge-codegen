@@ -334,6 +334,10 @@ class Primary(Expression):
     attrs = ("prefix_operators", "postfix_operators", "qualifier", "selectors")
 
 
+class ParenthesizedExpression(Primary):
+    attrs = ("expression",)
+
+
 class Assignment(Primary):
     attrs = ("expressionl", "value", "type")
 
@@ -366,6 +370,10 @@ class This(Primary):
 
 class Cast(Primary):
     attrs = ("type", "expression")
+
+
+class FieldReference(Primary):
+    attrs = ("field",)
 
 
 class MemberReference(Primary):
