@@ -26,7 +26,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
                                src_freq=3, code_freq=3, mined_data_file=None,
                                api_data_file=None, vocab_size=20000,
                                num_mined=0, out_dir='data/concode',
-                               num_examples=0):
+                               num_examples=0, debug=False):
     np.random.seed(1234)
 
     asdl_text = open(grammar_file).read()
@@ -38,7 +38,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     print(f'process gold training data... {train_file}', file=sys.stderr)
     train_examples = preprocess_dataset(train_file, name='train',
                                         transition_system=transition_system,
-                                        num_examples=num_examples)
+                                        num_examples=num_examples,
+                                        debug=debug)
 
     # held out 200 examples for development
     # TODO use the Concode valid corpus instead
@@ -139,7 +140,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
 
 
 def preprocess_dataset(file_path, transition_system, name='train',
-                       num_examples=None):
+                       num_examples=None, debug=False):
     try:
         dataset = json.load(open(file_path))
     except Exception as e:
@@ -153,13 +154,13 @@ def preprocess_dataset(file_path, transition_system, name='train',
     f = open(file_path + '.debug', 'w')
     skipped_list = []
     for i, example_json in enumerate(dataset):
-        print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
+        print(f"preprocess_dataset example n°{i+1}/{len(dataset)}", end='\r',
               file=sys.stderr)
         try:
             example_dict = preprocess_example(example_json)
             snippet = example_dict['canonical_snippet']
-            print(f"canonical_snippet:\n{snippet}",
-                  file=sys.stderr)
+            if debug:
+              print(f"canonical_snippet:\n{snippet}", file=sys.stderr)
 
             try:
                 java_ast = javalang.parse.parse_member_declaration(snippet)
@@ -169,7 +170,8 @@ def preprocess_dataset(file_path, transition_system, name='train',
                       file=sys.stderr)
                 raise
             canonical_code = jastor.to_source(java_ast).strip()
-            print(f"canonical_code:\n{canonical_code}", file=sys.stderr)
+            if debug:
+                print(f"canonical_code:\n{canonical_code}", file=sys.stderr)
             tgt_ast = java_ast_to_asdl_ast(java_ast, transition_system.grammar)
             tgt_actions = transition_system.get_actions(tgt_ast)
 
@@ -190,9 +192,9 @@ def preprocess_dataset(file_path, transition_system, name='train',
                 if hyp.frontier_node:
                     p_t = hyp.frontier_node.created_time
                     f_t = hyp.frontier_field.field.__repr__(plain=True)
-
-                print(f'\t[{t}] {action}, frontier field: {f_t}, '
-                      f'parent: {p_t}')
+                if debug:
+                    print(f'\t[{t}] {action}, frontier field: {f_t}, '
+                          f'parent: {p_t}')
                 hyp = hyp.clone_and_apply_action(action)
 
             assert hyp.frontier_node is None and hyp.frontier_field is None
@@ -213,10 +215,10 @@ def preprocess_dataset(file_path, transition_system, name='train',
                 decanonicalized_code_from_hyp)
             surface_decanon_ast = transition_system.surface_code_to_ast(
                 decanonicalized_code_from_hyp)
-            print(f"example_json['snippet']:\n{example_json['snippet']}\n==========")
-            print(f"decanonicalized_code_from_hyp:\n{decanonicalized_code_from_hyp}\n==========")
-            if i == 23:
-                print(i)
+
+            if debug:
+                print(f"example_json['snippet']:\n{example_json['snippet']}\n==========")
+                print(f"decanonicalized_code_from_hyp:\n{decanonicalized_code_from_hyp}\n==========")
             assert compare_ast(parsed_snippet_ast, parsed_decanon_ast)
             assert transition_system.compare_ast(surface_snippet_ast,
                                                  surface_decanon_ast)
@@ -342,6 +344,9 @@ def preprocess_example(example_json):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('-D', '--debug', default=False,
+                            action='store_true',
+                            help='If set, print additional debug messages.')
     arg_parser.add_argument('--train', type=str,
                             help='Path to train file',
                             default='data/concode/concode_train.json')
@@ -385,4 +390,5 @@ if __name__ == '__main__':
       vocab_size=args.vocabsize,
       num_mined=args.num_mined,
       out_dir=args.out_dir,
-      num_examples=args.num_examples)
+      num_examples=args.num_examples,
+      debug=args.debug)
