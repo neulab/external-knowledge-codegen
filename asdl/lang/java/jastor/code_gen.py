@@ -1015,7 +1015,11 @@ class SourceGenerator(ExplicitNodeVisitor):
     # LambdaExpression(parameter* parameters, statement body)
     def visit_LambdaExpression(self, node):
         if node.parameters:
+            if len(node.parameters) >= 2:
+                self.write("(")
             self.comma_list(node.parameters)
+            if len(node.parameters) >= 2:
+                self.write(")")
         else:
             self.write("( )")
         self.write(" -> ", node.body)
