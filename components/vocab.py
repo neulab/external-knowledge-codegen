@@ -50,7 +50,6 @@ class VocabEntry(object):
         for word in other_vocab_entry.word2id:
             self.add(word)
 
-
     @staticmethod
     def from_corpus(corpus, size, freq_cutoff=0):
         vocab_entry = VocabEntry()
@@ -59,13 +58,14 @@ class VocabEntry(object):
         word_freq = Counter(a_chain)
         non_singletons = [w for w in word_freq if word_freq[w] > 1]
         singletons = [w for w in word_freq if word_freq[w] == 1]
-        print('number of word types: %d, number of word types w/ frequency > 1: %d' % (len(word_freq),
-                                                                                       len(non_singletons)))
+        print(f'number of word types: {len(word_freq)}, number of word types '
+              f'w/ frequency > 1: {len(non_singletons)}')
         print('number of singletons: ', len(singletons))
         # print('singletons: %s' % singletons)
 
         total_appearance_count = 0
-        top_k_words = sorted(word_freq.keys(), reverse=True, key=word_freq.get)[:size]
+        top_k_words = sorted(word_freq.keys(), reverse=True,
+                             key=word_freq.get)[:size]
         words_not_included = []
         for word in top_k_words:
             total_appearance_count += word_freq[word]
@@ -95,7 +95,10 @@ class Vocab(object):
             self.entries.append(key)
 
     def __repr__(self):
-        return 'Vocab(%s)' % (', '.join('%s %swords' % (entry, getattr(self, entry)) for entry in self.entries))
+        return ('Vocab(%s)'
+                % (', '.join('%s %swords'
+                             % (entry, getattr(self, entry))
+                             for entry in self.entries)))
 
 
 if __name__ == '__main__':

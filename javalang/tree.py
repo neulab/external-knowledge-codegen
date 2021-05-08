@@ -87,6 +87,10 @@ class InstanceInitializer(NonEmptyDeclaration):
 # ------------------------------------------------------------------------------
 
 
+class ArrayDimension(Node):
+    attrs = ("dim",)
+
+
 class Modifier(Node):
     attrs = ("value",)
 
@@ -323,7 +327,7 @@ class BlockExpression(Expression):
 
 
 class NoExpression(Expression):
-    attrs = ("null",)
+    attrs = ()
 
 
 class Identifier(Node):

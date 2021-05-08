@@ -1,6 +1,8 @@
 ## ASDL's 4 builtin types are
 identifier, int, string, constant
 
+dimension = ArrayDimension(expression? dim)
+
 annotation = MarkerAnnotation(identifier name)
       | NormalAnnotation(expression* element, identifier name)
       | SingleElementAnnotation(expression? element, identifier name)
@@ -20,13 +22,13 @@ classbody = ClassBody(typedeclaration* declarations)
 
 cu = CompilationUnit(package? package, importdeclaration* imports, typedeclaration* types)
 
-declarator = VariableDeclarator(identifier name, int* dimensions, expression? initializer)
+declarator = VariableDeclarator(identifier name, dimension* dimensions, expression? initializer)
 
 enumbody = EnumBody(enumconstant* constants, constant? separator, typedeclaration* declarations, constant comma)
 
 enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, expression* arguments, typedeclaration* body)
 
-expression = ArrayCreator(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type, expression* dimensions, arrayinitializer? initializer)
+expression = ArrayCreator(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type type, dimension* dimensions, arrayinitializer? initializer)
       | ElementValueArrayInitializer(arrayinitializer initializer)
       | ArraySelector(expression index)
       | ParenthesizedExpression(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, expression expression)
@@ -48,7 +50,7 @@ expression = ArrayCreator(operator* prefix_operators, operator* postfix_operator
       | MemberReference(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, identifier member)
       | MethodInvocation(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments, identifier member)
       | MethodReference(expression expression, identifier method, type_argument* type_arguments)
-      | NoExpression(identifier? null)
+      | NoExpression
       | ReferenceTypeExpression(type type)
       | SuperConstructorInvocation(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments)
       | SuperMemberReference(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, identifier member)
@@ -72,7 +74,7 @@ operator = Operator(constant operator)
 
 package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name)
 
-parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, int* dimensions, constant? varargs)
+parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, dimension* dimensions, constant? varargs)
       | InferredFormalParameter(identifier name)
 
 statement = AssertStatement(identifier? label, expression condition, expression? value)
@@ -93,14 +95,14 @@ statement = AssertStatement(identifier? label, expression condition, expression?
       | TryStatement(identifier? label, identifier? resources, statement block, catch* catches, statement? finally_block)
       | WhileStatement(identifier? label, expression condition, statement body)
 
-type = BasicType(identifier name, int* dimensions)
-      | DiamondType(identifier name, int* dimensions, identifier? sub_type)
-      | ReferenceType(identifier name, int* dimensions, type_argument* arguments, identifier? sub_type)
+type = BasicType(identifier name, dimension* dimensions)
+      | DiamondType(identifier name, dimension* dimensions, type? sub_type)
+      | ReferenceType(identifier name, dimension* dimensions, type_argument* arguments, type? sub_type)
 
 type_argument = TypeArgument(type? type, identifier? pattern_type)
 
 typedeclaration = AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, typedeclaration* body)
-      | AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type? return_type, int* dimensions, identifier? default)
+      | AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type? return_type, dimension* dimensions, identifier? default)
       | ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, type* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
       | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement body)
@@ -109,7 +111,7 @@ typedeclaration = AnnotationDeclaration(fieldmodifier* modifiers, annotation* an
       | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
       | InstanceInitializer(statement block)
       | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, type* extends, typedeclaration* body)
-      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type? return_type, identifier name, int* dimensions, parameter* parameters, identifier* throws, statement? body)
+      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type? return_type, identifier name, dimension* dimensions, parameter* parameters, identifier* throws, statement? body)
       | StaticInitializer(statement block)
 
 type_parameter = TypeParameter(identifier name, type* extends)

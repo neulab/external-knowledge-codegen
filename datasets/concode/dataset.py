@@ -42,12 +42,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
                                         debug=debug,
                                         start_at=start_at)
 
-    # held out 200 examples for development
-    # TODO use the Concode valid corpus instead
     full_train_examples = train_examples[:]
     np.random.shuffle(train_examples)
-    # dev_examples = train_examples[:200]
-    # train_examples = train_examples[200:]
 
     dev_examples = preprocess_dataset(valid_file, name='dev',
                                       transition_system=transition_system,
@@ -102,6 +98,11 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
                                                         GenTokenAction),
                                    e.tgt_actions))
                         for e in train_examples]
+    for i, pt in enumerate(primitive_tokens):
+        print(f"pt {i}: {pt}")
+        for j, t in enumerate(pt):
+            #continue
+            print(f"  t {i}: {t}")
     primitive_vocab = VocabEntry.from_corpus(primitive_tokens, size=vocab_size,
                                              freq_cutoff=code_freq)
 

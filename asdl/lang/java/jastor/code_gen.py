@@ -566,7 +566,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(".", node.sub_type)
         if node.dimensions:
             for dim in node.dimensions:
-                self.write("[", dim, "]")
+                self.write(dim)
 
     def visit_ReferenceType(self, node):
         self.write(node.name)
@@ -579,15 +579,13 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(".", node.sub_type)
         if node.dimensions:
             for dim in node.dimensions:
-                self.write("[", dim, "]")
+                self.write(dim)
 
     def visit_VariableDeclarator(self, node):
         self.write(" ", node.name)
         if node.dimensions:
             for dim in node.dimensions:
-                self.write("[")
                 self.write(dim)
-                self.write("]")
         if node.initializer:
             self.write(" = ", node.initializer)
 
@@ -812,6 +810,12 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_ArraySelector(self, node):
         self.write("[", node.index, "]")
+
+    def visit_ArrayDimension(self, node):
+        self.write("[")
+        if node.dim is not None:
+            self.write(node.dim)
+        self.write("]")
 
     def visit_Modifier(self, node):
         self.write(node.value)
@@ -1202,9 +1206,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("new ", node.type)
         if node.dimensions:
             for dim in node.dimensions:
-                self.write("[")
                 self.write(dim)
-                self.write("]")
         if node.initializer:
               self.write(node.initializer)
         if node.postfix_operators:

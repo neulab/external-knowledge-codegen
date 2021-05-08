@@ -539,13 +539,10 @@ class Parser(object):
         if self.would_accept(BasicType):
             base_type = self.parse_basic_type()
             self.accept('[', ']')
-            base_type.dimensions = [None]
         else:
             base_type = self.parse_reference_type()
-            base_type.dimensions = []
 
-        base_type.dimensions = self.update_array_dimensions(
-            base_type.dimensions)
+        base_type.dimensions = self.parse_array_dimension()
 
         return tree.TypeArgument(type=base_type,
                                  pattern_type=pattern_type)
@@ -566,13 +563,10 @@ class Parser(object):
             if self.would_accept(BasicType):
                 base_type = self.parse_basic_type()
                 self.accept('[', ']')
-                base_type.dimensions = [None]
             else:
                 base_type = self.parse_reference_type()
-                base_type.dimensions = []
 
-            base_type.dimensions = self.update_array_dimensions(
-                base_type.dimensions)
+            base_type.dimensions = self.parse_array_dimension()
             types.append(base_type)
 
             if not self.try_accept(','):
@@ -632,16 +626,16 @@ class Parser(object):
                                   extends=extends)
 
     @parse_debug
-    def parse_array_dimension(self) -> List[tree.NoExpression]:
-        array_dimension = 0
-
-        while self.try_accept('[', ']'):
-            array_dimension += 1
-
-        if array_dimension:
-            return [tree.NoExpression(null=None)] * array_dimension
-        else:
-            return []
+    def parse_array_dimension(self) -> List[tree.ArrayDimension]:
+        dimensions = list()
+        while self.try_accept('['):
+            if self.try_accept(']'):
+                dimensions.append(tree.ArrayDimension())
+            else:
+                expression = self.parse_expression()
+                self.accept(']')
+                dimensions.append(tree.ArrayDimension(dim=expression))
+        return dimensions
 
 # ------------------------------------------------------------------------------
 # -- Annotations and modifiers --
@@ -1233,7 +1227,7 @@ class Parser(object):
 
     @parse_debug
     def parse_variable_declarator_rest(self) -> Tuple[
-      List[tree.NoExpression], tree.VariableInitializer]:
+      List[tree.ArrayDimension], tree.VariableInitializer]:
         array_dimension = self.parse_array_dimension()
         initializer = None
 
@@ -2060,13 +2054,15 @@ class Parser(object):
             identifier_suffix = self.parse_identifier_suffix()
 
             if (isinstance(identifier_suffix, tree.MethodInvocation)
-                and identifier_suffix.member is None):
-                # Take the last identifer as the member and leave the rest for the qualifier
+                    and identifier_suffix.member is None):
+                # Take the last identifer as the member and leave the rest for
+                # the qualifier
                 identifier_suffix.member = qualified_identifier.pop()
 
             elif (isinstance(identifier_suffix, tree.FieldReference)
-                and identifier_suffix.field is None):
-                # Take the last identifer as the member and leave the rest for the qualifier
+                  and identifier_suffix.field is None):
+                # Take the last identifer as the member and leave the rest for
+                # the qualifier
                 identifier_suffix.field = qualified_identifier.pop()
 
             elif isinstance(identifier_suffix, tree.ClassReference):
@@ -2242,29 +2238,17 @@ class Parser(object):
 
     @parse_debug
     def parse_array_creator_rest(self) -> tree.ArrayCreator:
-        if self.would_accept('[', ']'):
-            array_dimension = self.parse_array_dimension()
-            array_initializer = self.parse_array_initializer()
-
-            return tree.ArrayCreator(dimensions=array_dimension,
-                                     initializer=array_initializer)
-
-        else:
-            array_dimensions = list()
-
-            while self.would_accept('[') and not self.would_accept('[', ']'):
-                self.accept('[')
-                expression = self.parse_expression()
-                array_dimensions.append(expression)
-                self.accept(']')
-
-            array_dimensions = self.update_array_dimensions(array_dimensions)
-            return tree.ArrayCreator(dimensions=array_dimensions)
+        array_dimensions = self.parse_array_dimension()
+        initializer = None
+        if self.would_accept('{'):
+            initializer = self.parse_array_initializer()
+        return tree.ArrayCreator(dimensions=array_dimensions,
+                                 initializer=initializer)
 
     @parse_debug
     def parse_identifier_suffix(self):
-        if self.try_accept('[', ']'):
-            array_dimension = [None] + self.parse_array_dimension()
+        if self.would_accept('[', ']'):
+            array_dimension = self.parse_array_dimension()
             self.accept('.', 'class')
             return tree.ClassReference(type=tree.Type(dimensions=array_dimension))
 

@@ -107,6 +107,8 @@ def common_prefix(str1: str, str2: str) -> None:
 def test(java_code, check_hypothesis=False, fail_on_error=False, member=False,
          debug=False):
     # get the (domain-specific) java AST of the example Java code snippet
+    if debug:
+        print(f'Java code: \n{java_code}')
     if member:
         java_ast = javalang.parse.parse_member_declaration(java_code)
     else:
@@ -115,8 +117,9 @@ def test(java_code, check_hypothesis=False, fail_on_error=False, member=False,
     # convert the java AST into general-purpose ASDL AST used by tranX
     asdl_ast = java_ast_to_asdl_ast(java_ast, grammar)
     if debug:
-        print('String representation of the ASDL AST: \n%s' % asdl_ast.to_string())
-        print('Size of the AST: %d' % asdl_ast.size)
+        print(f'String representation of the ASDL AST:')
+        print(f'{asdl_ast.to_string()}')
+        print(f'Size of the AST: {asdl_ast.size}')
         print(f"ASDL AST: {asdl_ast.to_string()}", file=sys.stderr)
 
     # we can also convert the ASDL AST back into Java AST
