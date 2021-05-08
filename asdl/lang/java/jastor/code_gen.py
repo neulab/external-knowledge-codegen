@@ -695,7 +695,6 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        #self.write(";", "\n")
 
     def visit_ForStatement(self, node):
         if node.label:
@@ -1147,7 +1146,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.default:
             self.write("=")
             self.write(node.default)
-        self.write(';', '\n')
+        self.write(";", '\n')
     def visit_SuperMemberReference(self, node):
         if node.prefix_operators:
             for op in node.prefix_operators:
@@ -1189,7 +1188,6 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        #self.write(";")
 
     def visit_ArrayCreator(self, node):
         if node.prefix_operators:
@@ -1212,7 +1210,6 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.postfix_operators:
             for op in node.postfix_operators:
                 self.write(op)
-        #self.write(";")
 
     # InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
     def visit_InnerClassCreator(self, node):

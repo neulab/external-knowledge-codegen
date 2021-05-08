@@ -49,7 +49,7 @@ expression = ArrayCreator(operator* prefix_operators, operator* postfix_operator
       | FieldReference(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, identifier field)
       | MemberReference(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, identifier member)
       | MethodInvocation(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments, identifier member)
-      | MethodReference(expression expression, identifier method, type_argument* type_arguments)
+      | MethodReference(expression expression, expression method, type_argument* type_arguments)
       | NoExpression
       | ReferenceTypeExpression(type type)
       | SuperConstructorInvocation(operator* prefix_operators, operator* postfix_operators, identifier? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments)

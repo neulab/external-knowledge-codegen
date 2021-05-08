@@ -8,7 +8,7 @@ from .tokenizer import (
     Annotation, Literal, Operator, JavaToken,
     )
 
-ENABLE_DEBUG_SUPPORT = True
+ENABLE_DEBUG_SUPPORT = False
 
 def parse_debug(method):
     global ENABLE_DEBUG_SUPPORT
@@ -538,7 +538,6 @@ class Parser(object):
 
         if self.would_accept(BasicType):
             base_type = self.parse_basic_type()
-            self.accept('[', ']')
         else:
             base_type = self.parse_reference_type()
 
@@ -1301,7 +1300,7 @@ class Parser(object):
         found_annotations = False
         i = 0
 
-        # Look past annoatations and modifiers. If we find a modifier that is not
+        # Look past annotations and modifiers. If we find a modifier that is not
         # 'final' then the statement must be a class or interface declaration
         while True:
             token = self.tokens.look(i)
@@ -1354,13 +1353,12 @@ class Parser(object):
         # We can't easily determine the statement type. Try parsing as a
         # variable declaration first and fall back to a statement
         try:
-            self.tokens.push_marker()
-            statement = self.parse_local_variable_declaration_statement()
-            statement._position = token.position
-            self.tokens.pop_marker(False)
-            return statement
+            with self.tokens:
+                statement = self.parse_local_variable_declaration_statement()
+                statement._position = token.position
+                return statement
         except JavaSyntaxError:
-            self.tokens.pop_marker(True)
+            pass
         return self.parse_statement()
 
     @parse_debug
@@ -1553,6 +1551,31 @@ class Parser(object):
             return statement
 
         else:
+            try:
+                with self.tokens:
+                    # MethodInvocation:
+                    #   Primary . [TypeArguments] Identifier ( [ArgumentList] )
+                    primary = self.parse_primary()
+                    self.accept('.')
+                    arguments = None
+                    type_arguments = None
+                    if self.would_accept('<'):
+                        type_arguments = self.parse_type_arguments_or_diamond()
+                    id = self.parse_identifier()
+                    arguments = self.parse_arguments()
+                    self.accept(';')
+                    expression = tree.MethodInvocation(prefix_operators=None,
+                                                 postfix_operators=None,
+                                                 qualifier=primary,
+                                                 selectors=None,
+                                                 member=id,
+                                                 type_arguments=type_arguments,
+                                                 arguments=arguments)
+                    statement = tree.ExpressionStatement(expression=expression)
+                    statement._position = token.position
+                    return statement
+            except JavaSyntaxError:
+                pass
             expression = self.parse_expression()
             self.accept(';')
 
@@ -1792,12 +1815,11 @@ class Parser(object):
     @parse_debug
     def parse_expression(self) -> tree.Primary:
         try:
-            self.tokens.push_marker()
-            method_reference_expression = self.parse_method_reference_expression()
-            self.tokens.pop_marker(False)
-            return method_reference_expression
+            with self.tokens:
+                method_reference_expression = self.parse_method_reference_expression()
+                return method_reference_expression
         except JavaSyntaxError:
-            self.tokens.pop_marker(True)
+            pass
         expressionl = self.parse_expressionl()
         assignment_type = None
         assignment_expression = None
