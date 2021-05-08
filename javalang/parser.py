@@ -1844,7 +1844,7 @@ class Parser(object):
                                           if_false=false_expression)
         if self.would_accept('->'):
             body = self.parse_lambda_method_body()
-            parameter = tree.InferredFormalParameter(name=expression_2)
+            parameter = tree.InferredFormalParameter(expression=expression_2)
             return tree.LambdaExpression(parameter=parameter,
                                          body=body)
         if self.try_accept('::'):
@@ -1964,7 +1964,7 @@ class Parser(object):
             parameters = []
             while not self.would_accept(')'):
                 parameters.append(tree.InferredFormalParameter(
-                    name=self.parse_identifier()))
+                    expression=tree.Identifier(id=self.parse_identifier())))
                 self.try_accept(',')
             self.accept(')')
         else:
@@ -2000,7 +2000,7 @@ class Parser(object):
 # -- Primary expressions --
 
     @parse_debug
-    def parse_primary(self):
+    def parse_primary(self) -> tree.Primary:
         token = self.tokens.look()
 
         if isinstance(token, Literal):
@@ -2246,7 +2246,7 @@ class Parser(object):
                                  initializer=initializer)
 
     @parse_debug
-    def parse_identifier_suffix(self):
+    def parse_identifier_suffix(self) -> tree.Primary:
         if self.would_accept('[', ']'):
             array_dimension = self.parse_array_dimension()
             self.accept('.', 'class')

@@ -207,7 +207,7 @@ class FormalParameter(NonEmptyDeclaration):
 
 
 class InferredFormalParameter(Node):
-    attrs = ('name',)
+    attrs = ('expression',)
 
 # ------------------------------------------------------------------------------
 

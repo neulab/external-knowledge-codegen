@@ -1027,7 +1027,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(" -> ", node.body)
 
     def visit_InferredFormalParameter(self, node):
-        self.write(node.name)
+        self.write(node.expression)
 
     def visit_SwitchStatement(self, node):
         if node.label:

@@ -18,6 +18,7 @@ from datasets.concode.evaluator import ConcodeEvaluator
 from datasets.concode.util import *
 from asdl.lang.java import jastor
 from javalang.parser import JavaSyntaxError
+from javalang import tree
 
 assert jastor.__version__ == '0.7.1'
 
@@ -98,11 +99,13 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
                                                         GenTokenAction),
                                    e.tgt_actions))
                         for e in train_examples]
-    for i, pt in enumerate(primitive_tokens):
-        print(f"pt {i}: {pt}")
-        for j, t in enumerate(pt):
-            #continue
-            print(f"  t {i}: {t}")
+    if debug:
+        for i, pt in enumerate(primitive_tokens):
+            print(f"pt {i}: {pt}")
+            for j, t in enumerate(pt):
+                assert(type(t) != tree.FieldReference)
+                # continue
+                print(f"  t {i}: {t}")
     primitive_vocab = VocabEntry.from_corpus(primitive_tokens, size=vocab_size,
                                              freq_cutoff=code_freq)
 

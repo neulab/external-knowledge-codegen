@@ -2,6 +2,7 @@
 
 import javalang.parse
 from javalang.parser import JavaSyntaxError
+from javalang import tree
 
 from asdl.lang.java import jastor
 from asdl.lang.java.java_asdl_helper import (asdl_ast_to_java_ast,
@@ -57,6 +58,7 @@ class JavaTransitionSystem(TransitionSystem):
                     tokens.append(field_val)
 
             for tok in tokens:
+                assert(type(tok)!=tree.FieldReference)
                 actions.append(GenTokenAction(tok))
         else:
             pass

@@ -75,7 +75,7 @@ operator = Operator(constant operator)
 package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name)
 
 parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, dimension* dimensions, constant? varargs)
-      | InferredFormalParameter(identifier name)
+      | InferredFormalParameter(expression expression)
 
 statement = AssertStatement(identifier? label, expression condition, expression? value)
       | ContinueStatement(identifier? label, identifier? goto)
