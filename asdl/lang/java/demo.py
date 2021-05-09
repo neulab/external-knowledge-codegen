@@ -20,7 +20,7 @@ grammar = ASDLGrammar.from_text(asdl_text)
 # print(grammar, file=sys.stderr)
 
 # initialize the Java transition parser
-parser = JavaTransitionSystem(grammar)
+transition_system = JavaTransitionSystem(grammar)
 
 
 class bcolors:
@@ -52,15 +52,15 @@ def removeComments(string: str) -> str:
 
 def code_from_hyp(asdl_ast, debug=False):
     # get the sequence of gold-standard actions to construct the ASDL AST
-    actions = parser.get_actions(asdl_ast)
+    actions = transition_system.get_actions(asdl_ast)
     # a hypothesis is a(n) (partial) ASDL AST generated using a sequence of
     # tree-construction actions
-    hypothesis = Hypothesis()
-    for t, action in enumerate(actions, 1):
+    hyp = Hypothesis()
+    for t, action in enumerate(actions):
         # the type of the action should belong to one of the valid continuing
         # types of the transition system
-        valid_cont_types = parser.get_valid_continuation_types(hypothesis)
-        if action.__class__ not in valid_cont_types:
+        valid_continuating_types = transition_system.get_valid_continuation_types(hyp)
+        if action.__class__ not in valid_continuating_types:
             print(f"Error: Valid continuation types are {valid_cont_types} "
                   f"but current action class is {action.__class__}",
                   file=sys.stderr)
@@ -68,23 +68,28 @@ def code_from_hyp(asdl_ast, debug=False):
 
         # if it's an ApplyRule action, the production rule should belong to the
         # set of rules with the same LHS type as the current rule
-        if isinstance(action, ApplyRuleAction) and hypothesis.frontier_node:
-            if action.production not in grammar[
-                  hypothesis.frontier_field.type]:
+        if isinstance(action, ApplyRuleAction):
+            valid_continuating_productions = transition_system.get_valid_continuating_productions(hyp)
+            if action.production not in valid_continuating_productions and hyp.frontier_node:
                 raise Exception(f"{bcolors.BLUE}{action.production}"
                                 f"{bcolors.ENDC} should be in {bcolors.GREEN}"
-                                f"{grammar[hypothesis.frontier_field.type]}"
+                                f"{grammar[hyp.frontier_field.type] if hyp.frontier_field else ''}"
                                 f"{bcolors.ENDC}")
-            assert action.production in grammar[hypothesis.frontier_field.type]
+                assert action.production in valid_continuating_productions
 
+        p_t = -1
+        f_t = None
+        if hyp.frontier_node:
+            p_t = hyp.frontier_node.created_time
+            f_t = hyp.frontier_field.field.__repr__(plain=True)
         if debug:
-            p_t = (hypothesis.frontier_node.created_time
-                   if hypothesis.frontier_node else -1)
-            print(f't={t}, p_t={p_t}, Action={action}', file=sys.stderr)
-        hypothesis.apply_action(action)
-    java_ast = asdl_ast_to_java_ast(hypothesis.tree, grammar)
-    source = jastor.to_source(java_ast)
-    return source
+            print(f'\t[{t}] Action: {action}, frontier field: {f_t}, '
+                  f'parent: {p_t}')
+        hyp = hyp.clone_and_apply_action(action)
+    assert hyp.frontier_node is None and hyp.frontier_field is None
+    java_ast = asdl_ast_to_java_ast(hyp.tree, transition_system.grammar)
+    code_from_hyp = jastor.to_source(java_ast).strip()
+    return code_from_hyp
 
 
 def simplify(code: str) -> str:

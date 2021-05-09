@@ -330,10 +330,6 @@ class NoExpression(Expression):
     attrs = ()
 
 
-class Identifier(Node):
-    attrs = ("id",)
-
-
 class Primary(Expression):
     attrs = ("prefix_operators", "postfix_operators", "qualifier", "selectors")
 
@@ -362,6 +358,10 @@ class LambdaExpression(Primary):
     attrs = ('parameter', 'parameters', 'body')
 
 # ------------------------------------------------------------------------------
+
+
+class Identifier(Primary):
+    attrs = ("id",)
 
 
 class Literal(Primary):

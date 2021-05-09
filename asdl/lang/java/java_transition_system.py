@@ -45,6 +45,8 @@ class JavaTransitionSystem(TransitionSystem):
         if realized_field.value is not None:
             # expr -> Global(identifier* names)
             if realized_field.cardinality == 'multiple':
+                if isinstance(realized_field.value, tree.Node):
+                    print()
                 field_values = realized_field.value
             else:
                 field_values = [realized_field.value]
@@ -58,7 +60,7 @@ class JavaTransitionSystem(TransitionSystem):
                     tokens.append(field_val)
 
             for tok in tokens:
-                assert(type(tok)!=tree.FieldReference)
+                assert(not isinstance(tok, tree.Node))
                 actions.append(GenTokenAction(tok))
         else:
             pass

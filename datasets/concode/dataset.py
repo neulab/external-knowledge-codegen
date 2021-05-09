@@ -103,7 +103,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
         for i, pt in enumerate(primitive_tokens):
             print(f"pt {i}: {pt}")
             for j, t in enumerate(pt):
-                assert(type(t) != tree.FieldReference)
+                assert(not isinstance(t, tree.Node))
                 # continue
                 print(f"  t {i}: {t}")
     primitive_vocab = VocabEntry.from_corpus(primitive_tokens, size=vocab_size,
@@ -202,7 +202,13 @@ def preprocess_dataset(file_path, transition_system, name='train',
                     assert action.__class__ in valid_continuating_types
                 if isinstance(action, ApplyRuleAction):
                     valid_continuating_productions = transition_system.get_valid_continuating_productions(hyp)
-                    assert action.production in valid_continuating_productions
+                    if action.production not in valid_continuating_productions and hyp.frontier_node:
+                        raise Exception(f"{bcolors.BLUE}{action.production}"
+                                        f"{bcolors.ENDC} should be in {bcolors.GREEN}"
+                                        f"{grammar[hyp.frontier_field.type] if hyp.frontier_field else ''}"
+                                        f"{bcolors.ENDC}")
+                        assert action.production in valid_continuating_productions
+                    #assert action.production in valid_continuating_productions
                 p_t = -1
                 f_t = None
                 if hyp.frontier_node:

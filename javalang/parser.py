@@ -2066,11 +2066,11 @@ class Parser(object):
                 return invocation
 
         elif isinstance(token, Identifier):
-            qualified_identifier = [self.parse_identifier()]
+            qualified_identifier = [tree.Identifier(id=self.parse_identifier())]
 
             while self.would_accept('.', Identifier):
                 self.accept('.')
-                identifier = self.parse_identifier()
+                identifier = tree.Identifier(id=self.parse_identifier())
                 qualified_identifier.append(identifier)
 
             identifier_suffix = self.parse_identifier_suffix()
@@ -2079,23 +2079,23 @@ class Parser(object):
                     and identifier_suffix.member is None):
                 # Take the last identifer as the member and leave the rest for
                 # the qualifier
-                identifier_suffix.member = qualified_identifier.pop()
+                identifier_suffix.member = qualified_identifier.pop().id
 
             elif (isinstance(identifier_suffix, tree.FieldReference)
                   and identifier_suffix.field is None):
                 # Take the last identifer as the member and leave the rest for
                 # the qualifier
-                identifier_suffix.field = qualified_identifier.pop()
+                identifier_suffix.field = qualified_identifier.pop().id
 
             elif isinstance(identifier_suffix, tree.ClassReference):
                 identifier_suffix.type = tree.ReferenceType(
-                    name=qualified_identifier.pop(),
+                    name=qualified_identifier.pop().id,
                     dimensions=(identifier_suffix.type.dimensions)
                         if identifier_suffix.type is not None  else None)
 
             identifier_suffix._position = token.position
             if qualified_identifier:
-                identifier_suffix.qualifier = '.'.join(qualified_identifier)
+                identifier_suffix.qualifier = tree.Identifier(id='.'.join([id.id for id in qualified_identifier]))
 
             return identifier_suffix
 
