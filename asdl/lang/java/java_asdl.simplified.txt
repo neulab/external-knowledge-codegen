@@ -13,6 +13,8 @@ boolean = True | False
 
 case = SwitchStatementCase(expression* case, statement* statements)
 
+tryresource = TryResource(fieldmodifier* modifiers, annotation* annotations, type type, identifier name, expression value)
+
 catch = CatchClause(identifier? label, catch_clause_parameter parameter, statement block)
 
 catch_clause_parameter = CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
@@ -92,7 +94,7 @@ statement = AssertStatement(identifier? label, expression condition, expression?
       | SynchronizedStatement(identifier? label, expression lock, statement block)
       | TypeDeclarationStatement(typedeclaration declaration)
       | ThrowStatement(identifier? label, expression expression)
-      | TryStatement(identifier? label, identifier? resources, statement block, catch* catches, statement? finally_block)
+      | TryStatement(identifier? label, tryresource* resources, statement block, catch* catches, statement? finally_block)
       | WhileStatement(identifier? label, expression condition, statement body)
 
 type = BasicType(identifier name, dimension* dimensions)
