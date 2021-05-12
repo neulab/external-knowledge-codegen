@@ -735,6 +735,7 @@ class Parser(nn.Module):
                     else:
                         token = primitive_vocab.id2word[token_id.item()]
 
+                    assert(type(token) == str)
                     action = GenTokenAction(token)
 
                     if token in aggregated_primitive_tokens:

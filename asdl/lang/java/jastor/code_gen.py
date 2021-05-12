@@ -393,10 +393,11 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(node.implements)
         self.write(node.body)
 
-    #enumbody = EnumBody(enumconstant* constants, enumdeclaration* declarations)
+    # enumbody = EnumBody(enumconstant* constants,
+    # enumdeclaration* declarations)
     def visit_EnumBody(self, node):
         self.write("{", "\n")
-        self.comma_list(node.constants, trailing=node.comma)
+        self.comma_list(node.constants, trailing=(node.comma == ","))
         if node.separator:
             self.write(";")
         if node.declarations:
@@ -404,10 +405,12 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(declaration)
         self.write("}")
 
-    # enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, argument* arguments, statement body)
+    # enumconstant = EnumConstantDeclaration(annotation* annotations,
+    # string? documentation, fieldmodifier* modifiers, identifier name,
+    # argument* arguments, statement body)
     def visit_EnumConstantDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
+        # if node.documentation:
+        # self.write(node.documentation, "\n")
         if node.annotations:
             for annotation in node.annotations:
                 self.write(annotation, " ")
@@ -595,7 +598,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         elif node.expression and node.array is None:
             self.write(node.expression)
         else:
-            raise Exception("VariableInitializer must have exactly one of its attributes not none.")
+            raise Exception("VariableInitializer must have exactly one of its "
+                            "attributes not none.")
 
     def visit_ArrayInitializer(self, node):
         self.write("{")

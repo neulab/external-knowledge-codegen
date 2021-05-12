@@ -318,13 +318,13 @@ class Parser(object):
     @parse_debug
     def parse_import_declaration(self) -> tree.Import:
         qualified_identifier = list()
-        static = False
-        import_all = False
+        static = None
+        import_all = None
 
         self.accept('import')
 
         if self.try_accept('static'):
-            static = True
+            static = 'static'
 
         while True:
             identifier = self.parse_identifier()
@@ -333,7 +333,7 @@ class Parser(object):
             if self.try_accept('.'):
                 if self.try_accept('*'):
                     self.accept(';')
-                    import_all = True
+                    import_all = '*'
                     break
 
             else:
@@ -1152,10 +1152,10 @@ class Parser(object):
 
             token = self.tokens.look()
             parameter_type = self.parse_type()
-            varargs = False
+            varargs = None
 
             if self.try_accept('...'):
-                varargs = True
+                varargs = '...'
 
             parameter_name = self.parse_identifier()
             dimensions = []
@@ -1246,25 +1246,25 @@ class Parser(object):
     @parse_debug
     def parse_array_initializer(self) -> tree.ArrayInitializer:
         array_initializer = tree.ArrayInitializer(initializers=list(),
-                                                  comma=False)
+                                                  comma=None)
 
         self.accept('{')
 
         if self.try_accept(','):
             self.accept('}')
-            array_initializer.comma = True
+            array_initializer.comma = ","
             return array_initializer
 
         if self.try_accept('}'):
             return array_initializer
         while True:
             initializer = self.parse_variable_initializer()
-            array_initializer.comma = False
+            array_initializer.comma = None
             array_initializer.initializers.append(initializer)
 
             if not self.would_accept('}'):
                 self.accept(',')
-                array_initializer.comma = True
+                array_initializer.comma = ","
 
             if self.try_accept('}'):
                 return array_initializer
@@ -2388,23 +2388,23 @@ class Parser(object):
     def parse_enum_body(self):
         constants = list()
         body_declarations = list()
-        comma = False
+        comma = None
         self.accept('{')
 
         if not self.try_accept(','):
             while not (self.would_accept(';') or self.would_accept('}')):
                 constant = self.parse_enum_constant()
                 constants.append(constant)
-                comma = False
+                comma = None
                 if self.would_accept(','):
-                    comma = True
+                    comma = ","
                 if not self.try_accept(','):
                     break
         else:
-            comma = True
-        separator = False
+            comma = ","
+        separator = None
         if self.would_accept(';'):
-            separator = True
+            separator = ";"
         if self.try_accept(';'):
             while not self.would_accept('}'):
                 declaration = self.parse_class_body_declaration()

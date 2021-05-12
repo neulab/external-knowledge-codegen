@@ -7,7 +7,7 @@ annotation = MarkerAnnotation(identifier name)
       | NormalAnnotation(expression* element, identifier name)
       | SingleElementAnnotation(expression? element, identifier name)
 
-arrayinitializer = ArrayInitializer(expression* initializers, constant comma)
+arrayinitializer = ArrayInitializer(expression* initializers, constant? comma)
 
 boolean = True | False
 
@@ -26,7 +26,7 @@ cu = CompilationUnit(package? package, importdeclaration* imports, typedeclarati
 
 declarator = VariableDeclarator(identifier name, dimension* dimensions, expression? initializer)
 
-enumbody = EnumBody(enumconstant* constants, constant? separator, typedeclaration* declarations, constant comma)
+enumbody = EnumBody(enumconstant* constants, constant? separator, typedeclaration* declarations, constant? comma)
 
 enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, expression* arguments, typedeclaration* body)
 
