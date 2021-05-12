@@ -17,6 +17,7 @@ from common.registerable import Registrable
 from common.savable import Savable
 from datasets.conala.conala_eval import tokenize_for_bleu_eval
 from datasets.conala import evaluator as conala_evaluator
+from datasets.concode import evaluator as concode_evaluator
 from model import utils
 from components.dataset import Example
 

@@ -24,22 +24,38 @@ class cached_property(object):
 def init_arg_parser():
     arg_parser = argparse.ArgumentParser()
 
-    #### General configuration ####
+    # ### General configuration ####
     arg_parser.add_argument('--seed', default=0, type=int, help='Random seed')
-    arg_parser.add_argument('--cuda', action='store_true', default=False, help='Use gpu')
-    arg_parser.add_argument('--lang', choices=['python', 'lambda_dcs', 'prolog', 'python3'], default='python',
-                            help='[Deprecated] language to parse. Deprecated, use --transition_system and --parser instead')
-    arg_parser.add_argument('--asdl_file', type=str, help='Path to ASDL grammar specification')
+    arg_parser.add_argument('--cuda', action='store_true', default=False,
+                            help='Use gpu')
+    arg_parser.add_argument('--lang', choices=['java', 'lambda_dcs', 'prolog',
+                                               'python', 'python3'],
+                            default='python',
+                            help='[Deprecated] language to parse. Deprecated, '
+                                 'use --transition_system '
+                                 'and --parser instead')
+    arg_parser.add_argument('--asdl_file', type=str,
+                            help='Path to ASDL grammar specification')
     arg_parser.add_argument('--mode', choices=['train', 'test', 'interactive',
-                                               'train_paraphrase_identifier', 'train_reconstructor','rerank'], required=True, help='Run mode')
+                                               'train_paraphrase_identifier',
+                                               'train_reconstructor',
+                                               'rerank'],
+                            required=True, help='Run mode')
 
-    #### Modularized configuration ####
-    arg_parser.add_argument('--parser', type=str, default='default_parser', required=False, help='name of parser class to load')
-    arg_parser.add_argument('--transition_system', type=str, default='python2', required=False, help='name of transition system to use')
-    arg_parser.add_argument('--evaluator', type=str, default='default_evaluator', required=False, help='name of evaluator class to use')
+    # ### Modularized configuration ####
+    arg_parser.add_argument('--parser', type=str, default='default_parser',
+                            required=False,
+                            help='name of parser class to load')
+    arg_parser.add_argument('--transition_system', type=str, default='python2',
+                            required=False,
+                            help='name of transition system to use')
+    arg_parser.add_argument('--evaluator', type=str,
+                            default='default_evaluator', required=False,
+                            help='name of evaluator class to use')
 
-    #### Model configuration ####
-    arg_parser.add_argument('--lstm', choices=['lstm'], default='lstm', help='Type of LSTM used, currently only standard LSTM cell is supported')
+    # ### Model configuration ####
+    arg_parser.add_argument('--lstm', choices=['lstm'], default='lstm',
+                            help='Type of LSTM used, currently only standard LSTM cell is supported')
 
     # Embedding sizes
     arg_parser.add_argument('--embed_size', default=128, type=int, help='Size of word embeddings')

@@ -43,18 +43,10 @@ def init_config():
 def train(args):
     """Maximum Likelihood Estimation"""
 
-    # load in train/dev set
-    train_set = Dataset.from_bin_file(args.train_file)
-
-    if args.dev_file:
-        dev_set = Dataset.from_bin_file(args.dev_file)
-    else: dev_set = Dataset(examples=[])
-
-    vocab = pickle.load(open(args.vocab, 'rb'))
-
     grammar = ASDLGrammar.from_text(open(args.asdl_file).read())
     transition_system = Registrable.by_name(args.transition_system)(grammar)
 
+    vocab = pickle.load(open(args.vocab, 'rb'))
     parser_cls = Registrable.by_name(args.parser)  # TODO: add arg
     if args.pretrain:
         print('Finetune with: ', args.pretrain, file=sys.stderr)
@@ -68,6 +60,14 @@ def train(args):
 
     optimizer_cls = eval('torch.optim.%s' % args.optimizer)  # FIXME: this is evil!
     optimizer = optimizer_cls(model.parameters(), lr=args.lr)
+
+    # load in train/dev set
+    train_set = Dataset.from_bin_file(args.train_file)
+
+    if args.dev_file:
+        dev_set = Dataset.from_bin_file(args.dev_file)
+    else: dev_set = Dataset(examples=[])
+
 
     if not args.pretrain:
         if args.uniform_init:
@@ -224,7 +224,7 @@ def train_rerank_feature(args):
     vocab = pickle.load(open(args.vocab, 'rb'))
 
     grammar = ASDLGrammar.from_text(open(args.asdl_file).read())
-    transition_system = TransitionSystem.get_class_by_lang(args.lang)(grammar)
+    transition_system = TransitionSystem.get_class_by_lang(args.transition_system)(grammar)
 
     train_paraphrase_model = args.mode == 'train_paraphrase_identifier'
 
