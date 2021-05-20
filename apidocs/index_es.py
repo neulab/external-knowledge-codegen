@@ -1,14 +1,12 @@
 import json
 
+import argparse
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 import sys
 
 es = Elasticsearch()
 
-print(es.indices.create(index='python-code', ignore=400))
-
-jsonl_file = "python_docs.jsonl"
 
 def gendata(filename):
     with open(filename, encoding='utf-8') as jsonl:
@@ -22,13 +20,24 @@ def gendata(filename):
                 result[k] = v
             return result
 
-print(bulk(es, gendata(jsonl_file)))
-
 
 if __name__ == '__main__':
-    index_name, json_file = sys.argv[1:]
+    arg_parser = argparse.ArgumentParser()
+
+    arg_parser.add_argument('index_name',
+                            default='python-code',
+                            nargs='?',
+                            type=str,
+                            help='Set the name of the ElasticSearch index.')
+    arg_parser.add_argument('json_file',
+                            default='python-docs.jsonl',
+                            nargs='?',
+                            type=str,
+                            help='Set the file to index.')
+    args = arg_parser.parse_args()
+
     print('create index')
-    print(es.indices.create(index=index_name, ignore=400))
+    print(es.indices.create(index=args.index_name, ignore=400))
 
     print('index docs')
-    print(bulk(es, gendata(json_file)))
+    print(bulk(es, gendata(args.json_file)))

@@ -57,10 +57,13 @@ class JavaTransitionSystem(TransitionSystem):
                     tokens.extend(field_val.split(' ') + ['</primitive>'])
             else:
                 for field_val in field_values:
+                    #if type(field_val) == bool:
+                        #field_val = str(field_val).lower()
                     tokens.append(field_val)
 
             for tok in tokens:
                 assert(not isinstance(tok, tree.Node))
+                assert(type(tok) == str)
                 actions.append(GenTokenAction(tok))
         else:
             pass

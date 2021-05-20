@@ -455,13 +455,13 @@ def train_rerank_feature(args):
             patience = 0
 
 
-
 def test(args):
     test_set = Dataset.from_bin_file(args.test_file)
     assert args.load_model
 
     print('load model from [%s]' % args.load_model, file=sys.stderr)
-    params = torch.load(args.load_model, map_location=lambda storage, loc: storage)
+    params = torch.load(args.load_model, map_location=lambda storage,
+                        loc: storage)
     transition_system = params['transition_system']
     saved_args = params['args']
     saved_args.cuda = args.cuda
@@ -471,9 +471,11 @@ def test(args):
     parser_cls = Registrable.by_name(args.parser)
     parser = parser_cls.load(model_path=args.load_model, cuda=args.cuda)
     parser.eval()
-    evaluator = Registrable.by_name(args.evaluator)(transition_system, args=args)
-    eval_results, decode_results = evaluation.evaluate(test_set.examples, parser, evaluator, args,
-                                                       verbose=args.verbose, return_decode_result=True)
+    evaluator = Registrable.by_name(args.evaluator)(transition_system,
+                                                    args=args)
+    eval_results, decode_results = evaluation.evaluate(
+      test_set.examples, parser, evaluator, args, verbose=args.verbose,
+      return_decode_result=True)
     print(eval_results, file=sys.stderr)
     if args.save_decode_to:
         pickle.dump(decode_results, open(args.save_decode_to, 'wb'))

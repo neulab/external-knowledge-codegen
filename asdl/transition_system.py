@@ -25,6 +25,7 @@ class ApplyRuleAction(Action):
 
 class GenTokenAction(Action):
     def __init__(self, token):
+        assert(type(token) == str)
         self.token = token
 
     def is_stop_signal(self):
