@@ -1,6 +1,8 @@
 ## ASDL's 4 builtin types are
 identifier, int, string, constant
 
+cu = CompilationUnit(package? package, importdeclaration* imports, typedeclaration* types)
+
 dimension = ArrayDimension(expression? dim)
 
 annotation = MarkerAnnotation(identifier name)
@@ -21,8 +23,6 @@ catch_clause_parameter = CatchClauseParameter(fieldmodifier* modifiers, annotati
 
 classbody = ClassBody(typedeclaration* declarations)
       | EmptyClassBody
-
-cu = CompilationUnit(package? package, importdeclaration* imports, typedeclaration* types)
 
 declarator = VariableDeclarator(identifier name, dimension* dimensions, expression? initializer)
 
