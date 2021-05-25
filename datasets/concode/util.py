@@ -143,7 +143,7 @@ def decanonicalize_code(code, slot_map):
             code = code.replace(slot_name, slot_val['value'])
 
     slot2string = {x[0]: x[1]['value'] for x in list(slot_map.items())}
-    java_ast = javalang.parse.parse_any(code)
+    java_ast = javalang.parse.parse_one_of(code)
     replace_identifiers_in_ast(java_ast, slot2string)
     raw_code = jastor.to_source(java_ast).strip()
     # for slot_name, slot_info in slot_map.items():

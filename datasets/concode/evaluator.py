@@ -1,4 +1,5 @@
 import csv
+import sys
 
 from components.evaluator import Evaluator
 from common.registerable import Registrable
@@ -8,8 +9,9 @@ from datasets.conala.conala_eval import tokenize_for_bleu_eval
 from datasets.conala.bleu_score import compute_bleu
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 import numpy as np
-import ast
-import asdl.lang.java.jastor
+import javalang.parse
+from javalang.parser import JavaSyntaxError
+from asdl.lang.java import jastor
 
 
 @Registrable.register('concode_evaluator')
@@ -21,8 +23,14 @@ class ConcodeEvaluator(Evaluator):
 
     def is_hyp_correct(self, example, hyp):
         ref_code = example.tgt_code
-        ref_py_ast = ast.parse(ref_code)
-        ref_reformatted_code = jastor.to_source(ref_py_ast).strip()
+        try:
+            java_ast = javalang.parse.parse_member_declaration(ref_code)
+        except JavaSyntaxError as e:
+            print(f"Java syntax error: {e.description}, at {e.at} "
+                  f"in:\n{snippet}",
+                  file=sys.stderr)
+            raise
+        ref_reformatted_code = jastor.to_source(java_ast).strip()
 
         ref_code_tokens = self.transition_system.tokenize_code(
           ref_reformatted_code)
