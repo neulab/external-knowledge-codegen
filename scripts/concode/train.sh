@@ -15,7 +15,7 @@ field_embed_size=64
 type_embed_size=64
 lr=0.001
 lr_decay=0.5
-batch_size=64
+batch_size=32
 max_epoch=80
 beam_size=15
 lstm='lstm'  # lstm
@@ -56,6 +56,7 @@ python -u exp.py \
     --max_epoch ${max_epoch} \
     --beam_size ${beam_size} \
     --log_every 50 \
-    --save_to saved_models/concode/${model_name} 2>&1 | tee logs/concode/${model_name}.log
+    --save_to saved_models/concode/${model_name} \
+    --root_production "typedeclaration,MethodDeclaration"  2>&1 | tee logs/concode/${model_name}.log
 
 . scripts/concode/test.sh saved_models/concode/${model_name}.bin 2>&1 | tee -a logs/concode/${model_name}.log

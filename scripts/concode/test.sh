@@ -14,5 +14,6 @@ python exp.py \
     --test_file ${test_file} \
     --evaluator concode_evaluator \
     --save_decode_to decodes/concode/$(basename $1).test.decode \
-    --decode_max_time_step 100
+    --decode_max_time_step 100 \
+    --root_production "typedeclaration,MethodDeclaration"
 

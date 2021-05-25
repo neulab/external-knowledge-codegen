@@ -41,6 +41,11 @@ def init_arg_parser():
                                                'train_reconstructor',
                                                'rerank'],
                             required=True, help='Run mode')
+    arg_parser.add_argument('--root_production', type=str,
+                            help='comma concatenation of root production type '
+                                 'and constructor. Example: '
+                                 'typedeclaration,MethodDeclaration',
+                            default=None)
 
     # ### Modularized configuration ####
     arg_parser.add_argument('--parser', type=str, default='default_parser',

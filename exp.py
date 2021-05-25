@@ -43,7 +43,11 @@ def init_config():
 def train(args):
     """Maximum Likelihood Estimation"""
 
-    grammar = ASDLGrammar.from_text(open(args.asdl_file).read())
+    root_production = None
+    if args.root_production:
+        root_production = args.root_production.split(',')
+    grammar = ASDLGrammar.from_text(open(args.asdl_file).read(),
+                                    root_production)
     transition_system = Registrable.by_name(args.transition_system)(grammar)
 
     vocab = pickle.load(open(args.vocab, 'rb'))
@@ -476,7 +480,7 @@ def test(args):
     eval_results, decode_results = evaluation.evaluate(
       test_set.examples, parser, evaluator, args, verbose=args.verbose,
       return_decode_result=True)
-    print(eval_results, file=sys.stderr)
+    print("Eval results:", eval_results, file=sys.stderr)
     if args.save_decode_to:
         pickle.dump(decode_results, open(args.save_decode_to, 'wb'))
 
