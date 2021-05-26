@@ -41,7 +41,7 @@ class ESSearcher():
 
     def get_topk(self, query_str: str, field: str, topk: int=5):
         results = self.es.search(
-            index=self.index_name, 
+            index=self.index_name,
             q=self.query_format(query_str, field))['hits']['hits'][:topk]
         return [(doc['_source'], doc['_score']) for doc in results]
 
@@ -95,7 +95,7 @@ def topk_aug(args):
             rcode['retrieval_score'] = score
             aug_dataset.append(rcode)
             id2count[rcode['question_id']] += 1
-    
+
     with open(args.out, 'w') as fout:
         for code in aug_dataset:
             fout.write(json.dumps(code) + '\n')
@@ -139,13 +139,14 @@ def get_distribution(args):
             for qid, ap in zip(qids, probs):
                 fout.write('{}\t{}\n'.format(qid, ap))
 
+
 def sample_aug(args):
     dist_file, data_file = args.inp.split(':')
     qids = []
     probs = []
     with open(dist_file, 'r') as fin:
-        for l in fin:
-            qid, prob = l.strip().split('\t')
+        for line in fin:
+            qid, prob = line.strip().split('\t')
             qids.append(qid)
             probs.append(float(prob))
     qids = np.array(qids)
@@ -165,26 +166,31 @@ def sample_aug(args):
             fout.write(json.dumps(qid2code[qids[sam]]) + '\n')
             qid2count[qids[sam]] += 1
 
-    print('mostly sampled qids {}'.format(sorted(qid2count.items(), key=lambda x: -x[1])[:5]))
+    print('mostly sampled qids {}'.format(sorted(qid2count.items(),
+                                                 key=lambda x: -x[1])[:5]))
 
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('--method', type=str, help='method of augmentation', 
-        choices=['topk', 'dist', 'sample'])
+    arg_parser.add_argument('--method', type=str,
+                            help='method of augmentation',
+                            choices=['topk', 'dist', 'sample'])
     arg_parser.add_argument('--inp', type=str, help='input json file')
     arg_parser.add_argument('--out', type=str, help='output file')
-    arg_parser.add_argument('--topk', type=int, help='top k for retrieval', default=5)
-    arg_parser.add_argument('--max_count', type=int, 
-        help='max number of codes from each file', default=None)
-    arg_parser.add_argument('--field', type=str, help='field for retrieval', 
-        choices=['snippet', 'intent'], default='snippet')
-    arg_parser.add_argument('--temp', type=float, help='temperature of sampling', default=None)
+    arg_parser.add_argument('--topk', type=int, help='top k for retrieval',
+                            default=5)
+    arg_parser.add_argument('--max_count', type=int,
+                            help='max number of codes from each file',
+                            default=None)
+    arg_parser.add_argument('--field', type=str, help='field for retrieval',
+                            choices=['snippet', 'intent'], default='snippet')
+    arg_parser.add_argument('--temp', type=float,
+                            help='temperature of sampling', default=None)
     args = arg_parser.parse_args()
 
     if args.method == 'topk':
         topk_aug(args)
     elif args.method == 'dist':
-        get_distribution(args)    
+        get_distribution(args)
     elif args.method == 'sample':
         sample_aug(args)

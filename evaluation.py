@@ -60,7 +60,7 @@ def decode(examples, model, args, verbose=False, **kwargs):
 def evaluate(examples, parser, evaluator, args, verbose=False,
              return_decode_result=False, eval_top_pred_only=False):
     decode_results = decode(examples, parser, args, verbose=verbose)
-    #print(f"evaluation.evaluate decode_results: {decode_results}")
+    # print(f"evaluation.evaluate decode_results: {decode_results}")
     eval_result = evaluator.evaluate_dataset(examples, decode_results,
                                              fast_mode=eval_top_pred_only,
                                              args=args)

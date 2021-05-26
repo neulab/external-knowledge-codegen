@@ -59,10 +59,13 @@ def train(args):
         model = parser_cls(args, vocab, transition_system)
 
     model.train()
-    evaluator = Registrable.by_name(args.evaluator)(transition_system, args=args)
-    if args.cuda: model.cuda()
+    evaluator = Registrable.by_name(args.evaluator)(transition_system,
+                                                    args=args)
+    if args.cuda:
+        model.cuda()
 
-    optimizer_cls = eval('torch.optim.%s' % args.optimizer)  # FIXME: this is evil!
+    # FIXME: this is evil!
+    optimizer_cls = eval('torch.optim.%s' % args.optimizer)
     optimizer = optimizer_cls(model.parameters(), lr=args.lr)
 
     # load in train/dev set
@@ -70,24 +73,30 @@ def train(args):
 
     if args.dev_file:
         dev_set = Dataset.from_bin_file(args.dev_file)
-    else: dev_set = Dataset(examples=[])
-
+    else:
+        dev_set = Dataset(examples=[])
 
     if not args.pretrain:
         if args.uniform_init:
-            print('uniformly initialize parameters [-%f, +%f]' % (args.uniform_init, args.uniform_init), file=sys.stderr)
-            nn_utils.uniform_init(-args.uniform_init, args.uniform_init, model.parameters())
+            print('uniformly initialize parameters [-%f, +%f]' % (
+              args.uniform_init, args.uniform_init),
+                  file=sys.stderr)
+            nn_utils.uniform_init(-args.uniform_init, args.uniform_init,
+                                  model.parameters())
         elif args.glorot_init:
             print('use glorot initialization', file=sys.stderr)
             nn_utils.glorot_init(model.parameters())
 
         # load pre-trained word embedding (optional)
         if args.glove_embed_path:
-            print('load glove embedding from: %s' % args.glove_embed_path, file=sys.stderr)
+            print('load glove embedding from: %s' % args.glove_embed_path,
+                  file=sys.stderr)
             glove_embedding = GloveHelper(args.glove_embed_path)
             glove_embedding.load_to(model.src_embed, vocab.source)
 
-    print('begin training, %d training examples, %d dev examples' % (len(train_set), len(dev_set)), file=sys.stderr)
+    print('begin training, %d training examples, %d dev examples' % (
+      len(train_set), len(dev_set)),
+          file=sys.stderr)
     print('vocab: %s' % repr(vocab), file=sys.stderr)
 
     epoch = train_iter = 0
@@ -98,8 +107,11 @@ def train(args):
         epoch += 1
         epoch_begin = time.time()
 
-        for batch_examples in train_set.batch_iter(batch_size=args.batch_size, shuffle=True):
-            batch_examples = [e for e in batch_examples if len(e.tgt_actions) <= args.decode_max_time_step]
+        for batch_examples in train_set.batch_iter(batch_size=args.batch_size,
+                                                   shuffle=True):
+            batch_examples = [
+              e for e in batch_examples
+              if len(e.tgt_actions) <= args.decode_max_time_step]
             train_iter += 1
             optimizer.zero_grad()
 
@@ -125,20 +137,25 @@ def train(args):
 
             # clip gradient
             if args.clip_grad > 0.:
-                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
+                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                           args.clip_grad)
 
             optimizer.step()
 
             if train_iter % args.log_every == 0:
-                log_str = '[Iter %d] encoder loss=%.5f' % (train_iter, report_loss / report_examples)
+                log_str = '[Iter %d] encoder loss=%.5f' % (
+                  train_iter, report_loss / report_examples)
                 if args.sup_attention:
-                    log_str += ' supervised attention loss=%.5f' % (report_sup_att_loss / report_examples)
+                    log_str += ' supervised attention loss=%.5f' % (
+                      report_sup_att_loss / report_examples)
                     report_sup_att_loss = 0.
 
                 print(log_str, file=sys.stderr)
                 report_loss = report_examples = 0.
 
-        print('[Epoch %d] epoch elapsed %ds' % (epoch, time.time() - epoch_begin), file=sys.stderr)
+        print('[Epoch %d] epoch elapsed %ds' % (
+          epoch, time.time() - epoch_begin),
+              file=sys.stderr)
 
         if args.save_all_models:
             model_file = args.save_to + '.iter%d.bin' % train_iter
@@ -151,17 +168,18 @@ def train(args):
             if epoch % args.valid_every_epoch == 0:
                 print('[Epoch %d] begin validation' % epoch, file=sys.stderr)
                 eval_start = time.time()
-                eval_results = evaluation.evaluate(dev_set.examples, model, evaluator, args,
-                                                   verbose=False, eval_top_pred_only=args.eval_top_pred_only)
+                eval_results = evaluation.evaluate(
+                  dev_set.examples, model, evaluator, args,
+                  verbose=False, eval_top_pred_only=args.eval_top_pred_only)
                 dev_score = eval_results[evaluator.default_metric]
 
-                print('[Epoch %d] evaluate details: %s, dev %s: %.5f (took %ds)' % (
-                                    epoch, eval_results,
-                                    evaluator.default_metric,
-                                    dev_score,
-                                    time.time() - eval_start), file=sys.stderr)
+                print(f'[Epoch {epoch}] evaluate details: {eval_results}, '
+                      f'dev {evaluator.default_metric}: {dev_score:.5f} '
+                      f'(took {time.time() - eval_start}s)',
+                      file=sys.stderr)
 
-                is_better = history_dev_scores == [] or dev_score > max(history_dev_scores)
+                is_better = (history_dev_scores == []
+                             or dev_score > max(history_dev_scores))
                 history_dev_scores.append(dev_score)
         else:
             is_better = True
@@ -199,12 +217,15 @@ def train(args):
 
             # decay lr, and restore from previously best checkpoint
             lr = optimizer.param_groups[0]['lr'] * args.lr_decay
-            print('load previously best model and decay learning rate to %f' % lr, file=sys.stderr)
+            print(f'load previous best model and decay learning rate to {lr}',
+                  file=sys.stderr)
 
             # load model
-            params = torch.load(args.save_to + '.bin', map_location=lambda storage, loc: storage)
+            params = torch.load(args.save_to + '.bin',
+                                map_location=lambda storage, loc: storage)
             model.load_state_dict(params['state_dict'])
-            if args.cuda: model = model.cuda()
+            if args.cuda:
+                model = model.cuda()
 
             # load optimizers
             if args.reset_optimizer:
@@ -212,7 +233,8 @@ def train(args):
                 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
             else:
                 print('restore parameters of the optimizers', file=sys.stderr)
-                optimizer.load_state_dict(torch.load(args.save_to + '.optim.bin'))
+                optimizer.load_state_dict(torch.load(
+                  args.save_to + '.optim.bin'))
 
             # set new lr
             for param_group in optimizer.param_groups:
@@ -228,7 +250,8 @@ def train_rerank_feature(args):
     vocab = pickle.load(open(args.vocab, 'rb'))
 
     grammar = ASDLGrammar.from_text(open(args.asdl_file).read())
-    transition_system = TransitionSystem.get_class_by_lang(args.transition_system)(grammar)
+    transition_system = TransitionSystem.get_class_by_lang(
+      args.transition_system)(grammar)
 
     train_paraphrase_model = args.mode == 'train_paraphrase_identifier'
 
@@ -245,7 +268,8 @@ def train_rerank_feature(args):
                 try:
                     transition_system.tokenize_code(hyp.code)
                     valid_hyps.append(hyp)
-                except: pass
+                except:
+                    pass
 
             _decode_results[i] = valid_hyps
 
@@ -256,20 +280,25 @@ def train_rerank_feature(args):
         nn_utils.glorot_init(model.parameters())
 
     model.train()
-    if args.cuda: model.cuda()
+    if args.cuda:
+        model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # if training the paraphrase model, also load in decoding results
     if train_paraphrase_model:
-        print('load training decode results [%s]' % args.train_decode_file, file=sys.stderr)
+        print('load training decode results [%s]' % args.train_decode_file,
+              file=sys.stderr)
         train_decode_results = pickle.load(open(args.train_decode_file, 'rb'))
         _filter_hyps(train_decode_results)
-        train_decode_results = {e.idx: hyps for e, hyps in zip(train_set, train_decode_results)}
+        train_decode_results = {e.idx: hyps for e, hyps in zip(
+          train_set, train_decode_results)}
 
-        print('load dev decode results [%s]' % args.dev_decode_file, file=sys.stderr)
+        print('load dev decode results [%s]' % args.dev_decode_file,
+              file=sys.stderr)
         dev_decode_results = pickle.load(open(args.dev_decode_file, 'rb'))
         _filter_hyps(dev_decode_results)
-        dev_decode_results = {e.idx: hyps for e, hyps in zip(dev_set, dev_decode_results)}
+        dev_decode_results = {e.idx: hyps
+                              for e, hyps in zip(dev_set, dev_decode_results)}
 
     def evaluate_ppl():
         model.eval()
@@ -278,7 +307,8 @@ def train_rerank_feature(args):
         for batch in dev_set.batch_iter(args.batch_size):
             loss = -model.score(batch).sum()
             cum_loss += loss.data.item()
-            cum_tgt_words += sum(len(e.src_sent) + 1 for e in batch)  # add ending </s>
+            # add ending </s>
+            cum_tgt_words += sum(len(e.src_sent) + 1 for e in batch)
 
         ppl = np.exp(cum_loss / cum_tgt_words)
         model.train()
@@ -294,10 +324,14 @@ def train_rerank_feature(args):
 
             # get negative examples
             batch_decoding_results = [dev_decode_results[e.idx] for e in batch]
-            batch_negative_examples = [get_negative_example(e, _hyps, type='best')
-                                       for e, _hyps in zip(batch, batch_decoding_results)]
-            batch_negative_examples = list(filter(None, batch_negative_examples))
-            probs = model.score(batch_negative_examples).exp().data.cpu().numpy()
+            batch_negative_examples = [get_negative_example(e, _hyps,
+                                                            type='best')
+                                       for e, _hyps in zip(
+                                         batch, batch_decoding_results)]
+            batch_negative_examples = list(filter(None,
+                                                  batch_negative_examples))
+            probs = model.score(
+              batch_negative_examples).exp().data.cpu().numpy()
             for p in probs:
                 labels.append(p < 0.5)
 
@@ -314,9 +348,12 @@ def train_rerank_feature(args):
                     sample_idx = np.argmax(incorrect_hyp_scores)
                     sampled_hyp = incorrect_hyps[sample_idx]
                 else:
-                    incorrect_hyp_probs = [np.exp(score) for score in incorrect_hyp_scores]
-                    incorrect_hyp_probs = np.array(incorrect_hyp_probs) / sum(incorrect_hyp_probs)
-                    sampled_hyp = np.random.choice(incorrect_hyps, size=1, p=incorrect_hyp_probs)
+                    incorrect_hyp_probs = [np.exp(score)
+                                           for score in incorrect_hyp_scores]
+                    incorrect_hyp_probs = np.array(incorrect_hyp_probs) / sum(
+                      incorrect_hyp_probs)
+                    sampled_hyp = np.random.choice(incorrect_hyps, size=1,
+                                                   p=incorrect_hyp_probs)
                     sampled_hyp = sampled_hyp[0]
 
                 sample = Example(idx='negative-%s' % _example.idx,
@@ -339,7 +376,8 @@ def train_rerank_feature(args):
         else:
             return None
 
-    print('begin training decoder, %d training examples, %d dev examples' % (len(train_set), len(dev_set)), file=sys.stderr)
+    print('begin training decoder, %d training examples, %d dev examples' % (len(train_set), len(dev_set)),
+          file=sys.stderr)
     print('vocab: %s' % repr(vocab), file=sys.stderr)
 
     epoch = train_iter = 0
@@ -350,8 +388,10 @@ def train_rerank_feature(args):
         epoch += 1
         epoch_begin = time.time()
 
-        for batch_examples in train_set.batch_iter(batch_size=args.batch_size, shuffle=True):
-            batch_examples = [e for e in batch_examples if len(e.tgt_actions) <= args.decode_max_time_step]
+        for batch_examples in train_set.batch_iter(batch_size=args.batch_size,
+                                                   shuffle=True):
+            batch_examples = [e for e in batch_examples
+                              if len(e.tgt_actions) <= args.decode_max_time_step]
 
             if train_paraphrase_model:
                 positive_examples_num = len(batch_examples)
