@@ -61,7 +61,8 @@ class ConcodeEvaluator(Evaluator):
                         tokenize_for_bleu_eval(
                           example.meta['example_dict']['snippet']))
 
-        if not hasattr(decode_results[0][0], 'decanonical_code_tokens'):
+        if decode_results[0] and not hasattr(decode_results[0][0],
+                                             'decanonical_code_tokens'):
             for i, example in enumerate(examples):
                 hyp_list = decode_results[i]
                 # here we prune any hypothesis that throws an error when
