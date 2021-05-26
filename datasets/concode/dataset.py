@@ -27,7 +27,10 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
                                src_freq=3, code_freq=3, mined_data_file=None,
                                api_data_file=None, vocab_size=20000,
                                num_mined=0, out_dir='data/concode',
-                               num_examples=0, debug=False, start_at=0):
+                               num_examples=0, num_dev=0, debug=False,
+                               start_at=0):
+    if num_dev == 0:
+        num_dev = num_examples
     np.random.seed(1234)
 
     asdl_text = open(grammar_file).read()
@@ -48,7 +51,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
 
     dev_examples = preprocess_dataset(valid_file, name='dev',
                                       transition_system=transition_system,
-                                      num_examples=num_examples,
+                                      num_examples=num_dev,
                                       start_at=start_at)
     mined_examples = []
     api_examples = []
@@ -380,6 +383,9 @@ if __name__ == '__main__':
                             default='asdl/lang/java/java_asdl.simplified.txt')
     arg_parser.add_argument('--num_examples', type=int, default=0,
                             help='Max number of examples to use in any set')
+    arg_parser.add_argument('--num_dev', type=int, default=0,
+                            help='Max number of dev examples to use, If not '
+                                 'set, it will use num_examples')
     arg_parser.add_argument('--num_mined', type=int, default=0,
                             help='First k number from mined file')
     arg_parser.add_argument('--out_dir', type=str, default='data/concode',
@@ -417,5 +423,6 @@ if __name__ == '__main__':
       num_mined=args.num_mined,
       out_dir=args.out_dir,
       num_examples=args.num_examples,
+      num_dev=args.num_dev,
       debug=args.debug,
       start_at=args.start_at)
