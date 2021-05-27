@@ -24,8 +24,13 @@ def log_softmax(x):
 
 class ESSearcher():
     def __init__(self, index_name: str):
+        #print(f"index: {index_name}")
         self.es = Elasticsearch()
         self.index_name = index_name
+        #results = self.es.search(
+            #index=self.index_name,
+            #q=self.query_format("helper", "intent"))
+        #print(f"init result: {results}")
 
     def query_format(self, query_str: str, field: str):
         new_query_str = query_str.translate(PUNCT_TO_SPACE)
@@ -39,10 +44,11 @@ class ESSearcher():
         '''
         return '{}:({})'.format(field, new_query_str)
 
-    def get_topk(self, query_str: str, field: str, topk: int=5):
+    def get_topk(self, query_str: str, field: str, topk: int = 5):
         results = self.es.search(
             index=self.index_name,
             q=self.query_format(query_str, field))['hits']['hits'][:topk]
+        #print(results)
         return [(doc['_source'], doc['_score']) for doc in results]
 
 def load_multi_files(files: List[str], max_counts: List[int]=None):
@@ -78,9 +84,11 @@ def aug_iter(ess, dataset, field, topk):
         except Exception as e:
             pass  # sometimes the query is empty
 
-def topk_aug(args):
+def topk_aug(args, index_name):
+    assert(args.max_count is None)
+    assert(args.temp is None)
     dataset = load_multi_files(args.inp.split(':'))
-    ess = ESSearcher(index_name='python-docs')
+    ess = ESSearcher(index_name=index_name)
 
     aug_dataset = []
     id2count = defaultdict(lambda: 0)
@@ -108,10 +116,12 @@ def anneal(probs: np.ndarray, temperature=1):
     anneal_probs = softmax(alp)
     return anneal_probs
 
-def get_distribution(args):
+def get_distribution(args, index_name):
+    assert(args.max_count is not None)
+    assert(args.temp is not None)
     files = args.inp.split(':')
     dataset = load_multi_files(files, max_counts=[args.max_count] * len(files))
-    ess = ESSearcher(index_name='python-docs')
+    ess = ESSearcher(index_name=index_name)
 
     aug_dataset = []
     id2count = defaultdict(lambda: 0)
@@ -137,10 +147,12 @@ def get_distribution(args):
     if args.out:
         with open(args.out, 'w') as fout:
             for qid, ap in zip(qids, probs):
-                fout.write('{}\t{}\n'.format(qid, ap))
+                fout.write(f'{qid}\t{ap}\n')
 
 
 def sample_aug(args):
+    assert(args.max_count is not None)
+    assert(args.temp is not None)
     dist_file, data_file = args.inp.split(':')
     qids = []
     probs = []
@@ -172,6 +184,9 @@ def sample_aug(args):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('--index_name', type=str,
+                            help='name of the Elasticsearch index to use',
+                            default='python-code')
     arg_parser.add_argument('--method', type=str,
                             help='method of augmentation',
                             choices=['topk', 'dist', 'sample'])
@@ -189,8 +204,8 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     if args.method == 'topk':
-        topk_aug(args)
+        topk_aug(args, args.index_name)
     elif args.method == 'dist':
-        get_distribution(args)
+        get_distribution(args, args.index_name)
     elif args.method == 'sample':
         sample_aug(args)

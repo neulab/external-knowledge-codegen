@@ -23,11 +23,20 @@ from javalang import tree
 assert jastor.__version__ == '0.7.1'
 
 
-def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
-                               src_freq=3, code_freq=3, mined_data_file=None,
-                               api_data_file=None, vocab_size=20000,
-                               num_mined=0, out_dir='data/concode',
-                               num_examples=0, num_dev=0, debug=False,
+def preprocess_concode_dataset(train_file,
+                               valid_file,
+                               test_file,
+                               grammar_file,
+                               src_freq=3,
+                               code_freq=3,
+                               mined_data_file=None,
+                               api_data_file=None,
+                               vocab_size=20000,
+                               num_mined=0,
+                               out_dir='data/concode',
+                               num_examples=0,
+                               num_dev=0,
+                               debug=False,
                                start_at=0):
     if num_dev == 0:
         num_dev = num_examples
@@ -40,7 +49,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     transition_system = JavaTransitionSystem(grammar)
 
     print(f'process gold training data... {train_file}', file=sys.stderr)
-    train_examples = preprocess_dataset(train_file, name='train',
+    train_examples = preprocess_dataset(train_file,
+                                        name='train',
                                         transition_system=transition_system,
                                         num_examples=num_examples,
                                         debug=debug,
@@ -49,7 +59,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     full_train_examples = train_examples[:]
     np.random.shuffle(train_examples)
 
-    dev_examples = preprocess_dataset(valid_file, name='dev',
+    dev_examples = preprocess_dataset(valid_file,
+                                      name='dev',
                                       transition_system=transition_system,
                                       num_examples=num_dev,
                                       start_at=start_at)
@@ -59,8 +70,11 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
         print("use mined data: ", num_mined)
         print("from file: ", mined_data_file)
         mined_examples = preprocess_dataset(
-          mined_data_file, name='mined', transition_system=transition_system,
-          num_examples=num_mined, start_at=start_at)
+          mined_data_file,
+          name='mined',
+          transition_system=transition_system,
+          num_examples=num_mined,
+          start_at=start_at)
         pickle.dump(mined_examples,
                     open(os.path.join(out_dir,
                                       'mined_{}.bin'.format(num_mined)), 'wb'))
@@ -68,7 +82,8 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
     if api_data_file:
         print("use api docs from file: ", api_data_file)
         name = os.path.splitext(os.path.basename(api_data_file))[0]
-        api_examples = preprocess_dataset(api_data_file, name='api',
+        api_examples = preprocess_dataset(api_data_file,
+                                          name='api',
                                           transition_system=transition_system,
                                           num_examples=num_examples,
                                           start_at=start_at)
@@ -77,8 +92,7 @@ def preprocess_concode_dataset(train_file, valid_file, test_file, grammar_file,
 
     if mined_examples and api_examples:
         pickle.dump(mined_examples + api_examples,
-                    open(os.path.join(out_dir,
-                                      'pre_{}_{}.bin'.format(num_mined, name)),
+                    open(os.path.join(out_dir, f'pre_{num_mined}_{name}.bin'),
                          'wb'))
 
     # combine to make vocab

@@ -8,18 +8,17 @@ import sys
 es = Elasticsearch()
 
 
-def gendata(filename):
+def gendata(filename, index_name):
     with open(filename, encoding='utf-8') as jsonl:
         for line in jsonl:
             doc = json.loads(line)
             result = {
-                "_index": "python-code",
+                "_index": index_name,
                 "_type": "document"
             }
             for k, v in doc.items():
                 result[k] = v
-            return result
-
+            yield result
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
@@ -40,4 +39,6 @@ if __name__ == '__main__':
     print(es.indices.create(index=args.index_name, ignore=400))
 
     print('index docs')
-    print(bulk(es, gendata(args.json_file)))
+    data = gendata(args.json_file, args.index_name)
+    res = bulk(es, data)
+    print(res)
