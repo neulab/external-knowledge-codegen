@@ -17,37 +17,69 @@ from datasets.conala.util import *
 
 assert astor.__version__ == '0.7.1'
 
-def preprocess_conala_dataset(train_file, test_file, grammar_file, src_freq=3, code_freq=3,
-                              mined_data_file=None, api_data_file=None,
-                              vocab_size=20000, num_mined=0, out_dir='data/conala'):
+def preprocess_conala_dataset(train_file,
+                              test_file,
+                              grammar_file,
+                              src_freq=3,
+                              code_freq=3,
+                              rewritten=True,
+                              mined_data_file=None,
+                              api_data_file=None,
+                              vocab_size=20000,
+                              num_examples=0,
+                              num_mined=0,
+                              num_dev=200,
+                              debug=False,
+                              start_at=0,
+                              out_dir='data/conala'):
     np.random.seed(1234)
+    try:
+        os.makedirs(out_dir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
     asdl_text = open(grammar_file).read()
     grammar = ASDLGrammar.from_text(asdl_text)
     transition_system = Python3TransitionSystem(grammar)
 
     print('process gold training data...')
-    train_examples = preprocess_dataset(train_file, name='train', transition_system=transition_system)
+    train_examples = preprocess_dataset(train_file,
+                                        name='train',
+                                        transition_system=transition_system,
+                                        num_examples=num_examples,
+                                        debug=debug,
+                                        start_at=start_at,
+                                        rewritten=rewritten)
 
     # held out 200 examples for development
     full_train_examples = train_examples[:]
     np.random.shuffle(train_examples)
-    dev_examples = train_examples[:200]
-    train_examples = train_examples[200:]
+    dev_examples = train_examples[:num_dev]
+    train_examples = train_examples[num_dev:]
 
     mined_examples = []
     api_examples = []
     if mined_data_file and num_mined > 0:
         print("use mined data: ", num_mined)
         print("from file: ", mined_data_file)
-        mined_examples = preprocess_dataset(mined_data_file, name='mined', transition_system=transition_system,
-                                            firstk=num_mined)
+        mined_examples = preprocess_dataset(mined_data_file,
+                                            name='mined',
+                                            transition_system=transition_system,
+                                            num_examples=num_mined,
+                                            debug=debug,
+                                            start_at=start_at,
+                                            rewritten=rewritten)
         pickle.dump(mined_examples, open(os.path.join(out_dir, 'mined_{}.bin'.format(num_mined)), 'wb'))
 
     if api_data_file:
         print("use api docs from file: ", api_data_file)
         name = os.path.splitext(os.path.basename(api_data_file))[0]
-        api_examples = preprocess_dataset(api_data_file, name='api', transition_system=transition_system)
+        api_examples = preprocess_dataset(api_data_file, name='api',
+                                          transition_system=transition_system,
+                                          debug=debug,
+                                          start_at=start_at,
+                                          rewritten=rewritten)
         pickle.dump(api_examples, open(os.path.join(out_dir, name + '.bin'), 'wb'))
 
     if mined_examples and api_examples:
@@ -60,7 +92,9 @@ def preprocess_conala_dataset(train_file, test_file, grammar_file, src_freq=3, c
     print(f'{len(dev_examples)} dev instances', file=sys.stderr)
 
     print('process testing data...')
-    test_examples = preprocess_dataset(test_file, name='test', transition_system=transition_system)
+    test_examples = preprocess_dataset(test_file, name='test',
+                                       transition_system=transition_system,
+                                       rewritten=rewritten)
     print(f'{len(test_examples)} testing instances', file=sys.stderr)
 
     src_vocab = VocabEntry.from_corpus([e.src_sent for e in train_examples], size=vocab_size,
@@ -98,45 +132,79 @@ def preprocess_conala_dataset(train_file, test_file, grammar_file, src_freq=3, c
     pickle.dump(vocab, open(os.path.join(out_dir, vocab_name), 'wb'))
 
 
-def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
+def preprocess_dataset(file_path, transition_system, name='train',
+                       num_examples=None, debug=False,
+                       start_at=0,
+                       rewritten=True):
     try:
         dataset = json.load(open(file_path))
-    except:
+    except Exception as e:
+        # TODO handle opening errors
         dataset = [json.loads(jline) for jline in open(file_path).readlines()]
-    if firstk:
-        dataset = dataset[:firstk]
+    if num_examples:
+        dataset = dataset[:num_examples]
     examples = []
     evaluator = ConalaEvaluator(transition_system)
     f = open(file_path + '.debug', 'w')
     skipped_list = []
     for i, example_json in enumerate(dataset):
+        if i < start_at:
+            continue
+        if debug:
+            print(f"preprocess_dataset example n°{i+1}/{len(dataset)}",
+                  end='\n', file=sys.stderr)
+        else:
+            print(f">>>>>>>> preprocess_dataset example n°{i+1}/{len(dataset)}",
+                  end='\r', file=sys.stderr)
         try:
-            example_dict = preprocess_example(example_json)
+            example_dict = preprocess_example(example_json,
+                                              rewritten=rewritten)
 
-            python_ast = ast.parse(example_dict['canonical_snippet'])
-            canonical_code = astor.to_source(python_ast).strip()
-            tgt_ast = python_ast_to_asdl_ast(python_ast, transition_system.grammar)
+            snippet = example_dict['canonical_snippet']
+            if debug:
+                print(f"canonical_snippet:\n{snippet}", file=sys.stderr)
+
+            lang_ast = ast.parse(snippet)
+            canonical_code = astor.to_source(lang_ast).strip()
+            if debug:
+                print(f"canonical_code:\n{canonical_code}", file=sys.stderr)
+            tgt_ast = python_ast_to_asdl_ast(lang_ast, transition_system.grammar)
             tgt_actions = transition_system.get_actions(tgt_ast)
 
             # sanity check
             hyp = Hypothesis()
             for t, action in enumerate(tgt_actions):
-                assert action.__class__ in transition_system.get_valid_continuation_types(hyp)
+                valid_continuating_types = transition_system.get_valid_continuation_types(hyp)
+                if action.__class__ not in valid_continuating_types:
+                    print(f"Error: Valid continuation types are {valid_continuating_types} "
+                          f"but current action class is {action.__class__}",
+                          file=sys.stderr)
+                    assert action.__class__ in valid_continuating_types
                 if isinstance(action, ApplyRuleAction):
-                    assert action.production in transition_system.get_valid_continuating_productions(hyp)
-                # p_t = -1
-                # f_t = None
-                # if hyp.frontier_node:
-                #     p_t = hyp.frontier_node.created_time
-                #     f_t = hyp.frontier_field.field.__repr__(plain=True)
-                #
-                # # print('\t[%d] %s, frontier field: %s, parent: %d' % (t, action, f_t, p_t))
+                    valid_continuating_productions = transition_system.get_valid_continuating_productions(hyp)
+                    if action.production not in valid_continuating_productions and hyp.frontier_node:
+                        raise Exception(f"{bcolors.BLUE}{action.production}"
+                                        f"{bcolors.ENDC} should be in {bcolors.GREEN}"
+                                        f"{grammar[hyp.frontier_field.type] if hyp.frontier_field else ''}"
+                                        f"{bcolors.ENDC}")
+                        assert action.production in valid_continuating_productions
+                p_t = -1
+                f_t = None
+                if hyp.frontier_node:
+                    p_t = hyp.frontier_node.created_time
+                    f_t = hyp.frontier_field.field.__repr__(plain=True)
+                if debug:
+                    print(f'\t[{t}] {action}, frontier field: {f_t}, '
+                          f'parent: {p_t}')
                 hyp = hyp.clone_and_apply_action(action)
 
             assert hyp.frontier_node is None and hyp.frontier_field is None
-            hyp.code = code_from_hyp = astor.to_source(asdl_ast_to_python_ast(hyp.tree, transition_system.grammar)).strip()
-            # print(code_from_hyp)
-            # print(canonical_code)
+            lang_ast = asdl_ast_to_python_ast(hyp.tree, transition_system.grammar)
+            code_from_hyp = astor.to_source(lang_ast).strip()
+
+            hyp.code = code_from_hyp
+            if debug:
+                print(f"code_from_hyp:\n{code_from_hyp}", file=sys.stderr)
             assert code_from_hyp == canonical_code
 
             decanonicalized_code_from_hyp = decanonicalize_code(code_from_hyp, example_dict['slot_map'])
@@ -161,7 +229,7 @@ def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
 
         # log!
         f.write(f'Example: {example.idx}\n')
-        if 'rewritten_intent' in example.meta['example_dict']:
+        if rewritten and 'rewritten_intent' in example.meta['example_dict']:
             f.write(f"Original Utterance: {example.meta['example_dict']['rewritten_intent']}\n")
         else:
             f.write(f"Original Utterance: {example.meta['example_dict']['intent']}\n")
@@ -176,18 +244,19 @@ def preprocess_dataset(file_path, transition_system, name='train', firstk=None):
     return examples
 
 
-def preprocess_example(example_json):
+def preprocess_example(example_json, rewritten=True):
     intent = example_json['intent']
-    if 'rewritten_intent' in example_json:
+    if rewritten and 'rewritten_intent' in example_json:
         rewritten_intent = example_json['rewritten_intent']
     else:
         rewritten_intent = None
 
-    if rewritten_intent is None:
+    if not rewritten or rewritten_intent is None:
         rewritten_intent = intent
     snippet = example_json['snippet']
 
-    canonical_intent, slot_map = canonicalize_intent(rewritten_intent)
+    canonical_intent, slot_map = canonicalize_intent(rewritten_intent
+                                                     if rewritten else intent)
     canonical_snippet = canonicalize_code(snippet, slot_map)
     intent_tokens = tokenize_intent(canonical_intent)
     decanonical_snippet = decanonicalize_code(canonical_snippet, slot_map)
@@ -202,24 +271,47 @@ def preprocess_example(example_json):
             'slot_map': slot_map,
             'canonical_snippet': canonical_snippet}
 
+
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    #### General configuration ####
-    arg_parser.add_argument('--pretrain', type=str, help='Path to pretrain file')
-    arg_parser.add_argument('--out_dir', type=str, default='data/conala', help='Path to output file')
-    arg_parser.add_argument('--topk', type=int, default=0, help='First k number from mined file')
-    arg_parser.add_argument('--freq', type=int, default=3, help='minimum frequency of tokens')
-    arg_parser.add_argument('--vocabsize', type=int, default=20000, help='First k number from pretrain file')
-    arg_parser.add_argument('--include_api', type=str, help='Path to apidocs file')
+    # ### General configuration ####
+    arg_parser.add_argument('--train', type=str, help='Path to train file',
+                            default='data/conala/conala-train.json')
+    arg_parser.add_argument('--test', type=str, help='Path to test file',
+                            default='data/conala/conala-test.json')
+    arg_parser.add_argument('--mined', type=str, help='Path to mined file')
+    arg_parser.add_argument('--grammar', type=str,
+                            help='Path to language grammar',
+                            default='asdl/lang/py3/py3_asdl.simplified.txt')
+    arg_parser.add_argument('--out_dir', type=str, default='data/conala',
+                            help='Path to output file')
+    arg_parser.add_argument('--freq', type=int, default=3,
+                            help='minimum frequency of tokens')
+    arg_parser.add_argument('--vocabsize', type=int, default=20000,
+                            help='First k number from pretrain file')
+    arg_parser.add_argument('--include_api', type=str,
+                            help='Path to apidocs file')
+    arg_parser.add_argument('-r', '--no_rewritten', action='store_false',
+                            help='If set, will not use the manually rewritten '
+                                 'intents.')
+    arg_parser.add_argument('--num_examples', type=int, default=0,
+                            help='Max number of examples to use in any set')
+    arg_parser.add_argument('--num_dev', type=int, default=200,
+                            help='Max number of dev examples to use')
+    arg_parser.add_argument('--num_mined', type=int, default=0,
+                            help='First k number from mined file')
     args = arg_parser.parse_args()
 
     # the json files can be downloaded from http://conala-corpus.github.io
-    preprocess_conala_dataset(train_file='data/conala/conala-train.json',
-                              test_file='data/conala/conala-test.json',
-                              mined_data_file=args.pretrain,
+    preprocess_conala_dataset(train_file=args.train,
+                              test_file=args.test,
+                              mined_data_file=args.mined,
                               api_data_file=args.include_api,
-                              grammar_file='asdl/lang/py3/py3_asdl.simplified.txt',
+                              grammar_file=args.grammar,
                               src_freq=args.freq, code_freq=args.freq,
                               vocab_size=args.vocabsize,
-                              num_mined=args.topk,
-                              out_dir=args.out_dir)
+                              num_examples=args.num_examples,
+                              num_mined=args.num_mined,
+                              num_dev=args.num_dev,
+                              out_dir=args.out_dir,
+                              rewritten=args.no_rewritten)
