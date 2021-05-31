@@ -1,4 +1,5 @@
 import argparse
+import errno
 import json
 import os
 import pickle
@@ -32,15 +33,20 @@ def preprocess_concode_dataset(train_file,
                                mined_data_file=None,
                                api_data_file=None,
                                vocab_size=20000,
-                               num_mined=0,
                                out_dir='data/concode',
                                num_examples=0,
-                               num_dev=0,
+                               num_mined=0,
+                               num_dev=200,
                                debug=False,
+                               rewritten=True,
                                start_at=0):
-    if num_dev == 0:
-        num_dev = num_examples
     np.random.seed(1234)
+    try:
+        os.makedirs(out_dir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
 
     asdl_text = open(grammar_file).read()
     grammar = ASDLGrammar.from_text(asdl_text,
@@ -54,7 +60,8 @@ def preprocess_concode_dataset(train_file,
                                         transition_system=transition_system,
                                         num_examples=num_examples,
                                         debug=debug,
-                                        start_at=start_at)
+                                        start_at=start_at,
+                                        rewritten=rewritten)
 
     full_train_examples = train_examples[:]
     np.random.shuffle(train_examples)
@@ -63,7 +70,9 @@ def preprocess_concode_dataset(train_file,
                                       name='dev',
                                       transition_system=transition_system,
                                       num_examples=num_dev,
-                                      start_at=start_at)
+                                      debug=debug,
+                                      start_at=start_at,
+                                      rewritten=rewritten)
     mined_examples = []
     api_examples = []
     if mined_data_file and num_mined > 0:
@@ -86,7 +95,9 @@ def preprocess_concode_dataset(train_file,
                                           name='api',
                                           transition_system=transition_system,
                                           num_examples=num_examples,
-                                          start_at=start_at)
+                                          debug=debug,
+                                          start_at=start_at,
+                                          rewritten=rewritten)
         pickle.dump(api_examples,
                     open(os.path.join(out_dir, name + '.bin'), 'wb'))
 
@@ -104,8 +115,10 @@ def preprocess_concode_dataset(train_file,
     print('process testing data...', flush=True)
     test_examples = preprocess_dataset(test_file, name='test',
                                        transition_system=transition_system,
-                                        num_examples=num_examples,
-                                       start_at=start_at)
+                                       num_examples=num_examples,
+                                       debug=debug,
+                                       start_at=start_at,
+                                       rewritten=rewritten)
     print(f'{len(test_examples)} testing instances', file=sys.stderr)
 
     src_vocab = VocabEntry.from_corpus([e.src_sent for e in train_examples],
@@ -167,7 +180,8 @@ def preprocess_concode_dataset(train_file,
 
 def preprocess_dataset(file_path, transition_system, name='train',
                        num_examples=None, debug=False,
-                       start_at=0):
+                       start_at=0,
+                       rewritten=True):
     try:
         dataset = json.load(open(file_path))
     except Exception as e:
@@ -190,25 +204,20 @@ def preprocess_dataset(file_path, transition_system, name='train',
             print(f">>>>>>>> preprocess_dataset example n°{i+1}/{len(dataset)}",
                   end='\r', file=sys.stderr)
         try:
-            example_dict = preprocess_example(example_json)
+            example_dict = preprocess_example(example_json,
+                                              rewritten=rewritten)
             snippet = example_dict['canonical_snippet']
             if debug:
                 print(f"canonical_snippet:\n{snippet}", file=sys.stderr)
 
-            try:
-                java_ast = javalang.parse.parse_member_declaration(snippet)
-            except JavaSyntaxError as e:
-                print(f"Java syntax error: {e.description}, at {e.at} "
-                      f"in:\n{snippet}",
-                      file=sys.stderr)
-                raise
-            canonical_code = jastor.to_source(java_ast).strip()
+            lang_ast = javalang.parse.parse_member_declaration(snippet)
+            canonical_code = jastor.to_source(lang_ast).strip()
             if debug:
                 print(f"canonical_code:\n{canonical_code}", file=sys.stderr)
-            tgt_ast = java_ast_to_asdl_ast(java_ast, transition_system.grammar)
+            tgt_ast = java_ast_to_asdl_ast(lang_ast, transition_system.grammar)
             tgt_actions = transition_system.get_actions(tgt_ast)
 
-            # # sanity check
+            # sanity check
             hyp = Hypothesis()
             for t, action in enumerate(tgt_actions):
                 valid_continuating_types = transition_system.get_valid_continuation_types(hyp)
@@ -225,7 +234,6 @@ def preprocess_dataset(file_path, transition_system, name='train',
                                         f"{grammar[hyp.frontier_field.type] if hyp.frontier_field else ''}"
                                         f"{bcolors.ENDC}")
                         assert action.production in valid_continuating_productions
-                    #assert action.production in valid_continuating_productions
                 p_t = -1
                 f_t = None
                 if hyp.frontier_node:
@@ -237,8 +245,8 @@ def preprocess_dataset(file_path, transition_system, name='train',
                 hyp = hyp.clone_and_apply_action(action)
 
             assert hyp.frontier_node is None and hyp.frontier_field is None
-            java_ast = asdl_ast_to_java_ast(hyp.tree, transition_system.grammar)
-            code_from_hyp = jastor.to_source(java_ast).strip()
+            lang_ast = asdl_ast_to_java_ast(hyp.tree, transition_system.grammar)
+            code_from_hyp = jastor.to_source(lang_ast).strip()
 
             hyp.code = code_from_hyp
             if debug:
@@ -305,7 +313,7 @@ def preprocess_dataset(file_path, transition_system, name='train',
     return examples
 
 
-def preprocess_example(example_json):
+def preprocess_example(example_json, rewritten=True):
     """
     In Conala, this method allowed to replace occurrences of python code names
     in rewritten snippet and in code by a common representation. There is no
@@ -318,6 +326,8 @@ def preprocess_example(example_json):
     slot_map = {}
     snippet = example_json['snippet']
     intent_tokens = tokenize_intent(intent)
+    canonical_intent, slot_map = canonicalize_intent(intent)
+    intent_tokens = tokenize_intent(canonical_intent)
     return {'canonical_intent': intent,
             'intent_tokens': intent_tokens,
             'slot_map': slot_map,
@@ -397,9 +407,8 @@ if __name__ == '__main__':
                             default='asdl/lang/java/java_asdl.simplified.txt')
     arg_parser.add_argument('--num_examples', type=int, default=0,
                             help='Max number of examples to use in any set')
-    arg_parser.add_argument('--num_dev', type=int, default=0,
-                            help='Max number of dev examples to use, If not '
-                                 'set, it will use num_examples')
+    arg_parser.add_argument('--num_dev', type=int, default=200,
+                            help='Max number of dev examples to use')
     arg_parser.add_argument('--num_mined', type=int, default=0,
                             help='First k number from mined file')
     arg_parser.add_argument('--out_dir', type=str, default='data/concode',

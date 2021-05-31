@@ -12,29 +12,34 @@ import operator
 import numpy as np
 import pickle
 
-#PUNCT_TO_SPACE = dict(zip(list(string.punctuation), list(' ' * len(string.punctuation))))
-PUNCT_TO_SPACE = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
+# PUNCT_TO_SPACE = dict(zip(list(string.punctuation), list(' ' * len(string.punctuation))))
+PUNCT_TO_SPACE = str.maketrans(string.punctuation,
+                               ' ' * len(string.punctuation))
+
 
 def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
+
 def log_softmax(x):
     return np.log(softmax(x))
 
+
 class ESSearcher():
     def __init__(self, index_name: str):
-        #print(f"index: {index_name}")
+        # print(f"index: {index_name}")
         self.es = Elasticsearch()
         self.index_name = index_name
-        #results = self.es.search(
-            #index=self.index_name,
-            #q=self.query_format("helper", "intent"))
-        #print(f"init result: {results}")
+        # results = self.es.search(
+        # index=self.index_name,
+        # q=self.query_format("helper", "intent"))
+        # print(f"init result: {results}")
 
     def query_format(self, query_str: str, field: str):
         new_query_str = query_str.translate(PUNCT_TO_SPACE)
-        new_query_str = ' '.join([w for w in new_query_str.split() if re.match('^[0-9A-Za-z]+$', w)])
+        new_query_str = ' '.join(
+          [w for w in new_query_str.split() if re.match('^[0-9A-Za-z]+$', w)])
         new_query_str = new_query_str.replace(' AND ', ' ').replace(' and ', ' ')
         '''
         if len(query_str) - len(new_query_str) > 10:
@@ -48,10 +53,10 @@ class ESSearcher():
         results = self.es.search(
             index=self.index_name,
             q=self.query_format(query_str, field))['hits']['hits'][:topk]
-        #print(results)
         return [(doc['_source'], doc['_score']) for doc in results]
 
-def load_multi_files(files: List[str], max_counts: List[int]=None):
+
+def load_multi_files(files: List[str], max_counts: List[int] = None):
     if type(files) is not list:
         files = [files]
     dataset = []
@@ -59,21 +64,24 @@ def load_multi_files(files: List[str], max_counts: List[int]=None):
     for file, max_count in zip(files, max_counts):
         try:
             td = json.load(open(file, 'r'))
-        except:
-            td = [json.loads(l) for l in open(file, 'r')]
+        except Exception:
+            td = [json.loads(line) for line in open(file, 'r')]
         if max_count:
             td = td[:max_count]
         print('load {} from {}'.format(len(td), file))
         dataset.extend(td)
     return dataset
 
-def aug_iter(ess, dataset, field, topk):
+
+def aug_iter(ess, dataset, field, topk, rewritten=True):
     '''
     iterate over dataset and do retrieval
     '''
     for i, code in enumerate(tqdm(dataset)):
         if field == 'intent':
-            query = (code['rewritten_intent'] if 'rewritten_intent' in code else None) or code['intent']
+            query = (code['rewritten_intent']
+                     if (rewritten and 'rewritten_intent' in code)
+                     else None) or code['intent']
         elif field == 'snippet':
             query = code['snippet']
         try:
@@ -84,7 +92,8 @@ def aug_iter(ess, dataset, field, topk):
         except Exception as e:
             pass  # sometimes the query is empty
 
-def topk_aug(args, index_name):
+
+def topk_aug(args, index_name, rewritten=True):
     assert(args.max_count is None)
     assert(args.temp is None)
     dataset = load_multi_files(args.inp.split(':'))
@@ -92,7 +101,8 @@ def topk_aug(args, index_name):
 
     aug_dataset = []
     id2count = defaultdict(lambda: 0)
-    for code, hits in aug_iter(ess, dataset, args.field, args.topk):
+    for code, hits in aug_iter(ess, dataset, args.field, args.topk,
+                               rewritten=rewritten):
         '''
         if len(hits) != args.topk:
             print('not enough for "{}"'.format(query))
@@ -108,7 +118,9 @@ def topk_aug(args, index_name):
         for code in aug_dataset:
             fout.write(json.dumps(code) + '\n')
 
-    print('most commonly retrieved ids {}'.format(sorted(id2count.items(), key=lambda x: -x[1])[:5]))
+    print(f'most commonly retrieved ids '
+          f'{sorted(id2count.items(), key=lambda x: -x[1])[:5]}')
+
 
 def anneal(probs: np.ndarray, temperature=1):
     lp = np.log(probs)
@@ -116,7 +128,8 @@ def anneal(probs: np.ndarray, temperature=1):
     anneal_probs = softmax(alp)
     return anneal_probs
 
-def get_distribution(args, index_name):
+
+def get_distribution(args, index_name, rewritten=True):
     assert(args.max_count is not None)
     assert(args.temp is not None)
     files = args.inp.split(':')
@@ -125,7 +138,8 @@ def get_distribution(args, index_name):
 
     aug_dataset = []
     id2count = defaultdict(lambda: 0)
-    for code, hits in aug_iter(ess, dataset, args.field, args.topk):
+    for code, hits in aug_iter(ess, dataset, args.field, args.topk,
+                               rewritten=rewritten):
         for (rcode, score) in hits:
             rcode['for'] = code['question_id']
             rcode['retrieval_score'] = score
@@ -201,11 +215,15 @@ if __name__ == '__main__':
                             choices=['snippet', 'intent'], default='snippet')
     arg_parser.add_argument('--temp', type=float,
                             help='temperature of sampling', default=None)
+    arg_parser.add_argument('-r', '--use_rewritten', default=True,
+                            action='store_true',
+                            help='If set, will use the manually rewritten '
+                                 'intents.')
     args = arg_parser.parse_args()
 
     if args.method == 'topk':
-        topk_aug(args, args.index_name)
+        topk_aug(args, args.index_name, args.use_rewritten)
     elif args.method == 'dist':
-        get_distribution(args, args.index_name)
+        get_distribution(args, args.index_name, args.use_rewritten)
     elif args.method == 'sample':
         sample_aug(args)
