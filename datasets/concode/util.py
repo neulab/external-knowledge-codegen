@@ -78,6 +78,63 @@ def canonicalize_intent(intent):
             'quote': quote,
             'type': slot_type}
 
+    # Now handle Concode data: fields and methods.
+    # "intent": "Check if details are parsed . concode_field_sep Container
+    # concode_elem_sep parent … concode_func_sep Container concode_elem_sep
+    # getParent _
+
+    # Each field is announced by the string "concode_field_sep" and each method
+    # by "concode_func_sep". Both are composed of a Java type and an identifier
+    # separated by "concode_elem_sep"
+
+    # 1. split at first concode_func_sep. Everything after is methods. Split
+    # this methods string on concode_func_sep, and each element on
+    # concode_elem_sep. Add these methods data to slot_map
+    method_id = 0
+    if "concode_func_sep" in intent:
+        intent, methods = intent.split("concode_func_sep", 1)
+        methods = methods.strip().split("concode_func_sep")
+        for method in methods:
+            return_type, method_name = method.strip().split("concode_elem_sep")
+            return_type = return_type.strip()
+            method_name = method_name.strip()
+            slot_name = 'method_%d' % method_id
+            method_id += 1
+            slot_type = 'method'
+
+            slot_map[slot_name] = {
+                'value': method_name.strip().encode().decode('unicode_escape',
+                                                            'ignore'),
+                'quote': return_type,
+                'type': slot_type}
+            #print(f"slot_map[{slot_name}] = {slot_map[slot_name]}",
+                  #file=sys.stderr)
+
+    # 2. split the substring before concode_func_sep at first concode_field_sep
+    # Everything after is fields. Split this fields string on
+    # concode_field_sep, and each element on concode_elem_sep. Add these fields
+    # data to slot_map
+    if "concode_field_sep" in intent:
+        field_id = 0
+        intent, fields = intent.split("concode_field_sep", 1)
+        fields = fields.strip().split("concode_field_sep")
+        for field in fields:
+            field_type, field_name = field.strip().split("concode_elem_sep")
+            field_type = field_type.strip()
+            field_name = field_name.strip()
+            slot_name = 'field_%d' % field_id
+            field_id += 1
+            slot_type = 'field'
+
+            slot_map[slot_name] = {
+                'value': field_name.strip().encode().decode('unicode_escape',
+                                                            'ignore'),
+                'quote': field_type,
+                'type': slot_type}
+            #print(f"slot_map[{slot_name}] = {slot_map[slot_name]}",
+                  #file=sys.stderr)
+
+    #print(f"canonicalized intent = {intent}", file=sys.stderr)
     return intent, slot_map
 
 
