@@ -209,8 +209,18 @@ def preprocess_dataset(file_path, transition_system, name='train',
             snippet = example_dict['canonical_snippet']
             if debug:
                 print(f"canonical_snippet:\n{snippet}", file=sys.stderr)
-
-            lang_ast = javalang.parse.parse_member_declaration(snippet)
+            try:
+                lang_ast = javalang.parse.parse_member_declaration(snippet)
+            except JavaSyntaxError as e:
+                print(f"Syntax error in canonical snippet below. Will try original one.",
+                      file=sys.stderr)
+                print("------", file=sys.stderr)
+                print(snippet, file=sys.stderr)
+                print("------", file=sys.stderr)
+                snippet = example_dict['snippet']
+                if debug:
+                    print(f"snippet:\n{snippet}", file=sys.stderr)
+                lang_ast = javalang.parse.parse_member_declaration(snippet)
             canonical_code = jastor.to_source(lang_ast).strip()
             if debug:
                 print(f"canonical_code:\n{canonical_code}", file=sys.stderr)
@@ -325,33 +335,23 @@ def preprocess_example(example_json, rewritten=True):
     intent = example_json['intent']
     slot_map = {}
     snippet = example_json['snippet']
+    #print(f"preprocess_example snippet={snippet}", file=sys.stderr)
     intent_tokens = tokenize_intent(intent)
     canonical_intent, slot_map = canonicalize_intent(intent)
     intent_tokens = tokenize_intent(canonical_intent)
-    return {'canonical_intent': intent,
-            'intent_tokens': intent_tokens,
-            'slot_map': slot_map,
-            'canonical_snippet': snippet}
-    #intent = example_json['intent']
-    #if 'rewritten_intent' in example_json:
-        #rewritten_intent = example_json['rewritten_intent']
-    #else:
-        #rewritten_intent = None
-
-    #if rewritten_intent is None:
-        #rewritten_intent = intent
-    #canonical_intent, slot_map = canonicalize_intent(rewritten_intent)
-    #intent_tokens = tokenize_intent(canonical_intent)
-
-    #snippet = example_json['snippet']
-    #print(f"preprocess_example snippet={snippet}", file=sys.stderr)
-    #try:
-        #canonical_snippet = canonicalize_code(snippet, slot_map)
-    #except JavaSyntaxError as e:
-        #print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
-        #raise
+    try:
+        canonical_snippet = canonicalize_code(snippet, slot_map)
+    except JavaSyntaxError as e:
+        print(f"Java syntax error: {e.description}, at {e.at} in:\n{snippet}", file=sys.stderr)
+        raise
     #print(f"preprocess_example canonical_snippet={canonical_snippet}",
           #file=sys.stderr)
+    return {'canonical_intent': canonical_intent,
+            'intent_tokens': intent_tokens,
+            'slot_map': slot_map,
+            'snippet': snippet,
+            'canonical_snippet': canonical_snippet}
+
     #try:
         #decanonical_snippet = decanonicalize_code(canonical_snippet, slot_map)
     #except JavaSyntaxError as e:

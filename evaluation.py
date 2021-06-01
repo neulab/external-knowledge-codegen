@@ -4,6 +4,8 @@ from __future__ import print_function
 import sys
 import traceback
 from tqdm import tqdm
+from javalang.parse import parse_member_declaration
+from javalang.parser import JavaSyntaxError
 
 
 def decode(examples, model, args, verbose=False, **kwargs):
@@ -25,8 +27,12 @@ def decode(examples, model, args, verbose=False, **kwargs):
         for hyp_id, hyp in enumerate(hyps):
             got_code = False
             try:
-                hyp.code = model.transition_system.ast_to_surface_code(
-                  hyp.tree)
+                code = model.transition_system.ast_to_surface_code(hyp.tree)
+                try:
+                    java_ast = parse_member_declaration(code)
+                except JavaSyntaxError as e:
+                    continue
+                hyp.code = code
                 got_code = True
                 decoded_hyps.append(hyp)
             except Exception as e:

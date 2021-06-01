@@ -71,16 +71,17 @@ class ConcodeEvaluator(Evaluator):
             filtered_hyp_list = []
             for hyp in hyp_list:
                 if not hasattr(hyp, 'decanonical_code'):
-                    try:
-                        hyp.decanonical_code = decanonicalize_code(
-                          hyp.code, slot_map=example.meta['slot_map'])
-                        if hyp.decanonical_code:
-                            hyp.decanonical_code_tokens = tokenize_for_bleu_eval(hyp.decanonical_code)
-                            filtered_hyp_list.append(hyp)
-                    except Exception as e:
-                        hyp.decanonical_code_tokens = []
-                        print(f"Catching and passing {e}", file=sys.stderr)
-                        # pass
+                    hyp.decanonical_code = decanonicalize_code(
+                        hyp.code, slot_map=example.meta['slot_map'])
+                    if hyp.decanonical_code:
+                        hyp.decanonical_code_tokens = tokenize_for_bleu_eval(
+                          hyp.decanonical_code)
+                        filtered_hyp_list.append(hyp)
+                    #try:
+                    #except Exception as e:
+                        #hyp.decanonical_code_tokens = []
+                        ##print(f"Catching and passing {e}", file=sys.stderr)
+                        #pass
 
             decode_results[i] = filtered_hyp_list
 

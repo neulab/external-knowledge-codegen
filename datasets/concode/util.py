@@ -8,6 +8,7 @@ import sys
 
 import javalang
 from javalang import ast
+from javalang.parser import JavaSyntaxError
 from asdl.lang.java import jastor
 # from aymara import lima
 import nltk
@@ -50,10 +51,10 @@ def infer_slot_type(quote, value):
 
 
 def canonicalize_intent(intent):
+    slot_map = dict()
     # handle the following special case: quote is `''`
     marked_token_matches = QUOTED_TOKEN_RE.findall(intent)
 
-    slot_map = dict()
     var_id = 0
     str_id = 0
     for match in marked_token_matches:
@@ -149,11 +150,6 @@ def replace_identifiers_in_ast(java_ast, identifier2slot):
                 if isinstance(v, str):
                     if v in identifier2slot:
                         slot_name = identifier2slot[v]
-                        # Python 3
-                        # if isinstance(slot_name, unicode):
-                        #     try: slot_name = slot_name.encode('ascii')
-                        #     except: pass
-
                         setattr(node, k, slot_name)
 
 
@@ -200,10 +196,18 @@ def decanonicalize_code(code, slot_map):
             code = code.replace(slot_name, slot_val['value'])
 
     slot2string = {x[0]: x[1]['value'] for x in list(slot_map.items())}
-    java_ast = javalang.parse.parse_one_of(code)
+    try:
+        java_ast = javalang.parse.parse_member_declaration(code)
+    except JavaSyntaxError as e:
+        print(f"Syntax error {e.description}, at {e.at}, while parsing:",
+              file=sys.stderr)
+        print(f"----", file=sys.stderr)
+        print(f"{code}", file=sys.stderr)
+        print(f"----", file=sys.stderr)
+        raise
     replace_identifiers_in_ast(java_ast, slot2string)
     raw_code = jastor.to_source(java_ast).strip()
-    # for slot_name, slot_info in slot_map.items():
-    #     raw_code = raw_code.replace(slot_name, slot_info['value'])
+    for slot_name, slot_val in slot_map.items():
+        raw_code = raw_code.replace(slot_name, slot_val['value'])
 
     return raw_code
