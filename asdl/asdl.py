@@ -2,7 +2,7 @@
 from collections import OrderedDict, Counter
 from itertools import chain
 
-from .utils import remove_comment
+from asdl.utils.utils import remove_comment
 
 
 class ASDLGrammar(object):
