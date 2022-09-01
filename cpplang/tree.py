@@ -168,6 +168,10 @@ class CXX_METHOD(Member):
              "parameters", "throws", "body",)
 
 
+class PARM_DECL(Node):
+    attrs = ("type", "name", "dimensions",)
+
+
 class FieldDeclaration(Member):
     attrs = ("type", "declarators",)
 

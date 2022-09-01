@@ -391,6 +391,15 @@ class Parser(object):
         return tree.CXX_METHOD(name=name, return_type=return_type, subnodes=subnodes)
 
     @parse_debug
+    def parse_PARM_DECL(self, node) -> tree.PARM_DECL:
+        assert len(self.stack) > 1 and node.kind.name == "PARM_DECL"
+        breakpoint()
+        name = node.spelling
+        type = node.type.spelling
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.PARM_DECL(name=name, type=type, subnodes=subnodes)
+
+    @parse_debug
     def parse_enum_declaration(self) -> tree.EnumDeclaration:
         name = None
         implements = None

@@ -386,6 +386,9 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_CXX_ACCESS_SPEC_DECL(self, node: Cursor):
         self.write(node.access_spec, ":", "\n")
 
+    def visit_PARM_DECL(self, node: Cursor):
+        self.write(node.type, "", node.name, "\n")
+
     def visit_EmptyDeclaration(self, node: tree.EmptyDeclaration):
         self.newline()
 
@@ -450,6 +453,13 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.id)
 
     def visit_CXX_METHOD(self, node: tree.CXX_METHOD):
+        parameters = []
+        statements = []
+        for c in node.subnodes:
+            if c.__class__.__name__ == "PARM_DECL":
+                parameters.append(c)
+            else:
+                statements.append(c)
         #if node.documentation:
             #self.write(node.documentation, "\n")
         #if node.annotations:
@@ -465,8 +475,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.return_type, " ")
         self.write(node.name)
         self.write("(")
-        #if node.parameters:
-            #self.comma_list(node.parameters)
+        if parameters:
+            self.comma_list(parameters)
         self.write(")")
         #if node.dimensions:
             #for _ in node.dimensions:
@@ -475,9 +485,9 @@ class SourceGenerator(ExplicitNodeVisitor):
             #self.write(" throws ")
             #self.comma_list(node.throws)
         #self.write(" ")
-        if len(node.subnodes) > 0:
+        if len(statements) > 0:
             self.write(" {", "\n")
-            for c in node.subnodes:
+            for c in statements:
                 self.write(c)
             self.write("}", "\n")
         else:

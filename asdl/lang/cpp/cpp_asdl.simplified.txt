@@ -6,7 +6,7 @@ cu = TRANSLATION_UNIT(declaration* subnodes)
 declaration = CLASS_DECL(identifier name, classbodyelt* subnodes)
 
 classbodyelt = CXX_ACCESS_SPEC_DECL(identifier access_spec)
-      | CXX_METHOD(string? documentation, identifier name, identifier return_type, statement* subnodes)
+      | CXX_METHOD(string? documentation, identifier name, identifier return_type, methodsubnodes* subnodes)
 #      | CXX_METHOD(string? documentation, fieldmodifier* modifiers, annotation* annotations,
 #                   type_parameter* type_parameters, type? return_type, identifier name,
 #                   dimension* dimensions, parameter* parameters, identifier* throws,
@@ -87,6 +87,9 @@ package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, 
 
 parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, dimension* dimensions, constant? varargs)
       | InferredFormalParameter(expression expression)
+
+methodsubnodes = COMPOUND_STMT(statement* subnodes)
+      | PARM_DECL(identifier name, identifier type)
 
 statement = COMPOUND_STMT
       | AssertStatement(identifier? label, expression condition, expression? value)

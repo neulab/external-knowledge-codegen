@@ -3,7 +3,16 @@
 
 class Object {
 public:
-  int run();
+  int run(bool b);
+  /*
+  {
+    if (b)
+      return 0;
+    else
+    {
+      return 1;
+    }
+  }*/
 };
 
 #endif
