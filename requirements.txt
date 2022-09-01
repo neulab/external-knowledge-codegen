@@ -1,0 +1,6 @@
+astor==0.7.1
+clang
+colorama
+javalang
+libclang
+six

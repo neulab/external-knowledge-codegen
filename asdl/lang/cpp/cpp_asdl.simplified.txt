@@ -1,0 +1,130 @@
+## ASDL's 4 builtin types are
+identifier, int, string, constant
+
+cu = TRANSLATION_UNIT(declaration* subnodes)
+
+declaration = CLASS_DECL(identifier name, classbodyelt* subnodes)
+
+classbodyelt = CXX_ACCESS_SPEC_DECL(identifier access_spec)
+      | CXX_METHOD(string? documentation, identifier name, identifier return_type, statement* subnodes)
+#      | CXX_METHOD(string? documentation, fieldmodifier* modifiers, annotation* annotations,
+#                   type_parameter* type_parameters, type? return_type, identifier name,
+#                   dimension* dimensions, parameter* parameters, identifier* throws,
+#                   statement* subnodes)
+
+dimension = ArrayDimension(expression? dim)
+
+annotation = MarkerAnnotation(identifier name)
+      | NormalAnnotation(expression* element, identifier name)
+      | SingleElementAnnotation(expression? element, identifier name)
+
+arrayinitializer = ArrayInitializer(expression* initializers, constant? comma)
+
+boolean = True | False
+
+case = SwitchStatementCase(expression* case, statement* statements)
+
+tryresource = TryResource(fieldmodifier* modifiers, annotation* annotations, type type, identifier name, expression value)
+
+catch = CatchClause(identifier? label, catch_clause_parameter parameter, statement block)
+
+catch_clause_parameter = CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
+
+classbody = ClassBody(typedeclaration* declarations)
+      | EmptyClassBody
+
+declarator = VariableDeclarator(identifier name, dimension* dimensions, expression? initializer)
+
+enumbody = EnumBody(enumconstant* constants, constant? separator, typedeclaration* declarations, constant? comma)
+
+enumconstant = EnumConstantDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, expression* arguments, typedeclaration* body)
+
+expression = ArrayCreator(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type, dimension* dimensions, arrayinitializer? initializer)
+      | ElementValueArrayInitializer(arrayinitializer initializer)
+      | ArraySelector(expression index)
+      | ParenthesizedExpression(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, expression expression)
+      | Assignment(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, expression expressionl, expression value, operator type)
+      | BinaryOperation(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, operator operator, expression operandl, expression operandr)
+      | BlockExpression(statement block)
+      | Cast(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type, expression expression)
+      | ClassCreator(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type, type_argument* constructor_type_arguments, expression* arguments, classbody? body)
+      | ClassReference(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type)
+      | Creator(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type)
+      | ElementValuePair(identifier name, expression value)
+      | ExplicitConstructorInvocation(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments)
+      | Identifier(identifier id)
+      | InnerClassCreator(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type, type_argument* constructor_type_arguments, expression* arguments, statement* body)
+      | Invocation(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments)
+      | LambdaExpression(parameter? parameter, parameter* parameters, expression body)
+      | Literal(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, string value)
+      | FieldReference(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, identifier field)
+      | MemberReference(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, identifier member)
+      | MethodInvocation(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments, identifier member)
+      | MethodReference(expression expression, expression method, type_argument* type_arguments)
+      | NoExpression
+      | ReferenceTypeExpression(type type)
+      | SuperConstructorInvocation(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments)
+      | SuperMemberReference(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, identifier member)
+      | SuperMethodInvocation(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type_argument* type_arguments, expression* arguments, identifier member)
+      | TernaryExpression(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, expression condition, expression if_true, expression if_false)
+      | This(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors)
+      | VariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+      | VariableInitializer(expression? expression, arrayinitializer? array)
+      | VoidClassReference(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors)
+
+fieldmodifier = Modifier(constant value)
+
+forcontrol = EnhancedForControl(expression var, expression iterable)
+      | ForControl(expression* init, expression? condition, expression* update)
+
+importdeclaration = Import(identifier path, constant? static, constant? wildcard)
+
+localvariable = LocalVariableDeclaration(fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+
+operator = Operator(constant operator)
+
+package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name)
+
+parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, dimension* dimensions, constant? varargs)
+      | InferredFormalParameter(expression expression)
+
+statement = COMPOUND_STMT
+      | AssertStatement(identifier? label, expression condition, expression? value)
+      | ContinueStatement(identifier? label, identifier? goto)
+      | BlockStatement(identifier? label, statement* statements)
+      | BreakStatement(identifier? label, identifier? goto)
+      | DoStatement(identifier? label, expression condition, statement body)
+      | ExpressionStatement(identifier? label, expression expression)
+      | ForStatement(identifier? label, forcontrol control, statement body)
+      | IfStatement(identifier? label, expression condition, statement then_statement, statement? else_statement)
+      | LocalVariableDeclarationStatement(identifier? label, localvariable variable)
+      | ReturnStatement(identifier? label, expression? expression)
+      | Statement(identifier? label)
+      | SwitchStatement(identifier? label, expression expression, case* cases)
+      | SynchronizedStatement(identifier? label, expression lock, statement block)
+      | TypeDeclarationStatement(typedeclaration declaration)
+      | ThrowStatement(identifier? label, expression expression)
+      | TryStatement(identifier? label, tryresource* resources, statement block, catch* catches, statement? finally_block)
+      | WhileStatement(identifier? label, expression condition, statement body)
+
+type = BasicType(identifier name, dimension* dimensions)
+      | DiamondType(identifier name, dimension* dimensions, type? sub_type)
+      | ReferenceType(identifier name, dimension* dimensions, type_argument* arguments, type? sub_type)
+
+type_argument = TypeArgument(type? type, identifier? pattern_type)
+
+typedeclaration = AnnotationDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, identifier name, typedeclaration* body)
+      | AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name, type? return_type, dimension* dimensions, identifier? default)
+      | ClassDeclaration(annotation* annotations, typedeclaration* body, string? documentation, type? extends, type* implements, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters)
+      | ConstantDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+      | ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement body)
+      | EmptyDeclaration(string? documentation)
+      | EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, type* implements, enumbody body)
+      | FieldDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type type, declarator* declarators)
+      | InstanceInitializer(statement block)
+      | InterfaceDeclaration(annotation* annotations, string? documentation, fieldmodifier* modifiers, identifier name, type_parameter* type_parameters, type* extends, typedeclaration* body)
+      | MethodDeclaration(string? documentation, fieldmodifier* modifiers, annotation* annotations, type_parameter* type_parameters, type? return_type, identifier name, dimension* dimensions, parameter* parameters, identifier* throws, statement? body)
+      | StaticInitializer(statement block)
+
+type_parameter = TypeParameter(identifier name, type* extends)
+
