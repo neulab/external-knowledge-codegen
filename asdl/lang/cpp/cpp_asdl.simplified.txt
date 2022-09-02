@@ -91,7 +91,8 @@ parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, i
 methodsubnodes = COMPOUND_STMT(statement* subnodes)
       | PARM_DECL(identifier name, identifier type)
 
-statement = COMPOUND_STMT
+statement = COMPOUND_STMT(statement* subnodes)
+      | IF_STMT(ifsubnodes* subnodes)
       | AssertStatement(identifier? label, expression condition, expression? value)
       | ContinueStatement(identifier? label, identifier? goto)
       | BlockStatement(identifier? label, statement* statements)
@@ -109,6 +110,13 @@ statement = COMPOUND_STMT
       | ThrowStatement(identifier? label, expression expression)
       | TryStatement(identifier? label, tryresource* resources, statement block, catch* catches, statement? finally_block)
       | WhileStatement(identifier? label, expression condition, statement body)
+
+ifsubnodes = UNEXPOSED_EXPR(identifier name, unexposedexprsubnodes* subnodes)
+      | RETURN_STMT(returnstmtsubnodes* subnodes)
+
+unexposedexprsubnodes = DECL_REF_EXPR(identifier name)
+
+returnstmtsubnodes = INTEGER_LITERAL(identifier value)
 
 type = BasicType(identifier name, dimension* dimensions)
       | DiamondType(identifier name, dimension* dimensions, type? sub_type)

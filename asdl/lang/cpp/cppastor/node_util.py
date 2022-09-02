@@ -22,6 +22,7 @@ For a whole-tree approach, see the treewalk submodule.
 
 from cpplang.ast import Node
 import itertools
+import sys
 
 try:
     zip_longest = itertools.zip_longest
@@ -141,14 +142,15 @@ class ExplicitNodeVisitor(object):
     """
 
     def abort_visit(node):  # XXX: self?
-        msg = 'No defined handler for node of type %s'
-        raise AttributeError(msg % node.kind.name)
+        msg = (f"No defined handler for node of type {node.__class__.__name__}\n"
+               f"please define visit_{node.__class__.__name__} in code_gen.py.")
+        raise AttributeError(msg)
 
     def visit(self, node, abort=abort_visit):
         """Visit a node."""
         method = 'visit_' + node.__class__.__name__
-        print(method)
         visitor = getattr(self, method, abort)
+        print(f"visiting {method}", file=sys.stderr)
         return visitor(node)
 
     def generic_visit(self, node):

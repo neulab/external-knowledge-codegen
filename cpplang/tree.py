@@ -284,8 +284,25 @@ class BlockStatement(Statement):
     attrs = ("statements",)
 
 
+# statemenents are the subnodes (from Node)
 class COMPOUND_STMT(Statement):
-    attrs = ("statements",)
+    attrs = ()
+
+
+class IF_STMT(Statement):
+    attrs = ()
+
+
+class RETURN_STMT(Statement):
+    attrs = ()
+
+
+class UNEXPOSED_EXPR(Node):
+    attrs = ("name",)
+
+
+class DECL_REF_EXPR(Node):
+    attrs = ("name",)
 
 
 class ExpressionStatement(Statement):
@@ -378,6 +395,10 @@ class Identifier(Primary):
 
 class Literal(Primary):
     attrs = ("value",)
+
+
+class INTEGER_LITERAL(Literal):
+    attrs = ()
 
 
 class This(Primary):

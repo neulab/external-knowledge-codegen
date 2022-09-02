@@ -114,7 +114,7 @@ class Parser(object):
 # ---- Parsing entry point ----
 
     def parse(self):
-        return self.parse_compilation_unit()
+        return self.parse_TRANSLATION_UNIT()
 
 # ------------------------------------------------------------------------------
 # ---- Helper methods ----
@@ -264,9 +264,6 @@ class Parser(object):
 
         return qualified_identifiers
 
-# ------------------------------------------------------------------------------
-# -- Top level units --
-
     def abort_visit(node):  # XXX: self?
         msg = f'No defined handler for node of type {node.kind.name}'
         raise AttributeError(msg)
@@ -279,12 +276,161 @@ class Parser(object):
         self.stack.pop()
         return result
 
+# ------------------------------------------------------------------------------
+# -- Top level units --
+
     @parse_debug
-    def parse_compilation_unit(self) -> tree.TRANSLATION_UNIT:
+    def parse_TRANSLATION_UNIT(self) -> tree.TRANSLATION_UNIT:
         assert len(self.stack) == 1 and self.stack[-1].kind.name == "TRANSLATION_UNIT"
 
         subnodes = [self.parse_node(c) for c in self.stack[-1].get_children()]
         return tree.TRANSLATION_UNIT(subnodes=subnodes)
+
+    @parse_debug
+    def parse_CLASS_DECL(self, node) -> tree.CLASS_DECL:
+        assert len(self.stack) > 1 and node.kind.name == "CLASS_DECL"
+        name = node.spelling
+        #type_params = None
+        #extends = None
+        #implements = None
+        #body = None
+
+        #self.accept('class')
+
+        #name = self.parse_identifier()
+
+        #if self.would_accept('<'):
+            #type_params = self.parse_type_parameters()
+
+        #if self.try_accept('extends'):
+            #extends = self.parse_type()
+
+        #if self.try_accept('implements'):
+            #implements = self.parse_type_list()
+
+        #body = self.parse_class_body()
+
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+
+        return tree.CLASS_DECL(name=name, subnodes=subnodes)
+
+    @parse_debug
+    def parse_CXX_ACCESS_SPEC_DECL(self, node) -> tree.CXX_ACCESS_SPEC_DECL:
+        assert len(self.stack) > 1 and node.kind.name == "CXX_ACCESS_SPEC_DECL"
+        access_spec = node.access_specifier.name.lower()
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+
+        return tree.CXX_ACCESS_SPEC_DECL(access_spec=access_spec, subnodes=subnodes)
+
+    @parse_debug
+    def parse_CXX_METHOD(self, node) -> tree.CXX_METHOD:
+        assert len(self.stack) > 1 and node.kind.name == "CXX_METHOD"
+        name = node.spelling
+        return_type = node.result_type.spelling
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.CXX_METHOD(name=name, return_type=return_type, subnodes=subnodes)
+
+    @parse_debug
+    def parse_PARM_DECL(self, node) -> tree.PARM_DECL:
+        assert len(self.stack) > 1 and node.kind.name == "PARM_DECL"
+        name = node.spelling
+        type = node.type.spelling
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.PARM_DECL(name=name, type=type, subnodes=subnodes)
+
+    @parse_debug
+    def parse_COMPOUND_STMT(self, node) -> tree.COMPOUND_STMT:
+        assert len(self.stack) > 1 and node.kind.name == "COMPOUND_STMT"
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.COMPOUND_STMT(subnodes=subnodes)
+
+    @parse_debug
+    def parse_IF_STMT(self, node) -> tree.IF_STMT:
+        assert len(self.stack) > 1 and node.kind.name == "IF_STMT"
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.IF_STMT(subnodes=subnodes)
+
+    @parse_debug
+    def parse_RETURN_STMT(self, node) -> tree.RETURN_STMT:
+        assert len(self.stack) > 1 and node.kind.name == "RETURN_STMT"
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.RETURN_STMT(subnodes=subnodes)
+
+    @parse_debug
+    def parse_UNEXPOSED_EXPR(self, node) -> tree.UNEXPOSED_EXPR:
+        assert len(self.stack) > 1 and node.kind.name == "UNEXPOSED_EXPR"
+        name = node.spelling
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.UNEXPOSED_EXPR(name=name, subnodes=subnodes)
+
+    @parse_debug
+    def parse_DECL_REF_EXPR(self, node) -> tree.DECL_REF_EXPR:
+        assert len(self.stack) > 1 and node.kind.name == "DECL_REF_EXPR"
+        name = node.spelling
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.DECL_REF_EXPR(name=name, subnodes=subnodes)
+
+    @parse_debug
+    def parse_INTEGER_LITERAL(self, node) -> tree.INTEGER_LITERAL:
+        assert len(self.stack) > 1 and node.kind.name == "INTEGER_LITERAL"
+        value = (next(node.get_tokens())).spelling
+        subnodes = [self.parse_node(c) for c in node.get_children()]
+        return tree.INTEGER_LITERAL(value=value, subnodes=subnodes)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Old code from Java parsing
 
     @parse_debug
     def parse_import_declaration(self) -> tree.Import:
@@ -345,59 +491,6 @@ class Parser(object):
         type_declaration.documentation = cppdoc
 
         return type_declaration
-
-    @parse_debug
-    def parse_CLASS_DECL(self, node) -> tree.CLASS_DECL:
-        assert len(self.stack) > 1 and node.kind.name == "CLASS_DECL"
-        name = node.spelling
-        #type_params = None
-        #extends = None
-        #implements = None
-        #body = None
-
-        #self.accept('class')
-
-        #name = self.parse_identifier()
-
-        #if self.would_accept('<'):
-            #type_params = self.parse_type_parameters()
-
-        #if self.try_accept('extends'):
-            #extends = self.parse_type()
-
-        #if self.try_accept('implements'):
-            #implements = self.parse_type_list()
-
-        #body = self.parse_class_body()
-
-        subnodes = [self.parse_node(c) for c in node.get_children()]
-
-        return tree.CLASS_DECL(name=name, subnodes=subnodes)
-
-    @parse_debug
-    def parse_CXX_ACCESS_SPEC_DECL(self, node) -> tree.CXX_ACCESS_SPEC_DECL:
-        assert len(self.stack) > 1 and node.kind.name == "CXX_ACCESS_SPEC_DECL"
-        access_spec = node.access_specifier.name.lower()
-        subnodes = [self.parse_node(c) for c in node.get_children()]
-
-        return tree.CXX_ACCESS_SPEC_DECL(access_spec=access_spec, subnodes=subnodes)
-
-    @parse_debug
-    def parse_CXX_METHOD(self, node) -> tree.CXX_METHOD:
-        assert len(self.stack) > 1 and node.kind.name == "CXX_METHOD"
-        name = node.spelling
-        return_type = node.result_type.spelling
-        subnodes = [self.parse_node(c) for c in node.get_children()]
-        return tree.CXX_METHOD(name=name, return_type=return_type, subnodes=subnodes)
-
-    @parse_debug
-    def parse_PARM_DECL(self, node) -> tree.PARM_DECL:
-        assert len(self.stack) > 1 and node.kind.name == "PARM_DECL"
-        breakpoint()
-        name = node.spelling
-        type = node.type.spelling
-        subnodes = [self.parse_node(c) for c in node.get_children()]
-        return tree.PARM_DECL(name=name, type=type, subnodes=subnodes)
 
     @parse_debug
     def parse_enum_declaration(self) -> tree.EnumDeclaration:

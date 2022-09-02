@@ -21,7 +21,6 @@ import gc
 import re
 from cpplang.ast import Node
 from cpplang import tree
-from clang.cindex import Cursor
 import math
 import re
 import sys
@@ -30,10 +29,6 @@ from .op_util import get_op_symbol, get_op_precedence, Precedence
 from .node_util import ExplicitNodeVisitor
 from .string_repr import pretty_string, string_triplequote_repr
 from .source_repr import pretty_source
-
-
-def has_child(node: Cursor):
-    return len(gc.get_referents(node.get_children())[0]) > 0
 
 
 def to_source(node, indent_with=" " * 4, add_line_information=False,
@@ -173,8 +168,6 @@ class SourceGenerator(ExplicitNodeVisitor):
             """
             for item in params:
                 if isinstance(item, Node):
-                    visit(item)
-                elif isinstance(item, Cursor):
                     visit(item)
                 elif callable(item):
                     item()
@@ -383,11 +376,11 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("};")
         self.newline(extra=1)
 
-    def visit_CXX_ACCESS_SPEC_DECL(self, node: Cursor):
+    def visit_CXX_ACCESS_SPEC_DECL(self, node: tree.CXX_ACCESS_SPEC_DECL):
         self.write(node.access_spec, ":", "\n")
 
-    def visit_PARM_DECL(self, node: Cursor):
-        self.write(node.type, "", node.name, "\n")
+    def visit_PARM_DECL(self, node: tree.PARM_DECL):
+        self.write(node.type, " ", node.name)
 
     def visit_EmptyDeclaration(self, node: tree.EmptyDeclaration):
         self.newline()
@@ -486,10 +479,10 @@ class SourceGenerator(ExplicitNodeVisitor):
             #self.comma_list(node.throws)
         #self.write(" ")
         if len(statements) > 0:
-            self.write(" {", "\n")
+            #self.write(" {", "\n")
             for c in statements:
                 self.write(c)
-            self.write("}", "\n")
+            #self.write("}", "\n")
         else:
             self.write(";")
         self.newline(extra=1)
@@ -634,7 +627,6 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_ReferenceType(self, node):
         self.write(node.name)
         if node.arguments is not None:
-            #print(" bépo ", file=sys.stderr)
             self.write("<")
             self.comma_list(node.arguments)
             self.write(">")
@@ -668,6 +660,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.comma:
             self.write(",")
         self.write("}")
+
+    def visit_INTEGER_LITERAL(self, node):
+        self.write(node.value)
 
     def visit_Literal(self, node):
         if node.prefix_operators:
@@ -931,29 +926,31 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(op.operator)
 
     # ReturnStatement(identifier* label, expression expression)
-    def visit_ReturnStatement(self, node):
+    def visit_RETURN_STMT(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
-        self.write("return ", node.expression, ";", "\n")
+        self.write("return ", node.subnodes[0], ";", "\n")
 
     # IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
-    def visit_IfStatement(self, node):
+    def visit_IF_STMT(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
-        self.write("if", node.condition, "\n")
-        self.write(node.then_statement)
-        if node.else_statement:
-            self.write("else ", node.else_statement)
+        self.write("if (", node.subnodes[0], ")\n")
+        self.write(node.subnodes[1])
+        if len(node.subnodes) > 2:
+            self.write("else ", node.subnodes[2])
 
     # BlockStatement(identifier? label, statement* statements)
-    def visit_BlockStatement(self, node):
+    def visit_COMPOUND_STMT(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("{", "\n")
-        if node.statements:
-          for statement in node.statements:
-              self.write(statement)
+        for statement in node.subnodes:
+            self.write(statement)
         self.write("}", "\n")
+
+    def visit_UNEXPOSED_EXPR(self, node):
+        self.write(node.name)
 
     # EnhancedForControl(expression var, statement iterable)
     def visit_EnhancedForControl(self, node):

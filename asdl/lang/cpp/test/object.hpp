@@ -3,8 +3,7 @@
 
 class Object {
 public:
-  int run(bool b);
-  /*
+  int run(bool b)
   {
     if (b)
       return 0;
@@ -12,7 +11,7 @@ public:
     {
       return 1;
     }
-  }*/
+  }
 };
 
 #endif

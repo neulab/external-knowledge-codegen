@@ -11,6 +11,7 @@
 """
 A simple command line tool for dumping a source file using the Clang Index
 Library.
+Quite the same with clang: clang -x c++ -Xclang -ast-dump -fsyntax-only object.hpp
 """
 
 def get_diag_info(diag):
