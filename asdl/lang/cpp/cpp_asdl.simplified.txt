@@ -3,11 +3,11 @@ identifier, int, string, constant
 
 cu = TRANSLATION_UNIT(declaration* subnodes)
 
-declaration = CLASS_DECL(identifier name, classbodyelt* subnodes)
+declaration = CXXRecordDecl(identifier name, classbodyelt* subnodes)
 
-classbodyelt = CXX_ACCESS_SPEC_DECL(identifier access_spec)
-      | CXX_METHOD(string? documentation, identifier name, identifier return_type, methodsubnodes* subnodes)
-#      | CXX_METHOD(string? documentation, fieldmodifier* modifiers, annotation* annotations,
+classbodyelt = AccessSpecDecl(identifier access_spec)
+      | CXXMethodDecl(string? documentation, identifier name, identifier return_type, statement* subnodes)
+#      | CXXMethodDecl(string? documentation, fieldmodifier* modifiers, annotation* annotations,
 #                   type_parameter* type_parameters, type? return_type, identifier name,
 #                   dimension* dimensions, parameter* parameters, identifier* throws,
 #                   statement* subnodes)
@@ -88,11 +88,21 @@ package = PackageDeclaration(fieldmodifier* modifiers, annotation* annotations, 
 parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, identifier name, type type, dimension* dimensions, constant? varargs)
       | InferredFormalParameter(expression expression)
 
-methodsubnodes = COMPOUND_STMT(statement* subnodes)
-      | PARM_DECL(identifier name, identifier type)
-
-statement = COMPOUND_STMT(statement* subnodes)
-      | IF_STMT(ifsubnodes* subnodes)
+statement = CompoundStmt(statement* subnodes)
+      | DeclRefExpr(identifier name)
+      | ParmVarDecl(identifier name, identifier type)
+      | IfStmt(statement* subnodes)
+      | DeclStmt(declstmtsubnodes* subnodes)
+      | ReturnStmt(statement* subnodes)
+      | ExprWithCleanups(statement* subnodes)
+      | ImplicitCastExpr(statement* subnodes)
+      | CXXConstructExpr(statement* subnodes)
+      | MaterializeTemporaryExpr(statement* subnodes)
+      | CXXBindTemporaryExpr(statement* subnodes)
+      | CXXDefaultArgExpr
+      | IntegerLiteral(identifier value)
+      | FloatingLiteral(identifier value)
+      | StringLiteral(identifier value)
       | AssertStatement(identifier? label, expression condition, expression? value)
       | ContinueStatement(identifier? label, identifier? goto)
       | BlockStatement(identifier? label, statement* statements)
@@ -110,13 +120,12 @@ statement = COMPOUND_STMT(statement* subnodes)
       | ThrowStatement(identifier? label, expression expression)
       | TryStatement(identifier? label, tryresource* resources, statement block, catch* catches, statement? finally_block)
       | WhileStatement(identifier? label, expression condition, statement body)
+      | TypeRef(identifier name)
+      | NamespaceRef(identifier name)
 
-ifsubnodes = UNEXPOSED_EXPR(identifier name, unexposedexprsubnodes* subnodes)
-      | RETURN_STMT(returnstmtsubnodes* subnodes)
+#unexposedexprsubnodes = DeclRefExpr(identifier name)
 
-unexposedexprsubnodes = DECL_REF_EXPR(identifier name)
-
-returnstmtsubnodes = INTEGER_LITERAL(identifier value)
+declstmtsubnodes = VarDecl(identifier name, identifier type, statement* subnodes)
 
 type = BasicType(identifier name, dimension* dimensions)
       | DiamondType(identifier name, dimension* dimensions, type? sub_type)

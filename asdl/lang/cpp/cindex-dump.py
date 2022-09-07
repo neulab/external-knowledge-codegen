@@ -56,7 +56,6 @@ def get_info(node, depth=0):
 def main():
     from clang.cindex import Index
     from pprint import pprint
-
     from optparse import OptionParser, OptionGroup
 
     global opts

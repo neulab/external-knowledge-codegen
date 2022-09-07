@@ -51,11 +51,11 @@ class PackageDeclaration(NonEmptyDeclaration):
     attrs = ("name",)
 
 
-class CLASS_DECL(TypeDeclaration):
+class CXXRecordDecl(TypeDeclaration):
     attrs = ()
 
 
-class CXX_ACCESS_SPEC_DECL(Node):
+class AccessSpecDecl(Node):
     attrs = ("access_spec",)
 
 
@@ -163,12 +163,12 @@ class Member(NonEmptyDeclaration):
     attrs = ()
 
 
-class CXX_METHOD(Member):
+class CXXMethodDecl(Member):
     attrs = ("type_parameters", "return_type", "name", "dimensions",
              "parameters", "throws", "body",)
 
 
-class PARM_DECL(Node):
+class ParmVarDecl(Node):
     attrs = ("type", "name", "dimensions",)
 
 
@@ -285,15 +285,15 @@ class BlockStatement(Statement):
 
 
 # statemenents are the subnodes (from Node)
-class COMPOUND_STMT(Statement):
+class CompoundStmt(Statement):
     attrs = ()
 
 
-class IF_STMT(Statement):
+class IfStmt(Statement):
     attrs = ()
 
 
-class RETURN_STMT(Statement):
+class ReturnStmt(Statement):
     attrs = ()
 
 
@@ -301,12 +301,48 @@ class UNEXPOSED_EXPR(Node):
     attrs = ("name",)
 
 
-class DECL_REF_EXPR(Node):
+class DeclRefExpr(Node):
+    attrs = ("name",)
+
+
+class Namespace(Node):
+    attrs = ("name",)
+
+
+class DeclStmt(Node):
+    attrs = ()
+
+
+class VarDecl(Node):
+    attrs = ("name", "type")
+
+
+class TypeRef(Node):
+    attrs = ("name",)
+
+
+class NamespaceRef(Node):
     attrs = ("name",)
 
 
 class ExpressionStatement(Statement):
     attrs = ("expression",)
+
+
+class ExprWithCleanups(Node):
+    attrs = ()
+
+class CXXConstructExpr(Node):
+    attrs = ()
+
+class MaterializeTemporaryExpr(Node):
+    attrs = ()
+
+class CXXBindTemporaryExpr(Node):
+    attrs = ()
+
+class ImplicitCastExpr(Node):
+    attrs = ()
 
 # ------------------------------------------------------------------------------
 
@@ -397,7 +433,15 @@ class Literal(Primary):
     attrs = ("value",)
 
 
-class INTEGER_LITERAL(Literal):
+class IntegerLiteral(Literal):
+    attrs = ()
+
+
+class FloatingLiteral(Literal):
+    attrs = ()
+
+
+class StringLiteral(Literal):
     attrs = ()
 
 

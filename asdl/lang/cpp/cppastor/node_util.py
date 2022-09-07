@@ -142,8 +142,9 @@ class ExplicitNodeVisitor(object):
     """
 
     def abort_visit(node):  # XXX: self?
-        msg = (f"No defined handler for node of type {node.__class__.__name__}\n"
-               f"please define visit_{node.__class__.__name__} in code_gen.py.")
+        msg = (f"No defined visitor for node of type {node.__class__.__name__}\n"
+               f"please define 'visit_{node.__class__.__name__}' "
+               f"in cpp/cppastor/code_gen.py.")
         raise AttributeError(msg)
 
     def visit(self, node, abort=abort_visit):

@@ -177,7 +177,8 @@ class SourceGenerator(ExplicitNodeVisitor):
                     if self.new_lines:
                         append("\n" * self.new_lines)
                         self.colinfo = len(result), 0
-                        append(self.indent_with * self.indentation)
+                        if self.indentation > 0:
+                            append(self.indent_with * self.indentation)
                         self.new_lines = 0
                     if item:
                         append(item)
@@ -346,7 +347,7 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(element)
         self.write("}")
 
-    def visit_CLASS_DECL(self, node: tree.CLASS_DECL):
+    def visit_CXXRecordDecl(self, node: tree.CXXRecordDecl):
         assert node.name is not None
         self.write("class ")
         self.write(node.name)
@@ -376,17 +377,59 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("};")
         self.newline(extra=1)
 
-    def visit_CXX_ACCESS_SPEC_DECL(self, node: tree.CXX_ACCESS_SPEC_DECL):
+    def visit_Namespace(self, node: tree.Namespace):
+        assert node.name is not None
+        self.write("namespace ")
+        self.write(node.name, "\n")
+        self.write(" {", "\n")
+        for c in node.subnodes:
+            self.write(c)
+        self.write("}")
+        self.newline(extra=1)
+
+    def visit_AccessSpecDecl(self, node: tree.AccessSpecDecl):
         self.write(node.access_spec, ":", "\n")
 
-    def visit_PARM_DECL(self, node: tree.PARM_DECL):
+    def visit_ParmVarDecl(self, node: tree.ParmVarDecl):
         self.write(node.type, " ", node.name)
 
+    def visit_DeclStmt(self, node: tree.DeclStmt):
+        self.write(node.subnodes[0], ";\n")
+
+    def visit_ExprWithCleanups(self, node: tree.ExprWithCleanups):
+        self.write(node.subnodes[0])
+
+    def visit_CXXConstructExpr(self, node: tree.CXXConstructExpr):
+        self.write(node.subnodes[0])
+
+    def visit_DeclRefExpr(self, node: tree.DeclRefExpr):
+        self.write(node.name)
+
+    def visit_MaterializeTemporaryExpr(self, node: tree.MaterializeTemporaryExpr):
+        self.write(node.subnodes[0])
+
+    def visit_CXXBindTemporaryExpr(self, node: tree.CXXBindTemporaryExpr):
+        self.write(node.subnodes[0])
+
+    def visit_ImplicitCastExpr(self, node: tree.ImplicitCastExpr):
+        self.write(node.subnodes[0])
+
+    def visit_VarDecl(self, node: tree.VarDecl):
+        self.write(node.type, " ", node.name)
+        if node.subnodes is not None and len(node.subnodes) > 0:
+            self.write(" = ", node.subnodes[0])
+
+    def visit_TypeRef(self, node: tree.TypeRef):
+        self.write(node.name)
+
+    def visit_NamespaceRef(self, node: tree.NamespaceRef):
+        self.write(node.name)
+
     def visit_EmptyDeclaration(self, node: tree.EmptyDeclaration):
-        self.newline()
+        self.write(node.type, " ", node.name)
 
     def visit_ElementValuePair(self, node):
-        self.write(node.name, " = ", node.value)
+        self.write(node.type, " ", node.name)
 
     # enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
     def visit_EnumDeclaration(self, node):
@@ -445,11 +488,11 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_Identifier(self, node):
         self.write(node.id)
 
-    def visit_CXX_METHOD(self, node: tree.CXX_METHOD):
+    def visit_CXXMethodDecl(self, node: tree.CXXMethodDecl):
         parameters = []
         statements = []
         for c in node.subnodes:
-            if c.__class__.__name__ == "PARM_DECL":
+            if c.__class__.__name__ == "ParmVarDecl":
                 parameters.append(c)
             else:
                 statements.append(c)
@@ -661,7 +704,13 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(",")
         self.write("}")
 
-    def visit_INTEGER_LITERAL(self, node):
+    def visit_IntegerLiteral(self, node):
+        self.write(node.value)
+
+    def visit_FloatingLiteral(self, node):
+        self.write(node.value)
+
+    def visit_StringLiteral(self, node):
         self.write(node.value)
 
     def visit_Literal(self, node):
@@ -926,13 +975,13 @@ class SourceGenerator(ExplicitNodeVisitor):
                 self.write(op.operator)
 
     # ReturnStatement(identifier* label, expression expression)
-    def visit_RETURN_STMT(self, node):
+    def visit_ReturnStmt(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("return ", node.subnodes[0], ";", "\n")
 
     # IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
-    def visit_IF_STMT(self, node):
+    def visit_IfStmt(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("if (", node.subnodes[0], ")\n")
@@ -941,7 +990,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write("else ", node.subnodes[2])
 
     # BlockStatement(identifier? label, statement* statements)
-    def visit_COMPOUND_STMT(self, node):
+    def visit_CompoundStmt(self, node):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("{", "\n")

@@ -5,8 +5,6 @@ import colorama
 import os
 import re
 import sys
-from clang.cindex import Index
-from clang.cindex import TranslationUnit
 from typing import List
 
 import cppastor
@@ -114,16 +112,8 @@ def test(cpp_code, check_hypothesis=False, fail_on_error=False, member=False,
         print(f'Cpp code: \n{cpp_code}')
     if member:
         cpp_ast = cpplang.parse.parse_member_declaration(cpp_code)
-    #else:
-        #tu = TranslationUnit.from_source("test.cc", args=None,
-                                         #unsaved_files=[("test.cc", cpp_code)],
-                                         #options=0, index=None)
-        #if not tu:
-            #parser.error("unable to load input")
-        #cpp_ast = tu.cursor
     else:
         cpp_ast = cpplang.parse.parse(cpp_code)
-
     # convert the cpp AST into general-purpose ASDL AST used by tranX
     asdl_ast = cpp_ast_to_asdl_ast(cpp_ast, grammar)
     if debug:
