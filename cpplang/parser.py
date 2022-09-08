@@ -93,12 +93,13 @@ class Parser(object):
                             set(('<', '>', '>=', '<=', 'instanceof')),
                             set(('<<', '>>', '>>>')),
                             set(('+', '-')),
-                            set(('*', '/', '%')) ]
+                            set(('*', '/', '%'))]
 
     def __init__(self, cpp_code):
 
         p = subprocess.Popen(
-            ["clang", "-x", "c++", "-Xclang", "-ast-dump=json", "-fsyntax-only", "-"],
+            ["clang", "-x", "c++", "-std=c++17", "-Xclang", "-ast-dump=json",
+             "-fsyntax-only", "-"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
