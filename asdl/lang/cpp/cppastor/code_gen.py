@@ -86,51 +86,51 @@ def precedence_setter(AST=Node, get_op_precedence=get_op_precedence,
 set_precedence = precedence_setter()
 
 
-class Delimit(object):
-    """A context manager that can add enclosing
-       delimiters around the output of a
-       SourceGenerator method.  By default, the
-       parentheses are added, but the enclosed code
-       may set discard=True to get rid of them.
-    """
+#class Delimit(object):
+    #"""A context manager that can add enclosing
+       #delimiters around the output of a
+       #SourceGenerator method.  By default, the
+       #parentheses are added, but the enclosed code
+       #may set discard=True to get rid of them.
+    #"""
 
-    discard = False
+    #discard = False
 
-    def __init__(self, tree, *args):
-        """ use write instead of using result directly
-            for initial data, because it may flush
-            preceding data into result.
-        """
-        delimiters = "()"
-        node = None
-        op = None
-        for arg in args:
-            if isinstance(arg, Node):
-                if node is None:
-                    node = arg
-                else:
-                    op = arg
-            else:
-                delimiters = arg
-        tree.write(delimiters[0])
-        result = self.result = tree.result
-        self.index = len(result)
-        self.closing = delimiters[1]
-        if node is not None:
-            self.p = p = get_op_precedence(op or node)
-            self.pp = pp = tree.get__pp(node)
-            self.discard = p >= pp
+    #def __init__(self, tree, *args):
+        #""" use write instead of using result directly
+            #for initial data, because it may flush
+            #preceding data into result.
+        #"""
+        #delimiters = "()"
+        #node = None
+        #op = None
+        #for arg in args:
+            #if isinstance(arg, Node):
+                #if node is None:
+                    #node = arg
+                #else:
+                    #op = arg
+            #else:
+                #delimiters = arg
+        #tree.write(delimiters[0])
+        #result = self.result = tree.result
+        #self.index = len(result)
+        #self.closing = delimiters[1]
+        #if node is not None:
+            #self.p = p = get_op_precedence(op or node)
+            #self.pp = pp = tree.get__pp(node)
+            #self.discard = p >= pp
 
-    def __enter__(self):
-        return self
+    #def __enter__(self):
+        #return self
 
-    def __exit__(self, *exc_info):
-        result = self.result
-        start = self.index - 1
-        if self.discard:
-            result[start] = ""
-        else:
-            result.append(self.closing)
+    #def __exit__(self, *exc_info):
+        #result = self.result
+        #start = self.index - 1
+        #if self.discard:
+            #result[start] = ""
+        #else:
+            #result.append(self.closing)
 
 
 class SourceGenerator(ExplicitNodeVisitor):
@@ -202,8 +202,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         setattr(self, name, getter)
         return getter
 
-    def delimit(self, *args):
-        return Delimit(self, *args)
+    #def delimit(self, *args):
+        #return Delimit(self, *args)
 
     def conditional_write(self, *stuff):
         if stuff[-1] is not None:
@@ -274,79 +274,6 @@ class SourceGenerator(ExplicitNodeVisitor):
             #for type in node.types:
                 #self.write(type)
 
-    def visit_Annotation(self, node: tree.Annotation):
-        raise Exception("Annotation is an abstract class. It should not have instances")
-
-    def visit_NormalAnnotation(self, node: tree.NormalAnnotation):
-        self.write("@", node.name)
-        self.write("(")
-        self.comma_list(node.element)
-        self.write(")")
-
-    def visit_MarkerAnnotation(self, node: tree.MarkerAnnotation):
-        self.write("@", node.name)
-
-    def visit_SingleElementAnnotation(self, node: tree.SingleElementAnnotation):
-        self.write("@", node.name)
-        self.write("(")
-        if node.element is not None:
-            self.write(node.element)
-        self.write(")")
-
-    #### Declarations
-
-    def visit_AnnotationDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write("@interface", " ")
-        self.write(node.name)
-        self.write("{", "\n")
-        if node.body:
-            for element in node.body:
-                self.write(element)
-        self.write("}")
-
-    def visit_PackageDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation)
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write("package ", node.name, ";", "\n")
-
-    def visit_InterfaceDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write("interface ")
-        self.write(node.name)
-        if node.type_parameters is not None:
-            self.write("< ")
-            self.comma_list(node.type_parameters)
-            self.write(" >")
-        if node.extends:
-            self.write(" extends ")
-            self.comma_list(node.extends)
-        self.write("{", "\n")
-        if node.body:
-            for element in node.body:
-                self.write(element)
-        self.write("}")
-
     def visit_CXXRecordDecl(self, node: tree.CXXRecordDecl):
         assert node.name is not None
         self.write(node.kind, " ", node.name)
@@ -393,12 +320,12 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(")")
 
     def visit_CXXDestructorDecl(self, node: tree.CXXDestructorDecl):
-        if node.virtual:
+        if node.virtual == 'virtual':
             self.write("virtual", " ")
         self.write(node.name)
         self.write("(")
         self.write(")")
-        if len(node.subnodes) > 0:
+        if node.subnodes is not None and len(node.subnodes) > 0:
             #self.write(" {", "\n")
             for c in node.subnodes:
                 self.write(c)
@@ -407,15 +334,20 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(";")
         self.newline(extra=1)
 
-    def visit_Namespace(self, node: tree.Namespace):
+    def visit_NamespaceDecl(self, node: tree.NamespaceDecl):
         assert node.name is not None
         self.write("namespace ")
         self.write(node.name, "\n")
         self.write(" {", "\n")
-        for c in node.subnodes:
-            self.write(c)
+        if node.subnodes is not None:
+            for c in node.subnodes:
+                self.write(c)
         self.write("}")
         self.newline(extra=1)
+
+    def visit_UsingDirectiveDecl(self, node: tree.UsingDirectiveDecl):
+        assert node.name is not None
+        self.write("using namespace ", node.name, ";\n")
 
     def visit_AccessSpecDecl(self, node: tree.AccessSpecDecl):
         self.write(node.access_spec, ":", "\n")
@@ -424,9 +356,6 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.type, " ", node.name)
         if node.subnodes is not None and len(node.subnodes) > 0:
             self.write(" = ", node.subnodes[0])
-
-    def visit_DeclStmt(self, node: tree.DeclStmt):
-        self.write(node.subnodes[0], ";\n")
 
     def visit_ExprWithCleanups(self, node: tree.ExprWithCleanups):
         self.write(node.subnodes[0])
@@ -450,81 +379,15 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.type, " ", node.name)
         if node.subnodes is not None and len(node.subnodes) > 0:
             self.write(" = ", node.subnodes[0])
+        self.conditional_write(";\n")
 
     def visit_FieldDecl(self, node: tree.FieldDecl):
         self.write(node.type, " ", node.name)
         if node.subnodes is not None and len(node.subnodes) > 0:
-            self.write(" = ", node.subnodes[0])
-        self.write(";\n")
+            self.write(" = ", node.subnodes[0], ";\n")
 
     def visit_TypeRef(self, node: tree.TypeRef):
         self.write(node.name)
-
-    def visit_NamespaceRef(self, node: tree.NamespaceRef):
-        self.write(node.name)
-
-    def visit_EmptyDeclaration(self, node: tree.EmptyDeclaration):
-        self.write(node.type, " ", node.name)
-
-    def visit_ElementValuePair(self, node):
-        self.write(node.type, " ", node.name)
-
-    # enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
-    def visit_EnumDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write("enum ", node.name)
-        if node.implements:
-            self.write(" implements ")
-            self.comma_list(node.implements)
-        self.write(node.body)
-
-    # enumbody = EnumBody(enumconstant* constants,
-    # enumdeclaration* declarations)
-    def visit_EnumBody(self, node):
-        self.write("{", "\n")
-        self.comma_list(node.constants, trailing=(node.comma == ","))
-        if node.separator:
-            self.write(";")
-        if node.declarations:
-            for declaration in node.declarations:
-                self.write(declaration)
-        self.write("}")
-
-    # enumconstant = EnumConstantDeclaration(annotation* annotations,
-    # string? documentation, fieldmodifier* modifiers, identifier name,
-    # argument* arguments, statement body)
-    def visit_EnumConstantDeclaration(self, node):
-        # if node.documentation:
-        # self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(node.name)
-        if node.arguments:
-            self.write("(")
-            self.comma_list(node.arguments)
-            self.write(")")
-        if node.body:
-            self.write("{", "\n")
-            for element in node.body:
-                self.write(element)
-            self.write("}")
-
-    def visit_NoExpression(self, node):
-        pass
-
-    def visit_Identifier(self, node):
-        self.write(node.id)
 
     def visit_CXXMethodDecl(self, node: tree.CXXMethodDecl):
         parameters = []
@@ -556,855 +419,1012 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(";")
         self.newline(extra=1)
 
-    def visit_MethodDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        if node.type_parameters is not None:
-            self.write("< ")
-            self.comma_list(node.type_parameters)
-            self.write(" >")
-        if node.return_type:
-            self.write(node.return_type, " ")
-        else:
-            self.write("void ")
+    def visit_FunctionDecl(self, node: tree.FunctionDecl):
+        parameters = []
+        statements = []
+        for c in node.subnodes:
+            if c.__class__.__name__ == "ParmVarDecl":
+                parameters.append(c)
+            else:
+                statements.append(c)
+        self.write(node.return_type, " ")
         self.write(node.name)
         self.write("(")
-        if node.parameters:
-            self.comma_list(node.parameters)
+        if parameters:
+            self.comma_list(parameters)
         self.write(")")
-        if node.dimensions:
-            for _ in node.dimensions:
-                self.write("[]")
-        if node.throws:
-            self.write(" throws ")
-            self.comma_list(node.throws)
-        self.write(" ")
-        if node.body:
-            self.write(node.body)
+        if len(statements) > 0:
+            #self.write(" {", "\n")
+            for c in statements:
+                self.write(c)
+            #self.write("}", "\n")
         else:
             self.write(";")
         self.newline(extra=1)
 
-    # ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement* body)
-    def visit_ConstructorDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        if node.type_parameters is not None:
-            self.write("< ")
-            self.comma_list(node.type_parameters)
-            self.write(" >")
-        self.write(node.name)
-        self.write("(")
-        if node.parameters:
-            self.comma_list(node.parameters)
-        self.write(")")
-        if node.throws:
-            self.write(" throws ")
-            self.comma_list(node.throws)
-        self.write(" ")
-        if node.body:
-            self.write(node.body)
-        self.newline(extra=1)
-
-    # FieldDeclaration(string? documentation, fieldmodifier* modifiers,
-    # annotation* annotations, type type, declarator* declarators)
-    def visit_FieldDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(node.type, " ")
-        if node.declarators:
-            self.comma_list(node.declarators)
-        self.write(";", "\n")
-
-    # ConstantDeclaration(string? documentation, fieldmodifier* modifiers,
-    # annotation* annotations, type type, declarator* declarators)
-    def visit_ConstantDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(node.type, " ")
-        if node.declarators:
-            self.comma_list(node.declarators)
-        self.write(";", "\n")
-
-    def visit_TypeDeclarationStatement(self, node):
-        self.write(node.declaration)
-
-    def visit_ReferenceTypeExpression(self, node):
-        self.write(node.type)
-
-    def visit_VariableDeclaration(self, node):
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(node.type, " ")
-        self.comma_list(node.declarators)
-
-    def visit_LocalVariableDeclarationStatement(self, node):
-        self.write(node.variable)
-
-    def visit_LocalVariableDeclaration(self, node):
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(node.type, " ")
-        self.comma_list(node.declarators)
-        self.write(";", "\n")
-
-    # ### Declarators
-
-    def visit_DiamondType(self, node):
-        self.write(node.name)
-        self.write("<>")
-        if node.sub_type is not None:
-            self.write(".", node.sub_type)
-        if node.dimensions:
-            for dim in node.dimensions:
-                self.write(dim)
-
-    def visit_ReferenceType(self, node):
-        self.write(node.name)
-        if node.arguments is not None:
-            self.write("<")
-            self.comma_list(node.arguments)
-            self.write(">")
-        if node.sub_type is not None:
-            self.write(".", node.sub_type)
-        if node.dimensions:
-            for dim in node.dimensions:
-                self.write(dim)
-
-    def visit_VariableDeclarator(self, node):
-        self.write(" ", node.name)
-        if node.dimensions:
-            for dim in node.dimensions:
-                self.write(dim)
-        if node.initializer:
-            self.write(" = ", node.initializer)
-
-    def visit_VariableInitializer(self, node):
-        if node.array and node.expression is None:
-            self.write(node.array)
-        elif node.expression and node.array is None:
-            self.write(node.expression)
-        else:
-            raise Exception("VariableInitializer must have exactly one of its "
-                            "attributes not none.")
-
-    def visit_ArrayInitializer(self, node):
-        self.write("{")
-        if node.initializers:
-            self.comma_list(node.initializers)
-        if node.comma:
-            self.write(",")
-        self.write("}")
-
-    def visit_IntegerLiteral(self, node):
+    def visit_IntegerLiteral(self, node: tree.IntegerLiteral):
         self.write(node.value)
 
-    def visit_FloatingLiteral(self, node):
+    def visit_FloatingLiteral(self, node: tree.FloatingLiteral):
         self.write(node.value)
 
-    def visit_StringLiteral(self, node):
+    def visit_CharacterLiteral(self, node: tree.CharacterLiteral):
+        self.write("'", node.value, "'")
+
+    def visit_StringLiteral(self, node: tree.StringLiteral):
         self.write(node.value)
 
-    def visit_Literal(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        char_re = re.compile(r"^'(.)'$")
-        matches = char_re.findall(node.value)
-        if matches:
-            self.write("'", matches[0].encode("unicode_escape").decode('ASCII'), "'")
-        else:
-            self.write(node.value)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
+    def visit_BinaryOperator(self, node: tree.BinaryOperator):
+        self.write(node.subnodes[0])
+        self.write(" ", node.opcode, " ")
+        self.write(node.subnodes[1])
 
-    def visit_FormalParameter(self, node):
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(node.type)
-        if node.varargs:
-            self.write("...")
-        self.write(" ", node.name)
-        if node.dimensions is not None:
-            for _ in node.dimensions:
-                self.write("[]")
+    def visit_DeclStmt(self, node: tree.DeclStmt):
+        self.write(node.subnodes[0])
 
-
-    ### Statements
-
-    def visit_Statement(self, node):
+    # ReturnStmt(identifier* label, expression expression)
+    def visit_ReturnStmt(self, node: tree.ReturnStmt):
         if node.label:
             self.write(node.label, ": ", "\n")
-        self.write(";", "\n")
+        self.write("return ", node.subnodes[0], ";\n")
 
-    def visit_ExpressionStatement(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write(node.expression)
-        self.write(";", "\n")
-
-    def visit_BlockExpression(self, node):
-        self.write(node.block)
-
-    def visit_TernaryExpression(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.prefix_operators or node.postfix_operators:
-            self.write('(')
-        self.write(node.condition, " ? ", node.if_true, " : ", node.if_false)
-        if node.prefix_operators or node.postfix_operators:
-            self.write(')')
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    def visit_MethodInvocation(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        if node.type_arguments:
-            self.write('<')
-            self.comma_list(node.type_arguments)
-            self.write('>')
-        self.write(node.member)
-        self.write("(")
-        self.comma_list(node.arguments)
-        self.write(")")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    def visit_ForStatement(self, node):
-        if node.label:
-            self.write(node.label, ":", "\n")
-        self.write("for (")
-        self.write(node.control)
-        self.write(") ", "\n")
-        self.write(node.body)
-
-    def visit_WhileStatement(self, node):
-        if node.label:
-            self.write(node.label, ":", "\n")
-        self.write("while")
-        self.write(node.condition)
-        self.write(node.body)
-
-    def visit_DoStatement(self, node):
-        if node.label:
-            self.write(node.label, ":", "\n")
-        self.write("do ")
-        self.write(node.body)
-        self.write(" while")
-        self.write(node.condition)
-        self.write(";")
-        self.newline()
-
-    def visit_AssertStatement(self, node):
-        if node.label:
-            self.write(node.label, ":", "\n")
-        self.write("assert ")
-        self.write(node.condition)
-        if node.value:
-            self.write(":")
-            self.write(node.value)
-        self.write(";")
-
-    def visit_SynchronizedStatement(self, node):
-        if node.label:
-            self.write(node.label, ":", "\n")
-        self.write("synchronized", node.lock, node.block)
-
-    def visit_ForControl(self, node):
-        if node.init:
-            self.comma_list(node.init)
-        self.write("; ")
-        if node.condition:
-            self.write(node.condition)
-        self.write("; ")
-        if node.update:
-            self.comma_list(node.update)
-
-    def visit_StatementExpressionList(self, node):
-        self.comma_list(node.statement)
-
-    def visit_BinaryOperation(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op.operator)
-        if node.prefix_operators or node.postfix_operators:
-            self.write("(")
-        self.write(node.operandl)
-        self.write(" ", node.operator, " ")
-        self.write(node.operandr)
-        if node.prefix_operators or node.postfix_operators:
-            self.write(")")
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op.operator)
-
-    def visit_MemberReference(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op.operator)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        self.write(node.member)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op.operator)
-
-    def visit_FieldReference(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op.operator)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        self.write(node.field)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op.operator)
-
-    def visit_BasicType(self, node):
-        self.write(node.name)
-        if node.dimensions:
-            for _ in node.dimensions:
-                self.write("[]")
-
-    #def visit_Void(self, node):
-        #self.write("void")
-
-    def visit_ArraySelector(self, node):
-        self.write("[", node.index, "]")
-
-    def visit_ArrayDimension(self, node):
-        self.write("[")
-        if node.dim is not None:
-            self.write(node.dim)
-        self.write("]")
-
-    def visit_Modifier(self, node):
-        self.write(node.value)
-
-    def visit_Operator(self, node):
-        self.write(node.operator)
-
-    # Import(identifier path, identifier static, identifier wildcard)
-    def visit_Import(self, node):
-        self.write("import ")
-        if node.static:
-            self.write("static ")
-        self.write(node.path)
-        if node.wildcard:
-            self.write(".*",)
-        self.write(";", "\n")
-
-    # Assignment(expression expressionl, expression value,
-    # assign_operator type)
-    def visit_Assignment(self, node):
-        if node.selectors:
-            self.write("(")
-        self.write(node.expressionl, node.type, node.value)
-        if node.selectors:
-            self.write(")")
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-
-    # This(prefix_operator* prefix_operators,
-    # postfix_operator* postfix_operators, identifier? qualifier,
-    # selector* selectors)
-    def visit_This(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op.operator)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        self.write("this")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op.operator)
-
-    # ReturnStatement(identifier* label, expression expression)
-    def visit_ReturnStmt(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write("return ", node.subnodes[0], ";", "\n")
-
-    # IfStatement(identifier? label, expression condition, statement then_statement, statement else_statement)
-    def visit_IfStmt(self, node):
+    def visit_IfStmt(self, node: tree.IfStmt):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("if (", node.subnodes[0], ")\n")
         self.write(node.subnodes[1])
+        #if not isinstance(node.subnodes[1], tree.CompoundStmt):
+            #self.write(";\n")
         if len(node.subnodes) > 2:
             self.write("else ", node.subnodes[2])
 
     # BlockStatement(identifier? label, statement* statements)
-    def visit_CompoundStmt(self, node):
+    def visit_CompoundStmt(self, node: tree.CompoundStmt):
         if node.label:
             self.write(node.label, ": ", "\n")
         self.write("{", "\n")
-        for statement in node.subnodes:
-            self.write(statement)
+        if node.subnodes is not None:
+            for statement in node.subnodes:
+                self.write(statement)
+                if isinstance(statement, tree.BinaryOperator):
+                    self.write(";\n")
         self.write("}", "\n")
 
-    def visit_UNEXPOSED_EXPR(self, node):
-        self.write(node.name)
-
-    # EnhancedForControl(expression var, statement iterable)
-    def visit_EnhancedForControl(self, node):
-        self.write(node.var, " : ", node.iterable)
-
-    # Cast(type type, expression expression)
-    def visit_Cast(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        self.write("(", node.type, ") ")
-        self.write(node.expression)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    # TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
-    def visit_TryStatement(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write("try")
-        if node.resources:
-            self.write("(")
-            for idx, item in enumerate(node.resources):
-                self.write("; " if idx else "", item)
-            self.write(")")
-        self.write(node.block)
-        if node.catches:
-            for clause in node.catches:
-                self.write(clause)
-        if node.finally_block:
-            self.write("finally", node.finally_block)
-
-    def visit_TryResource(self,  node):
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(node.type, " ", node.name, " = ", node.value)
-
-
-    # CatchClause(identifier? label, catch_clause_parameter parameter, statement* block)
-    def visit_CatchClause(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write("catch (", node.parameter, ") ", node.block)
-
-    # CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
-    def visit_CatchClauseParameter(self, node):
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        self.write(" | ".join(node.types), " ", node.name)
-
-    # ThrowStatement(identifier? label, expression expression)
-    def visit_ThrowStatement(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write("throw ", node.expression, ";", "\n")
-
-    # SuperConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
-    def visit_SuperConstructorInvocation(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        if node.type_arguments:
-            self.write("<")
-            self.comma_list(node.type_arguments)
-            self.write(">")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        self.write("super(")
-        self.comma_list(node.arguments)
-        self.write(")")
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    # ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
-    def visit_ClassCreator(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        self.write("new ")
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        if node.constructor_type_arguments is not None:
-            self.write(" < ")
-            self.comma_list(node.constructor_type_arguments)
-            self.write(" > ")
-        self.write(node.type)
-        self.write("(")
-        if node.arguments:
-            self.comma_list(node.arguments)
-        self.write(")")
-        if node.body is not None:
-            self.write(node.body)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    # LambdaExpression(parameter* parameters, statement body)
-    def visit_LambdaExpression(self, node):
-        if node.parameter is not None:
-            self.write(node.parameter)
-        else:
-            self.write("(")
-            self.comma_list(node.parameters)
-            self.write(")")
-        self.write(" -> ", node.body)
-
-    def visit_InferredFormalParameter(self, node):
-        self.write(node.expression)
-
-    def visit_SwitchStatement(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write("switch", node.expression, "{", "\n")
-        if node.cases is not None:
-            for case in node.cases:
-                self.write(case)
-        self.write("}")
-
-    def visit_SwitchStatementCase(self, node):
-        if node.case:
-            for case in node.case:
-                self.write("case ", case, ":", "\n")
-        else:
-            self.write("default:", "\n")
-        if node.statements:
-            for statement in node.statements:
-                self.write(statement)
-
-    def visit_StaticInitializer(self, node):
-        self.write("static", node.block)
-
-    def visit_InstanceInitializer(self, node):
-        self.write(node.block)
-
-    # ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
-    def visit_ClassReference(self, node):
-        # TypeExtractor.class.getCanonicalName()
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        self.write(node.type, ".class")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    # MethodReference(expression expression, identifier method, type_argument* type_arguments)
-    def visit_MethodReference(self, node):
-        self.write(node.expression, "::", node.method)
-        if node.type_arguments:
-            raise Exception("TODO MethodReference type_arguments")
-
-    def visit_TypeParameter(self, node):
-        self.write(node.name)
-        if node.extends:
-            self.write(" extends ")
-            for idx, item in enumerate(node.extends):
-                self.write(" & " if idx else "", item)
-
-    def visit_TypeArgument(self, node):
-        self.write(node.pattern_type, " ", node.type)
-
-    def visit_SuperMethodInvocation(self, node):
-        if node.prefix_operators:
-          for op in node.prefix_operators:
-              self.write(op)
-        self.write("super.")
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        if node.type_arguments:
-            self.write("<")
-            self.comma_list(node.type_arguments)
-            self.write(">")
-        self.write(node.member)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        self.write("(")
-        self.comma_list(node.arguments)
-        self.write(")")
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    def visit_BreakStatement(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write("break")
-        if node.goto:
-            self.write(" ", node.goto)
-        self.write(";", "\n")
-
-    def visit_ContinueStatement(self, node):
-        if node.label:
-            self.write(node.label, ": ", "\n")
-        self.write("continue")
-        if node.goto:
-            self.write(" ", node.goto)
-        self.write(";", "\n")
-
-    # AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name", type return_type, int* dimensions, identifier? default)
-    def visit_AnnotationMethod(self, node):
-        if node.annotations:
-            for annotation in node.annotations:
-                self.write(annotation, " ")
-        if node.modifiers:
-            for modifier in node.modifiers:
-                self.write(modifier, " ")
-        if node.return_type:
-            self.write(node.return_type, " ")
-        self.write(node.name, '()')
-        if node.dimensions:
-            for _ in range(len(node.dimensions)):
-                self.write("[]")
-        if node.default:
-            self.write("=")
-            self.write(node.default)
-        self.write(";", '\n')
-    def visit_SuperMemberReference(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        self.write("super.", node.member)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    # ExplicitConstructorInvocation(prefix_operator* prefix_operators,
-    # postfix_operator* postfix_operators, identifier? qualifier,
-    # selector* selectors, type_argument* type_arguments, argument* arguments)
-    def visit_ExplicitConstructorInvocation(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        self.write("this")
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        if node.type_arguments:
-            self.comma_list(node.type_arguments)
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        self.write("(")
-        self.comma_list(node.arguments)
-        self.write(")")
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    def visit_ArrayCreator(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        self.write("new ", node.type)
-        if node.dimensions:
-            for dim in node.dimensions:
-                self.write(dim)
-        if node.initializer:
-              self.write(node.initializer)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    # InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
-    def visit_InnerClassCreator(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        if node.constructor_type_arguments:
-            self.comma_list(node.constructor_type_arguments)
-        self.write("new ")
-        self.write(node.type)
-        self.write("(")
-        if node.arguments:
-            self.comma_list(node.arguments)
-        self.write(")")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.body is not None:
-            self.write(node.body)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
-
-    def visit_VoidClassReference(self, node):
-        self.write("void.class")
-
-    def visit_ClassBody(self, node):
-        if node.declarations is not None:
-            self.write("{", "\n")
-            for declaration in node.declarations:
-                self.write(declaration)
-            self.write("}", "\n")
-
-    def visit_EmptyClassBody(self, node):
-        self.write("{", "}", "\n")
-
-    def visit_ElementValueArrayInitializer(self, node):
-        self.write(node.initializer)
-
     # prefix_operators, "postfix_operators", "qualifier", "selectors
-    def visit_ParenthesizedExpression(self, node):
-        if node.prefix_operators:
-            for op in node.prefix_operators:
-                self.write(op)
-        if node.qualifier:
-            self.write(node.qualifier, ".")
-        self.write("(", node.expression, ")")
-        if node.selectors:
-            for selector in node.selectors:
-                if type(selector) == tree.ArraySelector:
-                    self.write(selector)
-                else:
-                    self.write(".", selector)
-        if node.postfix_operators:
-            for op in node.postfix_operators:
-                self.write(op)
+    def visit_ParenExpr(self, node: tree.ParenExpr):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        self.write("(", node.subnodes[0], ")")
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+
+    #def visit_NamespaceRef(self, node: tree.NamespaceRef):
+        #self.write(node.name)
+
+    #def visit_EmptyDeclaration(self, node: tree.EmptyDeclaration):
+        #self.write(node.type, " ", node.name)
+
+    #def visit_ElementValuePair(self, node):
+        #self.write(node.type, " ", node.name)
+
+    ## enumdeclaration = EnumDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation ,identifier name, dottedname* implements, enumbody body)
+    #def visit_EnumDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write("enum ", node.name)
+        #if node.implements:
+            #self.write(" implements ")
+            #self.comma_list(node.implements)
+        #self.write(node.body)
+
+    ## enumbody = EnumBody(enumconstant* constants,
+    ## enumdeclaration* declarations)
+    #def visit_EnumBody(self, node):
+        #self.write("{", "\n")
+        #self.comma_list(node.constants, trailing=(node.comma == ","))
+        #if node.separator:
+            #self.write(";")
+        #if node.declarations:
+            #for declaration in node.declarations:
+                #self.write(declaration)
+        #self.write("}")
+
+    ## enumconstant = EnumConstantDeclaration(annotation* annotations,
+    ## string? documentation, fieldmodifier* modifiers, identifier name,
+    ## argument* arguments, statement body)
+    #def visit_EnumConstantDeclaration(self, node):
+        ## if node.documentation:
+        ## self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write(node.name)
+        #if node.arguments:
+            #self.write("(")
+            #self.comma_list(node.arguments)
+            #self.write(")")
+        #if node.body:
+            #self.write("{", "\n")
+            #for element in node.body:
+                #self.write(element)
+            #self.write("}")
+
+    #def visit_NoExpression(self, node):
+        #pass
+
+    #def visit_Identifier(self, node):
+        #self.write(node.id)
+
+    #def visit_Annotation(self, node: tree.Annotation):
+        #raise Exception("Annotation is an abstract class. It should not have instances")
+
+    #def visit_NormalAnnotation(self, node: tree.NormalAnnotation):
+        #self.write("@", node.name)
+        #self.write("(")
+        #self.comma_list(node.element)
+        #self.write(")")
+
+    #def visit_MarkerAnnotation(self, node: tree.MarkerAnnotation):
+        #self.write("@", node.name)
+
+    #def visit_SingleElementAnnotation(self, node: tree.SingleElementAnnotation):
+        #self.write("@", node.name)
+        #self.write("(")
+        #if node.element is not None:
+            #self.write(node.element)
+        #self.write(")")
+
+    ##### Declarations
+
+    #def visit_AnnotationDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write("@interface", " ")
+        #self.write(node.name)
+        #self.write("{", "\n")
+        #if node.body:
+            #for element in node.body:
+                #self.write(element)
+        #self.write("}")
+
+    #def visit_PackageDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation)
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write("package ", node.name, ";", "\n")
+
+    #def visit_InterfaceDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write("interface ")
+        #self.write(node.name)
+        #if node.type_parameters is not None:
+            #self.write("< ")
+            #self.comma_list(node.type_parameters)
+            #self.write(" >")
+        #if node.extends:
+            #self.write(" extends ")
+            #self.comma_list(node.extends)
+        #self.write("{", "\n")
+        #if node.body:
+            #for element in node.body:
+                #self.write(element)
+        #self.write("}")
+
+    #def visit_Namespace(self, node: tree.Namespace):
+        #assert node.name is not None
+        #self.write("namespace ")
+        #self.write(node.name, "\n")
+        #self.write(" {", "\n")
+        #for c in node.subnodes:
+            #self.write(c)
+        #self.write("}")
+        #self.newline(extra=1)
+
+    #def visit_MethodDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #if node.type_parameters is not None:
+            #self.write("< ")
+            #self.comma_list(node.type_parameters)
+            #self.write(" >")
+        #if node.return_type:
+            #self.write(node.return_type, " ")
+        #else:
+            #self.write("void ")
+        #self.write(node.name)
+        #self.write("(")
+        #if node.parameters:
+            #self.comma_list(node.parameters)
+        #self.write(")")
+        #if node.dimensions:
+            #for _ in node.dimensions:
+                #self.write("[]")
+        #if node.throws:
+            #self.write(" throws ")
+            #self.comma_list(node.throws)
+        #self.write(" ")
+        #if node.body:
+            #self.write(node.body)
+        #else:
+            #self.write(";")
+        #self.newline(extra=1)
+
+    ## ConstructorDeclaration(fieldmodifier* modifiers, annotation* annotations, string? documentation, type_parameter* type_parameters, identifier name, parameter* parameters, identifier* throws, statement* body)
+    #def visit_ConstructorDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #if node.type_parameters is not None:
+            #self.write("< ")
+            #self.comma_list(node.type_parameters)
+            #self.write(" >")
+        #self.write(node.name)
+        #self.write("(")
+        #if node.parameters:
+            #self.comma_list(node.parameters)
+        #self.write(")")
+        #if node.throws:
+            #self.write(" throws ")
+            #self.comma_list(node.throws)
+        #self.write(" ")
+        #if node.body:
+            #self.write(node.body)
+        #self.newline(extra=1)
+
+    ## FieldDeclaration(string? documentation, fieldmodifier* modifiers,
+    ## annotation* annotations, type type, declarator* declarators)
+    ## ConstantDeclaration(string? documentation, fieldmodifier* modifiers,
+    ## annotation* annotations, type type, declarator* declarators)
+    #def visit_ConstantDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write(node.type, " ")
+        #if node.declarators:
+            #self.comma_list(node.declarators)
+        #self.write(";", "\n")
+
+    #def visit_TypeDeclarationStatement(self, node):
+        #self.write(node.declaration)
+
+    #def visit_ReferenceTypeExpression(self, node):
+        #self.write(node.type)
+
+    #def visit_VariableDeclaration(self, node):
+        ##if node.documentation:
+            ##self.write(node.documentation, "\n")
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write(node.type, " ")
+        #self.comma_list(node.declarators)
+
+    #def visit_LocalVariableDeclarationStatement(self, node):
+        #self.write(node.variable)
+
+    #def visit_LocalVariableDeclaration(self, node):
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write(node.type, " ")
+        #self.comma_list(node.declarators)
+        #self.write(";", "\n")
+
+    ## ### Declarators
+
+    #def visit_DiamondType(self, node):
+        #self.write(node.name)
+        #self.write("<>")
+        #if node.sub_type is not None:
+            #self.write(".", node.sub_type)
+        #if node.dimensions:
+            #for dim in node.dimensions:
+                #self.write(dim)
+
+    #def visit_ReferenceType(self, node):
+        #self.write(node.name)
+        #if node.arguments is not None:
+            #self.write("<")
+            #self.comma_list(node.arguments)
+            #self.write(">")
+        #if node.sub_type is not None:
+            #self.write(".", node.sub_type)
+        #if node.dimensions:
+            #for dim in node.dimensions:
+                #self.write(dim)
+
+    #def visit_VariableDeclarator(self, node):
+        #self.write(" ", node.name)
+        #if node.dimensions:
+            #for dim in node.dimensions:
+                #self.write(dim)
+        #if node.initializer:
+            #self.write(" = ", node.initializer)
+
+    #def visit_VariableInitializer(self, node):
+        #if node.array and node.expression is None:
+            #self.write(node.array)
+        #elif node.expression and node.array is None:
+            #self.write(node.expression)
+        #else:
+            #raise Exception("VariableInitializer must have exactly one of its "
+                            #"attributes not none.")
+
+    #def visit_ArrayInitializer(self, node):
+        #self.write("{")
+        #if node.initializers:
+            #self.comma_list(node.initializers)
+        #if node.comma:
+            #self.write(",")
+        #self.write("}")
+
+    #def visit_Literal(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #char_re = re.compile(r"^'(.)'$")
+        #matches = char_re.findall(node.value)
+        #if matches:
+            #self.write("'", matches[0].encode("unicode_escape").decode('ASCII'), "'")
+        #else:
+            #self.write(node.value)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    #def visit_FormalParameter(self, node):
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write(node.type)
+        #if node.varargs:
+            #self.write("...")
+        #self.write(" ", node.name)
+        #if node.dimensions is not None:
+            #for _ in node.dimensions:
+                #self.write("[]")
+
+
+    ### Statements
+
+    #def visit_Statement(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write(";", "\n")
+
+    #def visit_ExpressionStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write(node.expression)
+        #self.write(";", "\n")
+
+    #def visit_BlockExpression(self, node):
+        #self.write(node.block)
+
+    #def visit_TernaryExpression(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.prefix_operators or node.postfix_operators:
+            #self.write('(')
+        #self.write(node.condition, " ? ", node.if_true, " : ", node.if_false)
+        #if node.prefix_operators or node.postfix_operators:
+            #self.write(')')
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    #def visit_MethodInvocation(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #if node.type_arguments:
+            #self.write('<')
+            #self.comma_list(node.type_arguments)
+            #self.write('>')
+        #self.write(node.member)
+        #self.write("(")
+        #self.comma_list(node.arguments)
+        #self.write(")")
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    #def visit_ForStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ":", "\n")
+        #self.write("for (")
+        #self.write(node.control)
+        #self.write(") ", "\n")
+        #self.write(node.body)
+
+    #def visit_WhileStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ":", "\n")
+        #self.write("while")
+        #self.write(node.condition)
+        #self.write(node.body)
+
+    #def visit_DoStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ":", "\n")
+        #self.write("do ")
+        #self.write(node.body)
+        #self.write(" while")
+        #self.write(node.condition)
+        #self.write(";")
+        #self.newline()
+
+    #def visit_AssertStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ":", "\n")
+        #self.write("assert ")
+        #self.write(node.condition)
+        #if node.value:
+            #self.write(":")
+            #self.write(node.value)
+        #self.write(";")
+
+    #def visit_SynchronizedStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ":", "\n")
+        #self.write("synchronized", node.lock, node.block)
+
+    #def visit_ForControl(self, node):
+        #if node.init:
+            #self.comma_list(node.init)
+        #self.write("; ")
+        #if node.condition:
+            #self.write(node.condition)
+        #self.write("; ")
+        #if node.update:
+            #self.comma_list(node.update)
+
+    #def visit_StatementExpressionList(self, node):
+        #self.comma_list(node.statement)
+
+    #def visit_MemberReference(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op.operator)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #self.write(node.member)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op.operator)
+
+    #def visit_FieldReference(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op.operator)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #self.write(node.field)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op.operator)
+
+    #def visit_BasicType(self, node):
+        #self.write(node.name)
+        #if node.dimensions:
+            #for _ in node.dimensions:
+                #self.write("[]")
+
+    ##def visit_Void(self, node):
+        ##self.write("void")
+
+    #def visit_ArraySelector(self, node):
+        #self.write("[", node.index, "]")
+
+    #def visit_ArrayDimension(self, node):
+        #self.write("[")
+        #if node.dim is not None:
+            #self.write(node.dim)
+        #self.write("]")
+
+    #def visit_Modifier(self, node):
+        #self.write(node.value)
+
+    #def visit_Operator(self, node):
+        #self.write(node.operator)
+
+    ## Import(identifier path, identifier static, identifier wildcard)
+    #def visit_Import(self, node):
+        #self.write("import ")
+        #if node.static:
+            #self.write("static ")
+        #self.write(node.path)
+        #if node.wildcard:
+            #self.write(".*",)
+        #self.write(";", "\n")
+
+    ## Assignment(expression expressionl, expression value,
+    ## assign_operator type)
+    #def visit_Assignment(self, node):
+        #if node.selectors:
+            #self.write("(")
+        #self.write(node.expressionl, node.type, node.value)
+        #if node.selectors:
+            #self.write(")")
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+
+    ## This(prefix_operator* prefix_operators,
+    ## postfix_operator* postfix_operators, identifier? qualifier,
+    ## selector* selectors)
+    #def visit_This(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op.operator)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #self.write("this")
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op.operator)
+
+    ## EnhancedForControl(expression var, statement iterable)
+    #def visit_EnhancedForControl(self, node):
+        #self.write(node.var, " : ", node.iterable)
+
+    ## Cast(type type, expression expression)
+    #def visit_Cast(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #self.write("(", node.type, ") ")
+        #self.write(node.expression)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    ## TryStatement(identifier? label, identifier? resources, statement* block, catch* catches, statement? finally_block)
+    #def visit_TryStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write("try")
+        #if node.resources:
+            #self.write("(")
+            #for idx, item in enumerate(node.resources):
+                #self.write("; " if idx else "", item)
+            #self.write(")")
+        #self.write(node.block)
+        #if node.catches:
+            #for clause in node.catches:
+                #self.write(clause)
+        #if node.finally_block:
+            #self.write("finally", node.finally_block)
+
+    #def visit_TryResource(self,  node):
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write(node.type, " ", node.name, " = ", node.value)
+
+
+    ## CatchClause(identifier? label, catch_clause_parameter parameter, statement* block)
+    #def visit_CatchClause(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write("catch (", node.parameter, ") ", node.block)
+
+    ## CatchClauseParameter(fieldmodifier* modifiers, annotation* annotations, identifier* types, identifier name)
+    #def visit_CatchClauseParameter(self, node):
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #self.write(" | ".join(node.types), " ", node.name)
+
+    ## ThrowStatement(identifier? label, expression expression)
+    #def visit_ThrowStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write("throw ", node.expression, ";", "\n")
+
+    ## SuperConstructorInvocation(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type_argument* type_arguments, argument* arguments)
+    #def visit_SuperConstructorInvocation(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #if node.type_arguments:
+            #self.write("<")
+            #self.comma_list(node.type_arguments)
+            #self.write(">")
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #self.write("super(")
+        #self.comma_list(node.arguments)
+        #self.write(")")
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    ## ClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement* body)
+    #def visit_ClassCreator(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #self.write("new ")
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #if node.constructor_type_arguments is not None:
+            #self.write(" < ")
+            #self.comma_list(node.constructor_type_arguments)
+            #self.write(" > ")
+        #self.write(node.type)
+        #self.write("(")
+        #if node.arguments:
+            #self.comma_list(node.arguments)
+        #self.write(")")
+        #if node.body is not None:
+            #self.write(node.body)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    ## LambdaExpression(parameter* parameters, statement body)
+    #def visit_LambdaExpression(self, node):
+        #if node.parameter is not None:
+            #self.write(node.parameter)
+        #else:
+            #self.write("(")
+            #self.comma_list(node.parameters)
+            #self.write(")")
+        #self.write(" -> ", node.body)
+
+    #def visit_InferredFormalParameter(self, node):
+        #self.write(node.expression)
+
+    #def visit_SwitchStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write("switch", node.expression, "{", "\n")
+        #if node.cases is not None:
+            #for case in node.cases:
+                #self.write(case)
+        #self.write("}")
+
+    #def visit_SwitchStatementCase(self, node):
+        #if node.case:
+            #for case in node.case:
+                #self.write("case ", case, ":", "\n")
+        #else:
+            #self.write("default:", "\n")
+        #if node.statements:
+            #for statement in node.statements:
+                #self.write(statement)
+
+    #def visit_StaticInitializer(self, node):
+        #self.write("static", node.block)
+
+    #def visit_InstanceInitializer(self, node):
+        #self.write(node.block)
+
+    ## ClassReference(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type)
+    #def visit_ClassReference(self, node):
+        ## TypeExtractor.class.getCanonicalName()
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #self.write(node.type, ".class")
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    ## MethodReference(expression expression, identifier method, type_argument* type_arguments)
+    #def visit_MethodReference(self, node):
+        #self.write(node.expression, "::", node.method)
+        #if node.type_arguments:
+            #raise Exception("TODO MethodReference type_arguments")
+
+    #def visit_TypeParameter(self, node):
+        #self.write(node.name)
+        #if node.extends:
+            #self.write(" extends ")
+            #for idx, item in enumerate(node.extends):
+                #self.write(" & " if idx else "", item)
+
+    #def visit_TypeArgument(self, node):
+        #self.write(node.pattern_type, " ", node.type)
+
+    #def visit_SuperMethodInvocation(self, node):
+        #if node.prefix_operators:
+          #for op in node.prefix_operators:
+              #self.write(op)
+        #self.write("super.")
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #if node.type_arguments:
+            #self.write("<")
+            #self.comma_list(node.type_arguments)
+            #self.write(">")
+        #self.write(node.member)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #self.write("(")
+        #self.comma_list(node.arguments)
+        #self.write(")")
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    #def visit_BreakStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write("break")
+        #if node.goto:
+            #self.write(" ", node.goto)
+        #self.write(";", "\n")
+
+    #def visit_ContinueStatement(self, node):
+        #if node.label:
+            #self.write(node.label, ": ", "\n")
+        #self.write("continue")
+        #if node.goto:
+            #self.write(" ", node.goto)
+        #self.write(";", "\n")
+
+    ## AnnotationMethod(fieldmodifier* modifiers, annotation* annotations, identifier name", type return_type, int* dimensions, identifier? default)
+    #def visit_AnnotationMethod(self, node):
+        #if node.annotations:
+            #for annotation in node.annotations:
+                #self.write(annotation, " ")
+        #if node.modifiers:
+            #for modifier in node.modifiers:
+                #self.write(modifier, " ")
+        #if node.return_type:
+            #self.write(node.return_type, " ")
+        #self.write(node.name, '()')
+        #if node.dimensions:
+            #for _ in range(len(node.dimensions)):
+                #self.write("[]")
+        #if node.default:
+            #self.write("=")
+            #self.write(node.default)
+        #self.write(";", '\n')
+    #def visit_SuperMemberReference(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #self.write("super.", node.member)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    ## ExplicitConstructorInvocation(prefix_operator* prefix_operators,
+    ## postfix_operator* postfix_operators, identifier? qualifier,
+    ## selector* selectors, type_argument* type_arguments, argument* arguments)
+    #def visit_ExplicitConstructorInvocation(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #self.write("this")
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #if node.type_arguments:
+            #self.comma_list(node.type_arguments)
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #self.write("(")
+        #self.comma_list(node.arguments)
+        #self.write(")")
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    #def visit_ArrayCreator(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #self.write("new ", node.type)
+        #if node.dimensions:
+            #for dim in node.dimensions:
+                #self.write(dim)
+        #if node.initializer:
+              #self.write(node.initializer)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    ## InnerClassCreator(prefix_operator* prefix_operators, postfix_operator* postfix_operators, identifier? qualifier, selector* selectors, type type, identifier* constructor_type_arguments, argument* arguments, statement body)
+    #def visit_InnerClassCreator(self, node):
+        #if node.prefix_operators:
+            #for op in node.prefix_operators:
+                #self.write(op)
+        #if node.qualifier:
+            #self.write(node.qualifier, ".")
+        #if node.constructor_type_arguments:
+            #self.comma_list(node.constructor_type_arguments)
+        #self.write("new ")
+        #self.write(node.type)
+        #self.write("(")
+        #if node.arguments:
+            #self.comma_list(node.arguments)
+        #self.write(")")
+        #if node.selectors:
+            #for selector in node.selectors:
+                #if type(selector) == tree.ArraySelector:
+                    #self.write(selector)
+                #else:
+                    #self.write(".", selector)
+        #if node.body is not None:
+            #self.write(node.body)
+        #if node.postfix_operators:
+            #for op in node.postfix_operators:
+                #self.write(op)
+
+    #def visit_VoidClassReference(self, node):
+        #self.write("void.class")
+
+    #def visit_ClassBody(self, node):
+        #if node.declarations is not None:
+            #self.write("{", "\n")
+            #for declaration in node.declarations:
+                #self.write(declaration)
+            #self.write("}", "\n")
+
+    #def visit_EmptyClassBody(self, node):
+        #self.write("{", "}", "\n")
+
+    #def visit_ElementValueArrayInitializer(self, node):
+        #self.write(node.initializer)
+
 

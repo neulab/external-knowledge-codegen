@@ -74,7 +74,9 @@ def code_from_hyp(asdl_ast, debug=False):
                   hypothesis.frontier_field.type]:
                 raise Exception(f"{bcolors.BLUE}{action.production}"
                                 f"{bcolors.ENDC} should be in {bcolors.GREEN}"
-                                f"{grammar[hypothesis.frontier_field.type]}"
+                                f"{grammar[hypothesis.frontier_field.type]}\n"
+                                f"{bcolors.ENDC} within current hypothesis "
+                                f"{bcolors.CYAN} {hypothesis.frontier_node.to_string()}"
                                 f"{bcolors.ENDC}")
             assert action.production in grammar[hypothesis.frontier_field.type]
 

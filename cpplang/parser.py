@@ -123,114 +123,114 @@ class Parser(object):
 # ------------------------------------------------------------------------------
 # ---- Helper methods ----
 
-    def illegal(self, description, at=None):
-        if not at:
-            at = self.tokens.look()
+    #def illegal(self, description, at=None):
+        #if not at:
+            #at = self.tokens.look()
 
-        raise CppSyntaxError(description, at)
+        #raise CppSyntaxError(description, at)
 
-    def accept(self, *accepts):
-        last = None
+    #def accept(self, *accepts):
+        #last = None
 
-        if len(accepts) == 0:
-            raise CppParserError("Missing acceptable values")
+        #if len(accepts) == 0:
+            #raise CppParserError("Missing acceptable values")
 
-        for accept in accepts:
-            token = next(self.tokens)
-            if isinstance(accept, six.string_types) and (
-                    not token.value == accept):
-                self.illegal("Expected '%s'" % (accept,))
-            elif isinstance(accept, type) and not isinstance(token, accept):
-                self.illegal("Expected %s" % (accept.__name__,))
+        #for accept in accepts:
+            #token = next(self.tokens)
+            #if isinstance(accept, six.string_types) and (
+                    #not token.value == accept):
+                #self.illegal("Expected '%s'" % (accept,))
+            #elif isinstance(accept, type) and not isinstance(token, accept):
+                #self.illegal("Expected %s" % (accept.__name__,))
 
-            last = token
+            #last = token
 
-        return last.value
+        #return last.value
 
-    def would_accept(self, *accepts):
-        if len(accepts) == 0:
-            raise CppParserError("Missing acceptable values")
+    #def would_accept(self, *accepts):
+        #if len(accepts) == 0:
+            #raise CppParserError("Missing acceptable values")
 
-        for i, accept in enumerate(accepts):
-            token = self.tokens.look(i)
+        #for i, accept in enumerate(accepts):
+            #token = self.tokens.look(i)
 
-            if isinstance(accept, six.string_types) and (
-                    not token.value == accept):
-                return False
-            elif isinstance(accept, type) and not isinstance(token, accept):
-                return False
+            #if isinstance(accept, six.string_types) and (
+                    #not token.value == accept):
+                #return False
+            #elif isinstance(accept, type) and not isinstance(token, accept):
+                #return False
 
-        return True
+        #return True
 
-    def try_accept(self, *accepts):
-        if len(accepts) == 0:
-            raise CppParserError("Missing acceptable values")
+    #def try_accept(self, *accepts):
+        #if len(accepts) == 0:
+            #raise CppParserError("Missing acceptable values")
 
-        for i, accept in enumerate(accepts):
-            token = self.tokens.look(i)
+        #for i, accept in enumerate(accepts):
+            #token = self.tokens.look(i)
 
-            if isinstance(accept, six.string_types) and (
-                    not token.value == accept):
-                return False
-            elif isinstance(accept, type) and not isinstance(token, accept):
-                return False
+            #if isinstance(accept, six.string_types) and (
+                    #not token.value == accept):
+                #return False
+            #elif isinstance(accept, type) and not isinstance(token, accept):
+                #return False
 
-        for i in range(0, len(accepts)):
-            next(self.tokens)
+        #for i in range(0, len(accepts)):
+            #next(self.tokens)
 
-        return True
+        #return True
 
-    def build_binary_operation(self, parts, start_level=0) -> tree.BinaryOperation:
-        if len(parts) == 1:
-            return parts[0]
+    #def build_binary_operation(self, parts, start_level=0) -> tree.BinaryOperation:
+        #if len(parts) == 1:
+            #return parts[0]
 
-        operands = list()
-        operators = list()
+        #operands = list()
+        #operators = list()
 
-        i = 0
+        #i = 0
 
-        for level in range(start_level, len(self.operator_precedence)):
-            for j in range(1, len(parts) - 1, 2):
-                if parts[j].operator in self.operator_precedence[level]:
-                    operand = self.build_binary_operation(parts[i:j], level + 1)
-                    operator = parts[j]
-                    i = j + 1
+        #for level in range(start_level, len(self.operator_precedence)):
+            #for j in range(1, len(parts) - 1, 2):
+                #if parts[j].operator in self.operator_precedence[level]:
+                    #operand = self.build_binary_operation(parts[i:j], level + 1)
+                    #operator = parts[j]
+                    #i = j + 1
 
-                    operands.append(operand)
-                    operators.append(operator)
+                    #operands.append(operand)
+                    #operators.append(operator)
 
-            if operands:
-                break
+            #if operands:
+                #break
 
-        operand = self.build_binary_operation(parts[i:], level + 1)
-        operands.append(operand)
+        #operand = self.build_binary_operation(parts[i:], level + 1)
+        #operands.append(operand)
 
-        operation = operands[0]
+        #operation = operands[0]
 
-        for operator, operandr in zip(operators, operands[1:]):
-            operation = tree.BinaryOperation(operandl=operation)
-            operation.operator = operator
-            operation.operandr = operandr
+        #for operator, operandr in zip(operators, operands[1:]):
+            #operation = tree.BinaryOperation(operandl=operation)
+            #operation.operator = operator
+            #operation.operandr = operandr
 
-        return operation
+        #return operation
 
-    def is_annotation(self, i=0):
-        """ Returns true if the position is the start of an annotation application
-        (as opposed to an annotation declaration)
+    #def is_annotation(self, i=0):
+        #""" Returns true if the position is the start of an annotation application
+        #(as opposed to an annotation declaration)
 
-        """
+        #"""
 
-        return (isinstance(self.tokens.look(i), Annotation)
-                and not self.tokens.look(i + 1).value == 'interface')
+        #return (isinstance(self.tokens.look(i), Annotation)
+                #and not self.tokens.look(i + 1).value == 'interface')
 
-    def is_annotation_declaration(self, i=0):
-        """ Returns true if the position is the start of an annotation application
-        (as opposed to an annotation declaration)
+    #def is_annotation_declaration(self, i=0):
+        #""" Returns true if the position is the start of an annotation application
+        #(as opposed to an annotation declaration)
 
-        """
+        #"""
 
-        return (isinstance(self.tokens.look(i), Annotation)
-                and self.tokens.look(i + 1).value == 'interface')
+        #return (isinstance(self.tokens.look(i), Annotation)
+                #and self.tokens.look(i + 1).value == 'interface')
 
     def parse_subnodes(self, node):
         if 'inner' in node:
@@ -246,35 +246,35 @@ class Parser(object):
 # ------------------------------------------------------------------------------
 # -- Identifiers --
 
-    @parse_debug
-    def parse_identifier(self):
-        return self.accept(Identifier)
+    #@parse_debug
+    #def parse_identifier(self):
+        #return self.accept(Identifier)
 
-    @parse_debug
-    def parse_qualified_identifier(self):
-        qualified_identifier = list()
+    #@parse_debug
+    #def parse_qualified_identifier(self):
+        #qualified_identifier = list()
 
-        while True:
-            identifier = self.parse_identifier()
-            qualified_identifier.append(identifier)
+        #while True:
+            #identifier = self.parse_identifier()
+            #qualified_identifier.append(identifier)
 
-            if not self.try_accept('.'):
-                break
+            #if not self.try_accept('.'):
+                #break
 
-        return '.'.join(qualified_identifier)
+        #return '.'.join(qualified_identifier)
 
-    @parse_debug
-    def parse_qualified_identifier_list(self):
-        qualified_identifiers = list()
+    #@parse_debug
+    #def parse_qualified_identifier_list(self):
+        #qualified_identifiers = list()
 
-        while True:
-            qualified_identifier = self.parse_qualified_identifier()
-            qualified_identifiers.append(qualified_identifier)
+        #while True:
+            #qualified_identifier = self.parse_qualified_identifier()
+            #qualified_identifiers.append(qualified_identifier)
 
-            if not self.try_accept(','):
-                break
+            #if not self.try_accept(','):
+                #break
 
-        return qualified_identifiers
+        #return qualified_identifiers
 
     def abort_visit(node):  # XXX: self?
         msg = (f"No defined parse handler for clang node of type `{node['kind']}`.\n"
@@ -284,8 +284,30 @@ class Parser(object):
     @parse_debug
     def parse_node(self, node, abort=abort_visit) -> tree.Node:
         print(f"parse_node {node['kind']}", file=sys.stderr)
-        if ((len(self.stack) == 0 and node['loc'] and 'file' in node['loc']
+        if (('isImplicit' in node and node['isImplicit'])
+            or ('loc' in node and 'includedFrom' in node['loc'])
+            or ('range' in node and 'includedFrom' in node['range']['begin'])
+            or ('loc' in node and 'range' in node['loc']
+                and 'includedFrom' in node['loc']['range']['begin'])
+            or ('loc' in node and 'spellingLoc' in node['loc'] and 'includedFrom' in node['loc']['spellingLoc'])
+            or ('range' in node and 'spellingLoc' in node['range']['begin'] and 'includedFrom' in node['range']['begin']['spellingLoc'])
+            ):
+            return None
+        elif ((len(self.stack) == 0 and node['loc'] and 'file' in node['loc']
              and node['loc']['file'] == "<stdin>")
+                or len(self.stack) > 0):
+            self.stack.append(node)
+            parse_method = getattr(self, "parse_"+node['kind'], abort)
+            result = parse_method(node)
+            self.stack.pop()
+            return result
+        elif ((len(self.stack) == 0 and 'loc' in node
+               and 'file' not in node['loc']
+               and 'includedFrom' not in node['loc']
+               and ('range' not in node['loc']
+                    or 'includedFrom' not in node['loc']['range']['begin'])
+               and ('spellingLoc' not in node['loc']
+                    or 'includedFrom' not in node['loc']['spellingLoc']))
                 or len(self.stack) > 0):
             self.stack.append(node)
             parse_method = getattr(self, "parse_"+node['kind'], abort)
@@ -344,7 +366,7 @@ class Parser(object):
         assert node['kind'] == "CXXDestructorDecl"
         if 'isImplicit' in node and node['isImplicit']:
             return None
-        virtual = 'virtual' in node and node['virtual']
+        virtual = 'virtual' if 'virtual' in node and node['virtual'] else ''
         name = node['name']
         subnodes = self.parse_subnodes(node)
         return tree.CXXDestructorDecl(name=name, virtual=virtual, subnodes=subnodes)
@@ -366,6 +388,14 @@ class Parser(object):
         return_type = node['type']['qualType'].split("(")[0]
         subnodes = self.parse_subnodes(node)
         return tree.CXXMethodDecl(name=name, return_type=return_type, subnodes=subnodes)
+
+    @parse_debug
+    def parse_FunctionDecl(self, node) -> tree.FunctionDecl:
+        assert node['kind'] == "FunctionDecl"
+        name = node['name']
+        return_type = node['type']['qualType'].split("(")[0]
+        subnodes = self.parse_subnodes(node)
+        return tree.FunctionDecl(name=name, return_type=return_type, subnodes=subnodes)
 
     @parse_debug
     def parse_ParmVarDecl(self, node) -> tree.ParmVarDecl:
@@ -391,14 +421,11 @@ class Parser(object):
     def parse_ReturnStmt(self, node) -> tree.ReturnStmt:
         assert node['kind'] == "ReturnStmt"
         subnodes = self.parse_subnodes(node)
-        return tree.ReturnStmt(subnodes=subnodes)
-
-    @parse_debug
-    def parse_UNEXPOSED_EXPR(self, node) -> tree.UNEXPOSED_EXPR:
-        assert node['kind'] == "UNEXPOSED_EXPR"
-        name = node['name']
-        subnodes = self.parse_subnodes(node)
-        return tree.UNEXPOSED_EXPR(name=name, subnodes=subnodes)
+        assert len(subnodes) <= 1
+        if len(subnodes) == 0:
+            return tree.ReturnStmt()
+        else:
+            return tree.ReturnStmt(subnodes=subnodes)
 
     @parse_debug
     def parse_DeclRefExpr(self, node) -> tree.DeclRefExpr:
@@ -422,6 +449,14 @@ class Parser(object):
         return tree.FloatingLiteral(value=value, subnodes=subnodes)
 
     @parse_debug
+    def parse_CharacterLiteral(self, node) -> tree.CharacterLiteral:
+        assert node['kind'] == "CharacterLiteral"
+        #breakpoint()
+        value = chr(node['value'])
+        subnodes = self.parse_subnodes(node)
+        return tree.CharacterLiteral(value=value, subnodes=subnodes)
+
+    @parse_debug
     def parse_StringLiteral(self, node) -> tree.StringLiteral:
         assert node['kind'] == "StringLiteral"
         value = node['value']
@@ -429,11 +464,24 @@ class Parser(object):
         return tree.StringLiteral(value=value, subnodes=subnodes)
 
     @parse_debug
-    def parse_Namespace(self, node) -> tree.Namespace:
-        assert node['kind'] == "Namespace"
+    def parse_NamespaceDecl(self, node) -> tree.NamespaceDecl:
+        assert node['kind'] == "NamespaceDecl"
         name = node['name']
         subnodes = self.parse_subnodes(node)
-        return tree.Namespace(name=name, subnodes=subnodes)
+        return tree.NamespaceDecl(name=name, subnodes=subnodes)
+
+    #@parse_debug
+    #def parse_Namespace(self, node) -> tree.Namespace:
+        #assert node['kind'] == "Namespace"
+        #name = node['name']
+        #subnodes = self.parse_subnodes(node)
+        #return tree.Namespace(name=name, subnodes=subnodes)
+
+    @parse_debug
+    def parse_UsingDirectiveDecl(self, node) -> tree.UsingDirectiveDecl:
+        assert node['kind'] == "UsingDirectiveDecl"
+        name = node['nominatedNamespace']['name']
+        return tree.UsingDirectiveDecl(name=name)
 
     @parse_debug
     def parse_DeclStmt(self, node) -> tree.DeclStmt:
@@ -459,12 +507,12 @@ class Parser(object):
         subnodes = self.parse_subnodes(node)
         return tree.TypeRef(name=name, subnodes=subnodes)
 
-    @parse_debug
-    def parse_NamespaceRef(self, node) -> tree.NamespaceRef:
-        assert node['kind'] == "NamespaceRef"
-        name = node['name']
-        subnodes = self.parse_subnodes(node)
-        return tree.NamespaceRef(name=name, subnodes=subnodes)
+    #@parse_debug
+    #def parse_NamespaceRef(self, node) -> tree.NamespaceRef:
+        #assert node['kind'] == "NamespaceRef"
+        #name = node['name']
+        #subnodes = self.parse_subnodes(node)
+        #return tree.NamespaceRef(name=name, subnodes=subnodes)
 
     @parse_debug
     def parse_ExprWithCleanups(self, node) -> tree.ExprWithCleanups:
@@ -512,6 +560,18 @@ class Parser(object):
             subnodes = []
         return tree.FieldDecl(name=name, type=var_type, subnodes=subnodes)
 
+    @parse_debug
+    def parse_BinaryOperator(self, node) -> tree.BinaryOperator:
+        assert node['kind'] == "BinaryOperator"
+        opcode = node['opcode']
+        subnodes = self.parse_subnodes(node)
+        return tree.BinaryOperator(opcode=opcode, subnodes=subnodes)
+
+    @parse_debug
+    def parse_ParenExpr(self, node):
+        assert node['kind'] == "ParenExpr"
+        subnodes = self.parse_subnodes(node)
+        return tree.ParenExpr(subnodes=subnodes)
 
 
 
@@ -566,66 +626,6 @@ class Parser(object):
 
 
 # Old code from Java parsing
-
-    @parse_debug
-    def parse_import_declaration(self) -> tree.Import:
-        qualified_identifier = list()
-        static = None
-        import_all = None
-
-        self.accept('import')
-
-        if self.try_accept('static'):
-            static = 'static'
-
-        while True:
-            identifier = self.parse_identifier()
-            qualified_identifier.append(identifier)
-
-            if self.try_accept('.'):
-                if self.try_accept('*'):
-                    self.accept(';')
-                    import_all = '*'
-                    break
-
-            else:
-                self.accept(';')
-                break
-
-        return tree.Import(path='.'.join(qualified_identifier),
-                           static=static,
-                           wildcard=import_all)
-
-    @parse_debug
-    def parse_type_declaration(self) -> tree.TypeDeclaration:
-        if self.try_accept(';'):
-            return None
-        else:
-            return self.parse_class_or_interface_declaration()
-
-    @parse_debug
-    def parse_class_or_interface_declaration(self) -> tree.TypeDeclaration:
-        modifiers, annotations, cppdoc = self.parse_modifiers()
-        type_declaration = None
-
-        token = self.tokens.look()
-        if token.value == 'class':
-            type_declaration = self.parse_normal_class_declaration()
-        elif token.value == 'enum':
-            type_declaration = self.parse_enum_declaration()
-        elif token.value == 'interface':
-            type_declaration = self.parse_normal_interface_declaration()
-        elif self.is_annotation_declaration():
-            type_declaration = self.parse_annotation_type_declaration()
-        else:
-            self.illegal("Expected type declaration")
-
-        type_declaration._position = token.position
-        type_declaration.modifiers = modifiers
-        type_declaration.annotations = annotations
-        type_declaration.documentation = cppdoc
-
-        return type_declaration
 
     @parse_debug
     def parse_enum_declaration(self) -> tree.EnumDeclaration:
@@ -2327,14 +2327,6 @@ class Parser(object):
     def parse_literal(self):
         literal = self.accept(Literal)
         return tree.Literal(value=literal)
-
-    @parse_debug
-    def parse_par_expression(self):
-        self.accept('(')
-        expression = self.parse_expression()
-        self.accept(')')
-
-        return tree.ParenthesizedExpression(expression=expression)
 
     @parse_debug
     def parse_arguments(self):

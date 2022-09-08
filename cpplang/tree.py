@@ -175,9 +175,12 @@ class Member(NonEmptyDeclaration):
     attrs = ()
 
 
-class CXXMethodDecl(Member):
-    attrs = ("type_parameters", "return_type", "name", "dimensions",
-             "parameters", "throws", "body",)
+class CXXMethodDecl(Declaration):
+    attrs = ("return_type", "name",)
+
+
+class FunctionDecl(Declaration):
+    attrs = ("return_type", "name",)
 
 
 class ParmVarDecl(Node):
@@ -276,10 +279,6 @@ class ContinueStatement(Statement):
     attrs = ("goto",)
 
 
-class ReturnStatement(Statement):
-    attrs = ("expression",)
-
-
 class ThrowStatement(Statement):
     attrs = ("expression",)
 
@@ -313,15 +312,17 @@ class ReturnStmt(Statement):
     attrs = ()
 
 
-class UNEXPOSED_EXPR(Node):
-    attrs = ("name",)
-
-
 class DeclRefExpr(Node):
     attrs = ("name",)
 
 
-class Namespace(Node):
+class NamespaceDecl(Node):
+    attrs = ("name",)
+#class Namespace(Node):
+    #attrs = ("name",)
+
+
+class UsingDirectiveDecl(Node):
     attrs = ("name",)
 
 
@@ -337,8 +338,8 @@ class TypeRef(Node):
     attrs = ("name",)
 
 
-class NamespaceRef(Node):
-    attrs = ("name",)
+#class NamespaceRef(Node):
+    #attrs = ("name",)
 
 
 class ExpressionStatement(Statement):
@@ -412,11 +413,12 @@ class NoExpression(Expression):
 
 
 class Primary(Expression):
-    attrs = ("prefix_operators", "postfix_operators", "qualifier", "selectors")
+    attrs = ()
+    #attrs = ("prefix_operators", "postfix_operators", "qualifier", "selectors")
 
 
-class ParenthesizedExpression(Primary):
-    attrs = ("expression",)
+class ParenExpr(Primary):
+    attrs = ()
 
 
 class Assignment(Primary):
@@ -427,8 +429,8 @@ class TernaryExpression(Primary):
     attrs = ("condition", "if_true", "if_false")
 
 
-class BinaryOperation(Primary):
-    attrs = ("operator", "operandl", "operandr")
+class BinaryOperator(Node):
+    attrs = ("opcode",)
 
 
 class MethodReference(Primary):
@@ -447,6 +449,10 @@ class Identifier(Primary):
 
 class Literal(Primary):
     attrs = ("value",)
+
+
+class CharacterLiteral(Literal):
+    attrs = ()
 
 
 class IntegerLiteral(Literal):

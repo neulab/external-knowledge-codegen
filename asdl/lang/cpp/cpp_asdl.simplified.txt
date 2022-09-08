@@ -1,12 +1,14 @@
 ## ASDL's 4 builtin types are
 identifier, int, string, constant
 
-cu = TranslationUnit(declaration* subnodes)
+cu = TranslationUnit(statement* subnodes)
 
-declaration = CXXRecordDecl(identifier name, identifier kind, identifier bases, classbodyelt* subnodes)
+#declaration = CXXRecordDecl(identifier name, identifier kind, identifier bases, classbodyelt* subnodes)
+#      | NamespaceDecl(identifier name, statement* subnodes)
+#      | UsingDirectiveDecl(identifier name)
 
-classbodyelt = AccessSpecDecl(identifier access_spec)
-      | CXXMethodDecl(string? documentation, identifier name, identifier return_type, statement* subnodes)
+#classbodyelt = AccessSpecDecl(identifier access_spec)
+#      | CXXMethodDecl(string? documentation, identifier name, identifier return_type, statement* subnodes)
 #      | CXXMethodDecl(string? documentation, fieldmodifier* modifiers, annotation* annotations,
 #                   type_parameter* type_parameters, type? return_type, identifier name,
 #                   dimension* dimensions, parameter* parameters, identifier* throws,
@@ -42,10 +44,7 @@ enumconstant = EnumConstantDeclaration(annotation* annotations, string? document
 expression = ArrayCreator(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type, dimension* dimensions, arrayinitializer? initializer)
       | ElementValueArrayInitializer(arrayinitializer initializer)
       | ArraySelector(expression index)
-      | ParenthesizedExpression(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, expression expression)
       | Assignment(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, expression expressionl, expression value, operator type)
-      | BinaryOperation(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, operator operator, expression operandl, expression operandr)
-      | BlockExpression(statement block)
       | Cast(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type, expression expression)
       | ClassCreator(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type, type_argument* constructor_type_arguments, expression* arguments, classbody? body)
       | ClassReference(operator* prefix_operators, operator* postfix_operators, expression? qualifier, expression* selectors, type type)
@@ -89,6 +88,9 @@ parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, i
       | InferredFormalParameter(expression expression)
 
 statement = CompoundStmt(statement* subnodes)
+      | AccessSpecDecl(identifier access_spec)
+      | CXXMethodDecl(string? documentation, identifier name, identifier return_type, statement* subnodes)
+      | FunctionDecl(string? documentation, identifier name, identifier return_type, statement* subnodes)
       | DeclRefExpr(identifier name)
       | ParmVarDecl(identifier name, identifier type, statement* subnodes)
       | FieldDecl(identifier name, identifier type, statement* subnodes)
@@ -96,7 +98,7 @@ statement = CompoundStmt(statement* subnodes)
       | CXXCtorInitializer(identifier name, statement* subnodes)
       | CXXDestructorDecl(identifier name, constant virtual, statement* subnodes)
       | IfStmt(statement* subnodes)
-      | DeclStmt(declstmtsubnodes* subnodes)
+      | DeclStmt(statement* subnodes)
       | ReturnStmt(statement* subnodes)
       | ExprWithCleanups(statement* subnodes)
       | ImplicitCastExpr(statement* subnodes)
@@ -106,6 +108,7 @@ statement = CompoundStmt(statement* subnodes)
       | CXXDefaultArgExpr
       | IntegerLiteral(identifier value)
       | FloatingLiteral(identifier value)
+      | CharacterLiteral(identifier value)
       | StringLiteral(identifier value)
       | AssertStatement(identifier? label, expression condition, expression? value)
       | ContinueStatement(identifier? label, identifier? goto)
@@ -125,11 +128,18 @@ statement = CompoundStmt(statement* subnodes)
       | TryStatement(identifier? label, tryresource* resources, statement block, catch* catches, statement? finally_block)
       | WhileStatement(identifier? label, expression condition, statement body)
       | TypeRef(identifier name)
-      | NamespaceRef(identifier name)
+      | NamespaceDecl(identifier name, statement* subnodes)
+      | UsingDirectiveDecl(identifier name)
+      | CXXRecordDecl(identifier name, identifier kind, identifier bases, statement* subnodes)
+      | VarDecl(identifier name, identifier type, statement* subnodes)
+      | BinaryOperator(constant opcode, statement* subnodes)
+      | BlockExpression(statement block)
+      | ParenExpr(statement* subnodes)
+#      | NamespaceRef(identifier name)
 
 #unexposedexprsubnodes = DeclRefExpr(identifier name)
 
-declstmtsubnodes = VarDecl(identifier name, identifier type, statement* subnodes)
+#declstmtsubnodes = VarDecl(identifier name, identifier type, statement* subnodes)
 
 type = BasicType(identifier name, dimension* dimensions)
       | DiamondType(identifier name, dimension* dimensions, type? sub_type)
