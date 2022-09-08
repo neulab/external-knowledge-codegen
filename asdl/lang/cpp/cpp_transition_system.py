@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import cpplang.parse
-from cpplang.clang_json_parser import CppSyntaxError
+from cpplang.parser import CppSyntaxError
 from cpplang import tree
 
 from asdl.lang.cpp import cppastor

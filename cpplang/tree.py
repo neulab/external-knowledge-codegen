@@ -4,7 +4,7 @@ from .ast import Node
 # ------------------------------------------------------------------------------
 
 
-class TRANSLATION_UNIT(Node):
+class TranslationUnit(Node):
     attrs = ()
 
 
@@ -34,12 +34,12 @@ class TypeDeclaration(NonEmptyDeclaration):
     @property
     def fields(self):
         return [decl for decl in self.body if isinstance(decl,
-                                                         FieldDeclaration)]
+                                                         FieldDecl)]
 
     @property
     def methods(self):
         return [decl for decl in self.body if isinstance(decl,
-                                                         MethodDeclaration)]
+                                                         MethodDecl)]
 
     @property
     def constructors(self):
@@ -52,7 +52,19 @@ class PackageDeclaration(NonEmptyDeclaration):
 
 
 class CXXRecordDecl(TypeDeclaration):
-    attrs = ()
+    attrs = ("kind", "bases",)
+
+
+class CXXConstructorDecl(Node):
+    attrs = ("name",)
+
+
+class CXXCtorInitializer(Node):
+    attrs = ("name",)
+
+
+class CXXDestructorDecl(Node):
+    attrs = ("name", "virtual",)
 
 
 class AccessSpecDecl(Node):
@@ -65,7 +77,7 @@ class EnumDeclaration(TypeDeclaration):
     @property
     def fields(self):
         return [decl for decl in self.body.declarations if isinstance(
-          decl, FieldDeclaration)]
+          decl, FieldDecl)]
 
     @property
     def methods(self):
@@ -172,8 +184,12 @@ class ParmVarDecl(Node):
     attrs = ("type", "name", "dimensions",)
 
 
-class FieldDeclaration(Member):
-    attrs = ("type", "declarators",)
+class ParmVarDecl(Node):
+    attrs = ("type", "name", "dimensions",)
+
+
+class FieldDecl(Node):
+    attrs = ("type", "name", "dimensions",)
 
 
 class ConstructorDeclaration(NonEmptyDeclaration):
@@ -182,7 +198,7 @@ class ConstructorDeclaration(NonEmptyDeclaration):
 # ------------------------------------------------------------------------------
 
 
-class ConstantDeclaration(FieldDeclaration):
+class ConstantDeclaration(FieldDecl):
     attrs = ()
 
 

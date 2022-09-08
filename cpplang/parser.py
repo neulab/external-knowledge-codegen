@@ -1,6 +1,7 @@
+import json
 import six
+import subprocess
 import sys
-from clang.cindex import (Cursor, TranslationUnit)
 from typing import (List, Set, Tuple)
 
 from . import util
@@ -95,14 +96,15 @@ class Parser(object):
                             set(('*', '/', '%')) ]
 
     def __init__(self, cpp_code):
-        tu = TranslationUnit.from_source("test.cc", args=None,
-                                         unsaved_files=[("test.cc", cpp_code)],
-                                         options=0, index=None)
-        if not tu:
-            error("unable to load input")
-        self.clang_ast = tu.cursor
-        self.stack = [self.clang_ast]
 
+        p = subprocess.Popen(
+            ["clang", "-x", "c++", "-Xclang", "-ast-dump=json", "-fsyntax-only", "-"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        stdout_data, stderr_data = p.communicate(input=cpp_code.encode())
+        self.tu = json.loads(stdout_data)
+        self.stack = []
         self.debug = False
 
 # ------------------------------------------------------------------------------
@@ -115,7 +117,7 @@ class Parser(object):
 # ---- Parsing entry point ----
 
     def parse(self):
-        return self.parse_TRANSLATION_UNIT()
+        return self.parse_TranslationUnit(self.tu)
 
 # ------------------------------------------------------------------------------
 # ---- Helper methods ----
@@ -229,10 +231,14 @@ class Parser(object):
         return (isinstance(self.tokens.look(i), Annotation)
                 and self.tokens.look(i + 1).value == 'interface')
 
-    def parse_subnodes(self):
-        assert len(self.stack) > 0
-        result = [self.parse_node(c) for c in self.stack[-1].get_children()]
-        return [c for c in result if c is not None]
+    def parse_subnodes(self, node):
+        if 'inner' in node:
+            assert len(node['inner']) > 0
+            result = [self.parse_node(c) for c in node['inner']]
+            return [c for c in result if c is not None]
+        else:
+            return []
+
 # ------------------------------------------------------------------------------
 # ---- Parsing methods ----
 
@@ -270,168 +276,240 @@ class Parser(object):
         return qualified_identifiers
 
     def abort_visit(node):  # XXX: self?
-        msg = (f'No defined parse handler for clang node of type `{node.kind.name}`.\n'
-               f"please define `parse_{node.kind.name}` in cpplang/parser.py.")
+        msg = (f"No defined parse handler for clang node of type `{node['kind']}`.\n"
+               f"please define `parse_{node['kind']}` in cpplang/parser.py.")
         raise AttributeError(msg)
 
     @parse_debug
-    def parse_node(self, node: Cursor, abort=abort_visit) -> tree.Node:
-        print(f"parse_node {node.kind.name}, from {node.location.file.name}", file=sys.stderr)
-        if node.location.file.name == "test.cc":
-            parse_method = getattr(self, "parse_"+node.kind.name, abort)
+    def parse_node(self, node, abort=abort_visit) -> tree.Node:
+        print(f"parse_node {node['kind']}", file=sys.stderr)
+        if ((len(self.stack) == 0 and node['loc'] and 'file' in node['loc']
+             and node['loc']['file'] == "<stdin>")
+                or len(self.stack) > 0):
             self.stack.append(node)
+            parse_method = getattr(self, "parse_"+node['kind'], abort)
             result = parse_method(node)
             self.stack.pop()
             return result
         else:
             return None
-        #parse_method = getattr(self, "parse_"+node.kind.name, abort)
-        #self.stack.append(node)
-        #result = parse_method(node)
-        #self.stack.pop()
-        #return result
 
 # ------------------------------------------------------------------------------
 # -- Top level units --
 
     @parse_debug
-    def parse_TRANSLATION_UNIT(self) -> tree.TRANSLATION_UNIT:
-        assert len(self.stack) == 1 and self.stack[-1].kind.name == "TRANSLATION_UNIT"
-
-        subnodes = self.parse_subnodes()
-        return tree.TRANSLATION_UNIT(subnodes=subnodes)
+    def parse_TranslationUnit(self, node) -> tree.TranslationUnit:
+        assert node['kind'] == "TranslationUnitDecl"
+        #print(f"parse_TranslationUnit {node}", file=sys.stderr)
+        subnodes = self.parse_subnodes(node)
+        return tree.TranslationUnit(subnodes=subnodes)
 
     @parse_debug
-    def parse_CLASS_DECL(self, node) -> tree.CLASS_DECL:
-        assert len(self.stack) > 1 and node.kind.name == "CLASS_DECL"
-        name = node.spelling
-        #type_params = None
-        #extends = None
-        #implements = None
-        #body = None
+    def parse_CXXRecordDecl(self, node) -> tree.CXXRecordDecl:
+        assert node['kind'] == "CXXRecordDecl"
+        if 'isImplicit' in node and node['isImplicit']:
+            return None
+        name = node['name']
+        kind = node['tagUsed']
+        bases = []
+        if "bases" in node:
+            for base in node['bases']:
+                if base['writtenAccess'] != 'none':
+                    bases.append(f"{base['writtenAccess']} {base['type']['qualType']}")
+                else:
+                    bases.append(f"{base['type']['qualType']}")
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXRecordDecl(name=name, kind=kind, bases=", ".join(bases),
+                                  subnodes=subnodes)
 
-        #self.accept('class')
+    @parse_debug
+    def parse_CXXConstructorDecl(self, node) -> tree.CXXConstructorDecl:
+        assert node['kind'] == "CXXConstructorDecl"
+        if 'isImplicit' in node and node['isImplicit']:
+            return None
+        name = node['name']
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXConstructorDecl(name=name, subnodes=subnodes)
 
-        #name = self.parse_identifier()
+    @parse_debug
+    def parse_CXXCtorInitializer(self, node) -> tree.CXXCtorInitializer:
+        assert node['kind'] == "CXXCtorInitializer"
+        name = node['anyInit']['name']
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXCtorInitializer(name=name, subnodes=subnodes)
 
-        #if self.would_accept('<'):
-            #type_params = self.parse_type_parameters()
-
-        #if self.try_accept('extends'):
-            #extends = self.parse_type()
-
-        #if self.try_accept('implements'):
-            #implements = self.parse_type_list()
-
-        #body = self.parse_class_body()
-
-        subnodes = self.parse_subnodes()
-
-        return tree.CLASS_DECL(name=name, subnodes=subnodes)
+    @parse_debug
+    def parse_CXXDestructorDecl(self, node) -> tree.CXXDestructorDecl:
+        assert node['kind'] == "CXXDestructorDecl"
+        if 'isImplicit' in node and node['isImplicit']:
+            return None
+        virtual = 'virtual' in node and node['virtual']
+        name = node['name']
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXDestructorDecl(name=name, virtual=virtual, subnodes=subnodes)
 
     @parse_debug
     def parse_AccessSpecDecl(self, node) -> tree.AccessSpecDecl:
-        assert len(self.stack) > 1 and node.kind.name == "AccessSpecDecl"
-        access_spec = node.access_specifier.name.lower()
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "AccessSpecDecl"
+        access_spec = node['access']
+        subnodes = self.parse_subnodes(node)
 
         return tree.AccessSpecDecl(access_spec=access_spec, subnodes=subnodes)
 
     @parse_debug
     def parse_CXXMethodDecl(self, node) -> tree.CXXMethodDecl:
-        assert len(self.stack) > 1 and node.kind.name == "CXXMethodDecl"
-        name = node.spelling
-        return_type = node.result_type.spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "CXXMethodDecl"
+        if 'isImplicit' in node and node['isImplicit']:
+            return None
+        name = node['name']
+        return_type = node['type']['qualType'].split("(")[0]
+        subnodes = self.parse_subnodes(node)
         return tree.CXXMethodDecl(name=name, return_type=return_type, subnodes=subnodes)
 
     @parse_debug
     def parse_ParmVarDecl(self, node) -> tree.ParmVarDecl:
-        assert len(self.stack) > 1 and node.kind.name == "ParmVarDecl"
-        name = node.spelling
-        type = node.type.spelling
-        subnodes = self.parse_subnodes()
-        return tree.ParmVarDecl(name=name, type=type, subnodes=subnodes)
+        assert node['kind'] == "ParmVarDecl"
+        name = node['name']
+        var_type = node['type']['qualType']
+        subnodes = self.parse_subnodes(node)
+        return tree.ParmVarDecl(name=name, type=var_type, subnodes=subnodes)
 
     @parse_debug
     def parse_CompoundStmt(self, node) -> tree.CompoundStmt:
-        assert len(self.stack) > 1 and node.kind.name == "CompoundStmt"
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "CompoundStmt"
+        subnodes = self.parse_subnodes(node)
         return tree.CompoundStmt(subnodes=subnodes)
 
     @parse_debug
     def parse_IfStmt(self, node) -> tree.IfStmt:
-        assert len(self.stack) > 1 and node.kind.name == "IfStmt"
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "IfStmt"
+        subnodes = self.parse_subnodes(node)
         return tree.IfStmt(subnodes=subnodes)
 
     @parse_debug
     def parse_ReturnStmt(self, node) -> tree.ReturnStmt:
-        assert len(self.stack) > 1 and node.kind.name == "ReturnStmt"
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "ReturnStmt"
+        subnodes = self.parse_subnodes(node)
         return tree.ReturnStmt(subnodes=subnodes)
 
     @parse_debug
     def parse_UNEXPOSED_EXPR(self, node) -> tree.UNEXPOSED_EXPR:
-        assert len(self.stack) > 1 and node.kind.name == "UNEXPOSED_EXPR"
-        name = node.spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "UNEXPOSED_EXPR"
+        name = node['name']
+        subnodes = self.parse_subnodes(node)
         return tree.UNEXPOSED_EXPR(name=name, subnodes=subnodes)
 
     @parse_debug
     def parse_DeclRefExpr(self, node) -> tree.DeclRefExpr:
-        assert len(self.stack) > 1 and node.kind.name == "DeclRefExpr"
-        name = node.spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "DeclRefExpr"
+        name = node['referencedDecl']['name']
+        subnodes = self.parse_subnodes(node)
         return tree.DeclRefExpr(name=name, subnodes=subnodes)
 
     @parse_debug
     def parse_IntegerLiteral(self, node) -> tree.IntegerLiteral:
-        assert len(self.stack) > 1 and node.kind.name == "IntegerLiteral"
-        value = (next(node.get_tokens())).spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "IntegerLiteral"
+        value = node['value']
+        subnodes = self.parse_subnodes(node)
         return tree.IntegerLiteral(value=value, subnodes=subnodes)
 
     @parse_debug
     def parse_FloatingLiteral(self, node) -> tree.FloatingLiteral:
-        assert len(self.stack) > 1 and node.kind.name == "FloatingLiteral"
-        value = (next(node.get_tokens())).spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "FloatingLiteral"
+        value = node['value']
+        subnodes = self.parse_subnodes(node)
         return tree.FloatingLiteral(value=value, subnodes=subnodes)
 
     @parse_debug
+    def parse_StringLiteral(self, node) -> tree.StringLiteral:
+        assert node['kind'] == "StringLiteral"
+        value = node['value']
+        subnodes = self.parse_subnodes(node)
+        return tree.StringLiteral(value=value, subnodes=subnodes)
+
+    @parse_debug
     def parse_Namespace(self, node) -> tree.Namespace:
-        assert len(self.stack) > 1 and node.kind.name == "Namespace"
-        name = node.spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "Namespace"
+        name = node['name']
+        subnodes = self.parse_subnodes(node)
         return tree.Namespace(name=name, subnodes=subnodes)
 
     @parse_debug
     def parse_DeclStmt(self, node) -> tree.DeclStmt:
-        assert len(self.stack) > 1 and node.kind.name == "DeclStmt"
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "DeclStmt"
+        subnodes = self.parse_subnodes(node)
         return tree.DeclStmt(subnodes=subnodes)
 
     @parse_debug
     def parse_VarDecl(self, node) -> tree.VarDecl:
-        assert len(self.stack) > 1 and node.kind.name == "VarDecl"
-        name = node.spelling
-        subnodes = self.parse_subnodes()
-        return tree.VarDecl(name=name, subnodes=subnodes)
+        assert node['kind'] == "VarDecl"
+        name = node['name']
+        var_type = node['type']['qualType']
+        if 'init' in node:
+            subnodes = self.parse_subnodes(node)
+        else:
+            subnodes = []
+        return tree.VarDecl(name=name, type=var_type, subnodes=subnodes)
 
     @parse_debug
     def parse_TypeRef(self, node) -> tree.TypeRef:
-        assert len(self.stack) > 1 and node.kind.name == "TypeRef"
-        name = node.spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "TypeRef"
+        name = node['name']
+        subnodes = self.parse_subnodes(node)
         return tree.TypeRef(name=name, subnodes=subnodes)
 
     @parse_debug
     def parse_NamespaceRef(self, node) -> tree.NamespaceRef:
-        assert len(self.stack) > 1 and node.kind.name == "NamespaceRef"
-        name = node.spelling
-        subnodes = self.parse_subnodes()
+        assert node['kind'] == "NamespaceRef"
+        name = node['name']
+        subnodes = self.parse_subnodes(node)
         return tree.NamespaceRef(name=name, subnodes=subnodes)
+
+    @parse_debug
+    def parse_ExprWithCleanups(self, node) -> tree.ExprWithCleanups:
+        assert node['kind'] == "ExprWithCleanups"
+        subnodes = self.parse_subnodes(node)
+        return tree.ExprWithCleanups(subnodes=subnodes)
+
+    @parse_debug
+    def parse_CXXConstructExpr(self, node) -> tree.CXXConstructExpr:
+        assert node['kind'] == "CXXConstructExpr"
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXConstructExpr(subnodes=subnodes)
+
+    @parse_debug
+    def parse_MaterializeTemporaryExpr(self, node) -> tree.MaterializeTemporaryExpr:
+        assert node['kind'] == "MaterializeTemporaryExpr"
+        subnodes = self.parse_subnodes(node)
+        return tree.MaterializeTemporaryExpr(subnodes=subnodes)
+
+    @parse_debug
+    def parse_CXXBindTemporaryExpr(self, node) -> tree.CXXBindTemporaryExpr:
+        assert node['kind'] == "CXXBindTemporaryExpr"
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXBindTemporaryExpr(subnodes=subnodes)
+
+    @parse_debug
+    def parse_ImplicitCastExpr(self, node) -> tree.ImplicitCastExpr:
+        assert node['kind'] == "ImplicitCastExpr"
+        subnodes = self.parse_subnodes(node)
+        return tree.ImplicitCastExpr(subnodes=subnodes)
+
+    @parse_debug
+    def parse_CXXDefaultArgExpr(self, node) -> None:
+        assert node['kind'] == "CXXDefaultArgExpr"
+        return None
+
+    @parse_debug
+    def parse_FieldDecl(self, node) -> tree.FieldDecl:
+        assert node['kind'] == "FieldDecl"
+        name = node['name']
+        var_type = node['type']['qualType']
+        if 'hasInClassInitializer' in node:
+            subnodes = self.parse_subnodes(node)
+        else:
+            subnodes = []
+        return tree.FieldDecl(name=name, type=var_type, subnodes=subnodes)
 
 
 
@@ -1011,18 +1089,6 @@ class Parser(object):
             rest = self.parse_field_declarators_rest()
             self.accept(';')
             return rest
-
-    @parse_debug
-    def parse_field_declarators_rest(self) -> tree.FieldDeclaration:
-        array_dimension, initializer = self.parse_variable_declarator_rest()
-        declarators = [tree.VariableDeclarator(dimensions=array_dimension,
-                                               initializer=initializer)]
-
-        while self.try_accept(','):
-            declarator = self.parse_variable_declarator()
-            declarators.append(declarator)
-
-        return tree.FieldDeclaration(declarators=declarators)
 
     @parse_debug
     def parse_method_declarator_rest(self) -> tree.CXXMethodDecl:

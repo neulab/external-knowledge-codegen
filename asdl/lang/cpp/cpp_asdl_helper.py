@@ -62,7 +62,7 @@ def cpp_ast_to_asdl_ast(cpp_ast_node, grammar):
                 if not has_value:
                     asdl_field.init_empty()
             else:
-                for val in cpp_ast_node.get_children():
+                for val in cpp_ast_node.subnodes:
                     asdl_field.add_value(str(val))
         #else:
             #pass

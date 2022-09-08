@@ -261,7 +261,7 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # Statements
 
-    def visit_TRANSLATION_UNIT(self, node):
+    def visit_TranslationUnit(self, node):
         for c in node.subnodes:
             self.write(c)
 
@@ -349,32 +349,62 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_CXXRecordDecl(self, node: tree.CXXRecordDecl):
         assert node.name is not None
-        self.write("class ")
-        self.write(node.name)
-
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-#next(t for t in next(c for c in node.get_children()).get_tokens())
-        #if node.annotations:
-            #for annotation in node.annotations:
-                #self.write(annotation, " ")
-        #if node.modifiers:
-            #for modifier in node.modifiers:
-                #self.write(modifier, " ")
-        #if node.type_parameters is not None:
-            #self.write("< ")
-            #self.comma_list(node.type_parameters)
-            #self.write(" >")
-        #if node.extends:
-            #self.write(" extends ")
-            #self.write(node.extends)
-        #if node.implements:
-            #self.write(" implements ")
-            #self.comma_list(node.implements)
+        self.write(node.kind, " ", node.name)
+        if node.bases:
+            self.write(" : ", node.bases)
         self.write(" {", "\n")
         for c in node.subnodes:
             self.write(c)
         self.write("};")
+        self.newline(extra=1)
+
+    def visit_CXXConstructorDecl(self, node: tree.CXXConstructorDecl):
+        parameters = []
+        initializers = []
+        statements = []
+        for c in node.subnodes:
+            if c.__class__.__name__ == "ParmVarDecl":
+                parameters.append(c)
+            elif c.__class__.__name__ == "CXXCtorInitializer":
+                initializers.append(c)
+            else:
+                statements.append(c)
+        self.write(node.name)
+        self.write("(")
+        if parameters:
+            self.comma_list(parameters)
+        self.write(")")
+        if len(initializers) > 0:
+            self.write(" : ")
+            self.comma_list(initializers)
+        if len(statements) > 0:
+            #self.write(" {", "\n")
+            for c in statements:
+                self.write(c)
+            #self.write("}", "\n")
+        else:
+            self.write(";")
+        self.newline(extra=1)
+
+    def visit_CXXCtorInitializer(self, node: tree.CXXCtorInitializer):
+        self.write(node.name)
+        self.write("(")
+        self.write(node.subnodes[0])
+        self.write(")")
+
+    def visit_CXXDestructorDecl(self, node: tree.CXXDestructorDecl):
+        if node.virtual:
+            self.write("virtual", " ")
+        self.write(node.name)
+        self.write("(")
+        self.write(")")
+        if len(node.subnodes) > 0:
+            #self.write(" {", "\n")
+            for c in node.subnodes:
+                self.write(c)
+            #self.write("}", "\n")
+        else:
+            self.write(";")
         self.newline(extra=1)
 
     def visit_Namespace(self, node: tree.Namespace):
@@ -392,6 +422,8 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_ParmVarDecl(self, node: tree.ParmVarDecl):
         self.write(node.type, " ", node.name)
+        if node.subnodes is not None and len(node.subnodes) > 0:
+            self.write(" = ", node.subnodes[0])
 
     def visit_DeclStmt(self, node: tree.DeclStmt):
         self.write(node.subnodes[0], ";\n")
@@ -418,6 +450,12 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.type, " ", node.name)
         if node.subnodes is not None and len(node.subnodes) > 0:
             self.write(" = ", node.subnodes[0])
+
+    def visit_FieldDecl(self, node: tree.FieldDecl):
+        self.write(node.type, " ", node.name)
+        if node.subnodes is not None and len(node.subnodes) > 0:
+            self.write(" = ", node.subnodes[0])
+        self.write(";\n")
 
     def visit_TypeRef(self, node: tree.TypeRef):
         self.write(node.name)
@@ -496,18 +534,6 @@ class SourceGenerator(ExplicitNodeVisitor):
                 parameters.append(c)
             else:
                 statements.append(c)
-        #if node.documentation:
-            #self.write(node.documentation, "\n")
-        #if node.annotations:
-            #for annotation in node.annotations:
-                #self.write(annotation, " ")
-        #if node.modifiers:
-            #for modifier in node.modifiers:
-                #self.write(modifier, " ")
-        #if node.type_parameters is not None:
-            #self.write("< ")
-            #self.comma_list(node.type_parameters)
-            #self.write(" >")
         self.write(node.return_type, " ")
         self.write(node.name)
         self.write("(")

@@ -1,9 +1,9 @@
 ## ASDL's 4 builtin types are
 identifier, int, string, constant
 
-cu = TRANSLATION_UNIT(declaration* subnodes)
+cu = TranslationUnit(declaration* subnodes)
 
-declaration = CXXRecordDecl(identifier name, classbodyelt* subnodes)
+declaration = CXXRecordDecl(identifier name, identifier kind, identifier bases, classbodyelt* subnodes)
 
 classbodyelt = AccessSpecDecl(identifier access_spec)
       | CXXMethodDecl(string? documentation, identifier name, identifier return_type, statement* subnodes)
@@ -90,7 +90,11 @@ parameter = FormalParameter(annotation* annotations, fieldmodifier* modifiers, i
 
 statement = CompoundStmt(statement* subnodes)
       | DeclRefExpr(identifier name)
-      | ParmVarDecl(identifier name, identifier type)
+      | ParmVarDecl(identifier name, identifier type, statement* subnodes)
+      | FieldDecl(identifier name, identifier type, statement* subnodes)
+      | CXXConstructorDecl(identifier name, statement* subnodes)
+      | CXXCtorInitializer(identifier name, statement* subnodes)
+      | CXXDestructorDecl(identifier name, constant virtual, statement* subnodes)
       | IfStmt(statement* subnodes)
       | DeclStmt(declstmtsubnodes* subnodes)
       | ReturnStmt(statement* subnodes)

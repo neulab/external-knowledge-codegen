@@ -1,7 +1,7 @@
 import sys
 
 #from .parser import Parser
-from .clang_json_parser import Parser
+from .parser import Parser
 from .tokenizer import tokenize
 
 

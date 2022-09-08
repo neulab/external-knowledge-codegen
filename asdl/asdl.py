@@ -1,4 +1,5 @@
 # coding=utf-8
+import sys
 from collections import OrderedDict, Counter
 from itertools import chain
 
@@ -52,7 +53,12 @@ class ASDLGrammar(object):
             return self._productions[datum]
 
     def get_prod_by_ctr_name(self, name):
-        return self._constructor_production_map[name]
+        try:
+            return self._constructor_production_map[name]
+        except KeyError as e:
+            print(f"Error: there is no production named {name} in the ASDL grammar",
+                  file=sys.stderr)
+            sys.exit(1)
 
     @property
     def types(self):
