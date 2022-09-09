@@ -183,6 +183,14 @@ class FunctionDecl(Declaration):
     attrs = ("return_type", "name",)
 
 
+class ClassTemplateDecl(Declaration):
+    attrs = ()
+
+
+class TemplateTypeParmDecl(Declaration):
+    attrs = ("name",)
+
+
 class ParmVarDecl(Node):
     attrs = ("type", "name", "dimensions",)
 
@@ -243,68 +251,72 @@ class Statement(Node):
     attrs = ("label",)
 
 
-class LocalVariableDeclarationStatement(Statement):
+class LocalVariableDeclarationStmt(Statement):
     attrs = ("variable",)
 
 
-class TypeDeclarationStatement(Statement):
+class TypeDeclarationStmt(Statement):
     attrs = ("declaration",)
 
 
-class IfStatement(Statement):
-    attrs = ("condition", "then_statement", "else_statement")
+class IfStmt(Statement):
+    attrs = ()
 
 
-class WhileStatement(Statement):
+class WhileStmt(Statement):
     attrs = ("condition", "body")
 
 
-class DoStatement(Statement):
+class DoStmt(Statement):
     attrs = ("condition", "body")
 
 
-class ForStatement(Statement):
+class ForStmt(Statement):
     attrs = ("control", "body")
 
 
-class AssertStatement(Statement):
+class AssertStmt(Statement):
     attrs = ("condition", "value")
 
 
-class BreakStatement(Statement):
+class BreakStmt(Statement):
     attrs = ("goto",)
 
 
-class ContinueStatement(Statement):
+class ContinueStmt(Statement):
     attrs = ("goto",)
 
 
-class ThrowStatement(Statement):
+class ThrowStmt(Statement):
     attrs = ("expression",)
 
 
-class SynchronizedStatement(Statement):
+class SynchronizedStmt(Statement):
     attrs = ("lock", "block")
 
 
-class TryStatement(Statement):
+class TryStmt(Statement):
     attrs = ("resources", "block", "catches", "finally_block")
 
 
-class SwitchStatement(Statement):
-    attrs = ("expression", "cases")
+class SwitchStmt(Statement):
+    attrs = ()
 
 
-class BlockStatement(Statement):
+class BreakStmt(Statement):
+    attrs = ()
+
+
+class DefaultStmt(Statement):
+    attrs = ()
+
+
+class BlockStmt(Statement):
     attrs = ("statements",)
 
 
 # statemenents are the subnodes (from Node)
 class CompoundStmt(Statement):
-    attrs = ()
-
-
-class IfStmt(Statement):
     attrs = ()
 
 
@@ -342,7 +354,7 @@ class TypeRef(Node):
     #attrs = ("name",)
 
 
-class ExpressionStatement(Statement):
+class ExpressionStmt(Statement):
     attrs = ("expression",)
 
 
@@ -378,8 +390,8 @@ class CatchClauseParameter(NonEmptyDeclaration):
 # ------------------------------------------------------------------------------
 
 
-class SwitchStatementCase(Node):
-    attrs = ("case", "statements")
+class CaseStmt(Node):
+    attrs = ()
 
 
 class ForControl(Node):
@@ -433,6 +445,10 @@ class BinaryOperator(Node):
     attrs = ("opcode",)
 
 
+class UnaryOperator(Node):
+    attrs = ("opcode",)
+
+
 class MethodReference(Primary):
     attrs = ("expression", "method", "type_arguments")
 
@@ -467,8 +483,16 @@ class StringLiteral(Literal):
     attrs = ()
 
 
-class This(Primary):
+class CXXThisExpr(Primary):
     attrs = ()
+
+
+class MemberExpr(Primary):
+    attrs = ("name", )
+
+
+class ConstantExpr(Primary):
+    attrs = ("value",)
 
 
 class Cast(Primary):

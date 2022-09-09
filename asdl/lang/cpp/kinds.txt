@@ -4,18 +4,14 @@ AlignedAttr
 ArraySubscriptExpr
 AsmLabelAttr
 AtomicExpr
-BinaryOperator
-BreakStmt
 BuiltinType
 CallbackAttr
 CallExpr
-ClassTemplateDecl
 ClassTemplatePartialSpecializationDecl
 ClassTemplateSpecializationDecl
 CompoundAssignOperator
 ConditionalOperator
 ConstantArrayType
-ConstantExpr
 ConstAttr
 ContinueStmt
 CStyleCastExpr
@@ -39,7 +35,6 @@ CXXReinterpretCastExpr
 CXXScalarValueInitExpr
 CXXStaticCastExpr
 CXXTemporaryObjectExpr
-CXXThisExpr
 CXXThrowExpr
 CXXTryStmt
 CXXTypeidExpr
@@ -65,7 +60,6 @@ InitListExpr
 InjectedClassNameType
 LinkageSpecDecl
 LValueReferenceType
-MemberExpr
 MemberPointerType
 ModeAttr
 NonNullAttr
@@ -91,7 +85,6 @@ SubstTemplateTypeParmType
 TemplateArgument
 TemplateSpecializationType
 TemplateTemplateParmDecl
-TemplateTypeParmDecl
 TemplateTypeParmType
 TypeAliasDecl
 TypeAliasTemplateDecl
@@ -100,7 +93,6 @@ TypedefType
 TypeOfExprType
 TypeTraitExpr
 UnaryExprOrTypeTraitExpr
-UnaryOperator
 UnaryTransformType
 UnresolvedLookupExpr
 UnresolvedMemberExpr
