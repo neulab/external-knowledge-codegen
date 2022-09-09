@@ -98,8 +98,14 @@ class Parser(object):
     def __init__(self, cpp_code):
 
         p = subprocess.Popen(
-            ["clang", "-x", "c++", "-std=c++17", "-Xclang", "-ast-dump=json",
+            ["clang", "-x", "c++", "-std=c++17", "-fPIC",
+             "-I/usr/include/x86_64-linux-gnu/qt5",
+             "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+             "-I/home/gael/Projets/Lima/lima/lima_common/src/",
+             "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
+             "-Xclang", "-ast-dump=json",
              "-fsyntax-only", "-"],
+
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
@@ -107,6 +113,7 @@ class Parser(object):
         self.tu = json.loads(stdout_data)
         self.stack = []
         self.debug = False
+        self.source_code = cpp_code
 
 # ------------------------------------------------------------------------------
 # ---- Debug control ----
@@ -530,12 +537,24 @@ class Parser(object):
     def parse_VarDecl(self, node) -> tree.VarDecl:
         assert node['kind'] == "VarDecl"
         name = node['name']
-        var_type = node['type']['qualType']
+        if 'isInvalid' in node and node['isInvalid']:
+            splitted_type = self.source_code[
+                node['range']['begin']['offset']:node['range']['end']['offset']].strip().split(" ")
+            var_type, array_decl = splitted_type if len(splitted_type) == 2 else (node['type']['qualType'], "")
+        else:
+            splitted_type = node['type']['qualType'].split(" ")
+            var_type, array_decl = splitted_type if len(splitted_type) == 2 else (node['type']['qualType'], "")
         if 'init' in node:
             subnodes = self.parse_subnodes(node)
         else:
             subnodes = []
-        return tree.VarDecl(name=name, type=var_type, subnodes=subnodes)
+        return tree.VarDecl(name=name, type=var_type, array=array_decl, subnodes=subnodes)
+
+    @parse_debug
+    def parse_InitListExpr(self, node) -> tree.InitListExpr:
+        assert node['kind'] == "InitListExpr"
+        subnodes = self.parse_subnodes(node)
+        return tree.InitListExpr(subnodes=subnodes)
 
     @parse_debug
     def parse_TypeRef(self, node) -> tree.TypeRef:
@@ -624,12 +643,25 @@ class Parser(object):
         return tree.ClassTemplateDecl(subnodes=subnodes)
 
     @parse_debug
+    def parse_FunctionTemplateDecl(self, node) -> tree.FunctionTemplateDecl:
+        assert node['kind'] == "FunctionTemplateDecl"
+        subnodes = self.parse_subnodes(node)
+        return tree.FunctionTemplateDecl(subnodes=subnodes)
+
+    @parse_debug
     def parse_TemplateTypeParmDecl(self, node) -> tree.TemplateTypeParmDecl:
         assert node['kind'] == "TemplateTypeParmDecl"
         name = node['name']
         subnodes = self.parse_subnodes(node)
         return tree.TemplateTypeParmDecl(name=name, subnodes=subnodes)
 
+    @parse_debug
+    def parse_NonTypeTemplateParmDecl(self, node) -> tree.NonTypeTemplateParmDecl:
+        assert node['kind'] == "NonTypeTemplateParmDecl"
+        name = node['name']
+        the_type = node['type']['qualType']
+        subnodes = self.parse_subnodes(node)
+        return tree.NonTypeTemplateParmDecl(name=name, type=the_type, subnodes=subnodes)
 
 def parse(tokens, debug=False):
     parser = Parser(tokens)

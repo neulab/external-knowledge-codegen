@@ -168,6 +168,10 @@ class ElementValuePair(Node):
 class ElementArrayValue(Node):
     attrs = ("values",)
 
+
+class InitListExpr(Node):
+    attrs = ()
+
 # ------------------------------------------------------------------------------
 
 
@@ -187,8 +191,16 @@ class ClassTemplateDecl(Declaration):
     attrs = ()
 
 
+class FunctionTemplateDecl(Declaration):
+    attrs = ()
+
+
 class TemplateTypeParmDecl(Declaration):
     attrs = ("name",)
+
+
+class NonTypeTemplateParmDecl(Declaration):
+    attrs = ("name", "type")
 
 
 class ParmVarDecl(Node):
@@ -343,7 +355,7 @@ class DeclStmt(Node):
 
 
 class VarDecl(Node):
-    attrs = ("name", "type")
+    attrs = ("name", "type", "array")
 
 
 class TypeRef(Node):

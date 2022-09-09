@@ -261,9 +261,16 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     # Statements
 
-    def visit_TranslationUnit(self, node):
-        for c in node.subnodes:
-            self.write(c)
+    def visit_TranslationUnit(self, node: tree.TranslationUnit):
+        if node.subnodes is not None:
+            for c in node.subnodes:
+                self.write(c)
+
+    def visit_InitListExpr(self, node: tree.InitListExpr):
+        self.write("{")
+        self.comma_list(node.subnodes)
+        self.write("}")
+        self.newline(extra=1)
 
         #if node.package:
             #self.write(node.package)
@@ -379,7 +386,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.subnodes[0])
 
     def visit_VarDecl(self, node: tree.VarDecl):
-        self.write(node.type, " ", node.name)
+        self.write(node.type, " ", node.name, node.array)
         if node.subnodes is not None and len(node.subnodes) > 0:
             self.write(" = ", node.subnodes[0])
         self.conditional_write(";\n")
@@ -525,7 +532,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         parameters = []
         statements = []
         for c in node.subnodes:
-            if c.__class__.__name__ == "TemplateTypeParmDecl":
+            if c.__class__.__name__ in ["TemplateTypeParmDecl",
+                                        "NonTypeTemplateParmDecl"]:
                 parameters.append(c)
             else:
                 statements.append(c)
@@ -540,6 +548,25 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(";")
         self.newline(extra=1)
 
+    def visit_FunctionTemplateDecl(self, node: tree.FunctionTemplateDecl):
+        parameters = []
+        statements = []
+        for c in node.subnodes:
+            if c.__class__.__name__ in ["TemplateTypeParmDecl",
+                                        "NonTypeTemplateParmDecl"]:
+                parameters.append(c)
+            else:
+                statements.append(c)
+        self.write("template<")
+        if parameters:
+            self.comma_list(parameters)
+        self.write(">")
+        for c in statements:
+            self.write(c)
+        self.newline(extra=1)
+
     def visit_TemplateTypeParmDecl(self, node: tree.TemplateTypeParmDecl):
         self.write("typename", " ", node.name)
 
+    def visit_NonTypeTemplateParmDecl(self, node: tree.NonTypeTemplateParmDecl):
+        self.write(node.type, " ", node.name)

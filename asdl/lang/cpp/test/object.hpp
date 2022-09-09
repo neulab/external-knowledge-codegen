@@ -4,9 +4,11 @@
 // #include <iostream>
 // #include <string>
 //
+
+int tab[3] = {1,2,3};
 // namespace N {
 // template <typename T, typename S>
-class Object;
+// class Object;
 // {
 // public:
 //   Object(int i = 3) : m_i(i) {}
