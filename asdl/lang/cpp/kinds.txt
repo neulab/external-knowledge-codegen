@@ -151,3 +151,9 @@ TemplateTypeParmDecl
 InitListExpr
 FunctionTemplateDecl
 NonTypeTemplateParmDecl
+OverrideAttr
+Comment
+FullComment
+BlockCommandComment
+ParagraphComment
+TextComment

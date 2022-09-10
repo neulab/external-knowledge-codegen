@@ -12,8 +12,32 @@ class Import(Node):
     attrs = ("path", "static", "wildcard")
 
 
+class OverrideAttr(Node):
+    attrs = ()
+
+
 class Documented(Node):
     attrs = ("documentation",)
+
+
+class Comment(Node):
+    attrs = ("comment",)
+
+
+class FullComment(Comment):
+    attrs = ()
+
+
+class BlockCommandComment(Comment):
+    attrs = ()
+
+
+class ParagraphComment(Comment):
+    attrs = ()
+
+
+class TextComment(Comment):
+    attrs = ()
 
 
 class Declaration(Documented):

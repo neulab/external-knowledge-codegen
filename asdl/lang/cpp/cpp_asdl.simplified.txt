@@ -144,6 +144,8 @@ statement = CompoundStmt(statement* subnodes)
       | FunctionTemplateDecl(statement* subnodes)
       | TemplateTypeParmDecl(identifier name, statement* subnodes)
       | NonTypeTemplateParmDecl(identifier name, identifier type, statement* subnodes)
+      | FullComment(string comment)
+      | OverrideAttr
 
 
 

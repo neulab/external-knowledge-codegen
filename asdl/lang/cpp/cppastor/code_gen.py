@@ -394,7 +394,10 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_FieldDecl(self, node: tree.FieldDecl):
         self.write(node.type, " ", node.name)
         if node.subnodes is not None and len(node.subnodes) > 0:
-            self.write(" = ", node.subnodes[0], ";\n")
+            self.write(" = ", node.subnodes[0], ";")
+        else:
+            self.write(";")
+        self.newline(extra=1)
 
     def visit_TypeRef(self, node: tree.TypeRef):
         self.write(node.name)
@@ -402,29 +405,25 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_CXXMethodDecl(self, node: tree.CXXMethodDecl):
         parameters = []
         statements = []
+        comment = ""
         for c in node.subnodes:
             if c.__class__.__name__ == "ParmVarDecl":
                 parameters.append(c)
+            elif c.__class__.__name__ == "FullComment":
+                comment = c.comment
             else:
                 statements.append(c)
+        if len(comment) > 0:
+            self.write("/** ", comment, "*/\n")
         self.write(node.return_type, " ")
         self.write(node.name)
         self.write("(")
         if parameters:
             self.comma_list(parameters)
         self.write(")")
-        #if node.dimensions:
-            #for _ in node.dimensions:
-                #self.write("[]")
-        #if node.throws:
-            #self.write(" throws ")
-            #self.comma_list(node.throws)
-        #self.write(" ")
         if len(statements) > 0:
-            #self.write(" {", "\n")
             for c in statements:
                 self.write(c)
-            #self.write("}", "\n")
         else:
             self.write(";")
         self.newline(extra=1)
@@ -570,3 +569,11 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_NonTypeTemplateParmDecl(self, node: tree.NonTypeTemplateParmDecl):
         self.write(node.type, " ", node.name)
+
+    def visit_FullComment(self, node: tree.FullComment):
+        self.write("/** ", node.comment, "*/")
+
+    def visit_OverrideAttr(self, node: tree.OverrideAttr):
+        self.write(" ", "override", ";")
+        self.newline(extra=1)
+

@@ -7,7 +7,7 @@
   * @file       xmlConfigurationFileHandler.h
   * @brief      originally in detectlibraries
   * @date       begin Mon Oct, 13 2003 (ven oct 18 2002)
-  * @author     Gael de Chalendar <Gael.de-Chalendar@cea.fr> 
+  * @author     Gael de Chalendar <Gael.de-Chalendar@cea.fr>
 
   *             copyright (C) 2002-2003 by CEA
   */
@@ -42,7 +42,7 @@ public:
     bool error(const QXmlParseException& e) override;
     bool fatalError(const QXmlParseException& e) override;
     bool warning(const QXmlParseException& e) override;
-    
+
     // -----------------------------------------------------------------------
     //  Implementations of the SAX DocumentHandler interface
     // -----------------------------------------------------------------------
@@ -57,7 +57,7 @@ private:
     std::string m_groupName;
     std::string m_listName;
     std::string m_mapName;
-    
+
     // bools to handle items with attributes
     bool m_firstItem;
     bool m_itemWithAttributes;

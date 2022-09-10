@@ -96,7 +96,19 @@ class Parser(object):
                             set(('*', '/', '%'))]
 
     def __init__(self, cpp_code):
+        preprocess = subprocess.Popen(
+            ["clang", "-x", "c++", "-std=c++17", "-fPIC",
+             "-I/usr/include/x86_64-linux-gnu/qt5",
+             "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+             "-I/home/gael/Projets/Lima/lima/lima_common/src/",
+             "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
+             "-E", "-"],
 
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        preprocess_stdout_data, preprocess_stderr_data = preprocess.communicate(
+            input=cpp_code.encode())
         p = subprocess.Popen(
             ["clang", "-x", "c++", "-std=c++17", "-fPIC",
              "-I/usr/include/x86_64-linux-gnu/qt5",
@@ -109,11 +121,11 @@ class Parser(object):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        stdout_data, stderr_data = p.communicate(input=cpp_code.encode())
-        self.tu = json.loads(stdout_data)
+        stdout_data, stderr_data = p.communicate(input=preprocess_stdout_data)
+        self.tu = json.loads(stdout_data.decode())
         self.stack = []
         self.debug = False
-        self.source_code = cpp_code
+        self.source_code = preprocess_stdout_data.decode()
 
 # ------------------------------------------------------------------------------
 # ---- Debug control ----
@@ -246,6 +258,11 @@ class Parser(object):
             return [c for c in result if c is not None]
         else:
             return []
+
+    def collect_comment(self, node) -> str:
+        if node['kind'] == 'TextComment':
+            return node['text']
+        return " ".join([self.collect_comment(subnode) for subnode in node['inner']])
 
 # ------------------------------------------------------------------------------
 # ---- Parsing methods ----
@@ -408,7 +425,7 @@ class Parser(object):
     def parse_ParmVarDecl(self, node) -> tree.ParmVarDecl:
         assert node['kind'] == "ParmVarDecl"
         name = node['name']
-        var_type = node['type']['qualType']
+        var_type = self.source_code[node['range']['begin']['offset']:node['range']['end']['offset']].strip()
         subnodes = self.parse_subnodes(node)
         return tree.ParmVarDecl(name=name, type=var_type, subnodes=subnodes)
 
@@ -537,13 +554,9 @@ class Parser(object):
     def parse_VarDecl(self, node) -> tree.VarDecl:
         assert node['kind'] == "VarDecl"
         name = node['name']
-        if 'isInvalid' in node and node['isInvalid']:
-            splitted_type = self.source_code[
-                node['range']['begin']['offset']:node['range']['end']['offset']].strip().split(" ")
-            var_type, array_decl = splitted_type if len(splitted_type) == 2 else (node['type']['qualType'], "")
-        else:
-            splitted_type = node['type']['qualType'].split(" ")
-            var_type, array_decl = splitted_type if len(splitted_type) == 2 else (node['type']['qualType'], "")
+        splitted_type = self.source_code[
+            node['range']['begin']['offset']:node['range']['end']['offset']].strip().split(" ")
+        var_type, array_decl = splitted_type if len(splitted_type) == 2 else (splitted_type[0], "")
         if 'init' in node:
             subnodes = self.parse_subnodes(node)
         else:
@@ -609,7 +622,9 @@ class Parser(object):
     def parse_FieldDecl(self, node) -> tree.FieldDecl:
         assert node['kind'] == "FieldDecl"
         name = node['name']
-        var_type = node['type']['qualType']
+        splitted_type = self.source_code[node['range']['begin']['offset']:node['range']['end']['offset']].strip().split(" ")
+        var_type, array_decl = splitted_type if len(splitted_type) == 2 else (splitted_type[0], "")
+        #var_type = node['type']['qualType']
         if 'hasInClassInitializer' in node:
             subnodes = self.parse_subnodes(node)
         else:
@@ -662,6 +677,17 @@ class Parser(object):
         the_type = node['type']['qualType']
         subnodes = self.parse_subnodes(node)
         return tree.NonTypeTemplateParmDecl(name=name, type=the_type, subnodes=subnodes)
+
+    @parse_debug
+    def parse_FullComment(self, node) -> tree.FullComment:
+        assert node['kind'] == "FullComment"
+        comment = self.collect_comment(node)
+        return tree.FullComment(comment=comment)
+
+    @parse_debug
+    def parse_OverrideAttr(self, node) -> tree.OverrideAttr:
+        assert node['kind'] == "OverrideAttr"
+        return tree.OverrideAttr()
 
 def parse(tokens, debug=False):
     parser = Parser(tokens)

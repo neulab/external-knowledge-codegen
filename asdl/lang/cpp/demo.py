@@ -4,6 +4,7 @@ import argparse
 import colorama
 import os
 import re
+import subprocess
 import sys
 from typing import List
 
@@ -107,8 +108,33 @@ def common_prefix(str1: str, str2: str) -> None:
           file=sys.stderr)
 
 
-def test(cpp_code, check_hypothesis=False, fail_on_error=False, member=False,
+def preprocess_code(cpp_code):
+    preprocess = subprocess.Popen(
+        ["clang", "-x", "c++", "-std=c++17", "-fPIC",
+            "-I/usr/include/x86_64-linux-gnu/qt5",
+            "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+            "-I/home/gael/Projets/Lima/lima/lima_common/src/",
+            "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
+            "-E", "-"],
+
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+    preprocess_stdout_data, preprocess_stderr_data = preprocess.communicate(
+        input=cpp_code.encode())
+    preprocessed_code = preprocess_stdout_data.decode()
+    lines = preprocessed_code.split('\n')
+    first_line = -1
+    for i, line in enumerate(reversed(lines)):
+        if "<stdin>" in line:
+            first_line = i
+            break
+    assert first_line != -1
+    return "\n".join(lines[len(lines)-first_line:])
+
+def test(cpp_code, filepath, check_hypothesis=False, fail_on_error=False, member=False,
          debug=False):
+
     # get the (domain-specific) cpp AST of the example Cpp code snippet
     if debug:
         print(f'Cpp code: \n{cpp_code}')
@@ -133,7 +159,7 @@ def test(cpp_code, check_hypothesis=False, fail_on_error=False, member=False,
     # get the surface code snippets from the original Python AST,
     # the reconstructed AST and the AST generated using actions
     # they should be the same
-    src0 = removeComments(cpp_code)
+    src0 = removeComments(preprocess_code(cpp_code))
     simp0 = simplify(src0)
     src1 = removeComments(cppastor.to_source(cpp_ast))
     simp1 = simplify(src1)
@@ -229,6 +255,7 @@ def test_filepath(filepath: str,
                   total: int = 0,
                   debug: bool = False):
     if (filepath.endswith(".cpp") or filepath.endswith(".cc") or filepath.endswith(".h")
+            or filepath.endswith(".i") or filepath.endswith(".ii")
             or filepath.endswith(".hpp")):
         cprint(bcolors.ENDC,
                f"\n−−−−−−−−−−\nTesting Cpp file {number:5d}/{total:5d} "
@@ -237,7 +264,7 @@ def test_filepath(filepath: str,
         with open(filepath, "r") as f:
             try:
                 cpp = f.read()
-                if not test(cpp, check_hypothesis=check_hypothesis,
+                if not test(cpp, filepath, check_hypothesis=check_hypothesis,
                             fail_on_error=fail_on_error, member=member,
                             debug=debug):
                     cprint(bcolors.RED,
