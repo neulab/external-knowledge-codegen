@@ -303,7 +303,8 @@ class SourceGenerator(ExplicitNodeVisitor):
             if c.__class__.__name__ == "ParmVarDecl":
                 parameters.append(c)
             elif c.__class__.__name__ == "CXXCtorInitializer":
-                initializers.append(c)
+                if c.subnodes is not None and len(c.subnodes) > 0:
+                    initializers.append(c)
             else:
                 statements.append(c)
         self.write(node.name)
@@ -323,11 +324,17 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(";")
         self.newline(extra=1)
 
+    def visit_CXXConstructExpr(self, node: tree.CXXConstructExpr):
+        if node.subnodes is not None and len(node.subnodes) > 0:
+            self.write(node.subnodes[0])
+
     def visit_CXXCtorInitializer(self, node: tree.CXXCtorInitializer):
         self.write(node.name)
-        self.write("(")
-        self.write(node.subnodes[0])
-        self.write(")")
+        self.write('(')
+        self.comma_list(node.subnodes)
+        self.write(')')
+        #if node.subnodes is not None and len(node.subnodes) > 0:
+            #self.write(node.subnodes[0])
 
     def visit_CXXDestructorDecl(self, node: tree.CXXDestructorDecl):
         if node.virtual == 'virtual':
@@ -369,12 +376,19 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_ExprWithCleanups(self, node: tree.ExprWithCleanups):
         self.write(node.subnodes[0])
-
-    def visit_CXXConstructExpr(self, node: tree.CXXConstructExpr):
-        self.write(node.subnodes[0])
+        #breakpoint()
+        #if len(self.stack) > 1 and self.stack[-2] == 'CompoundStmt':
+            #self.write(";")
 
     def visit_DeclRefExpr(self, node: tree.DeclRefExpr):
+        if node.name.startswith("operator"):
+            self.write(node.name.replace("operator", "", 1))
+            return
         self.write(node.name)
+        if node.kind == "CXXMethodDecl":
+            self.write("(")
+            self.comma_list(node.subnodes)
+            self.write(")")
 
     def visit_MaterializeTemporaryExpr(self, node: tree.MaterializeTemporaryExpr):
         self.write(node.subnodes[0])
@@ -386,10 +400,15 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.subnodes[0])
 
     def visit_VarDecl(self, node: tree.VarDecl):
+        if len(node.storage_class) > 0:
+            self.write(node.storage_class, " ")
         self.write(node.type, " ", node.name, node.array)
         if node.subnodes is not None and len(node.subnodes) > 0:
-            self.write(" = ", node.subnodes[0])
-        self.conditional_write(";\n")
+            if node.init == 'call':
+                self.write("(", node.subnodes[0], ")")
+            else:
+                self.write(" = ", node.subnodes[0])
+        self.conditional_write(";")
 
     def visit_FieldDecl(self, node: tree.FieldDecl):
         self.write(node.type, " ", node.name)
@@ -469,7 +488,10 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.subnodes[1])
 
     def visit_UnaryOperator(self, node: tree.UnaryOperator):
-        self.write(node.opcode, node.subnodes[0])
+        if node.postfix == "True":
+            self.write(node.subnodes[0], node.opcode)
+        else:
+            self.write(node.opcode, node.subnodes[0])
 
     def visit_DeclStmt(self, node: tree.DeclStmt):
         self.write(node.subnodes[0])
@@ -480,6 +502,9 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(node.label, ": ", "\n")
         self.write("return ", node.subnodes[0], ";\n")
 
+    def visit_NullStmt(self, node: tree.NullStmt):
+        self.write(";")
+
     def visit_IfStmt(self, node: tree.IfStmt):
         if node.label:
             self.write(node.label, ": ", "\n")
@@ -489,6 +514,9 @@ class SourceGenerator(ExplicitNodeVisitor):
             #self.write(";\n")
         if len(node.subnodes) > 2:
             self.write("else ", node.subnodes[2])
+            if node.subnodes[2].__class__.__name__ not in ["CompoundStmt", "IfStmt"]:
+                self.conditional_write(";")
+                self.newline(extra=1)
 
     # BlockStatement(identifier? label, statement* statements)
     def visit_CompoundStmt(self, node: tree.CompoundStmt):
@@ -498,9 +526,13 @@ class SourceGenerator(ExplicitNodeVisitor):
         if node.subnodes is not None:
             for statement in node.subnodes:
                 self.write(statement)
-                if isinstance(statement, tree.BinaryOperator):
+                if (isinstance(statement, tree.BinaryOperator)
+                        or isinstance(statement, tree.ExprWithCleanups)
+                        or isinstance(statement, tree.CXXOperatorCallExpr)
+                        or isinstance(statement, tree.CXXMemberCallExpr)):
                     self.write(";\n")
-        self.write("}", "\n")
+        self.write("}")
+        self.newline(extra=1)
 
     # prefix_operators, "postfix_operators", "qualifier", "selectors
     def visit_ParenExpr(self, node: tree.ParenExpr):
@@ -519,7 +551,15 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("break;\n")
 
     def visit_MemberExpr(self, node: tree.MemberExpr):
+        if (len(node.subnodes) > 0
+                and node.subnodes[0].__class__.__name__ in ['DeclRefExpr',
+                                                            'ImplicitCastExpr',
+                                                            'MaterializeTemporaryExpr',
+                                                            'MemberExpr']):
+            self.write(node.subnodes[0], ".")
         self.write(node.name)
+        if len(node.subnodes) > 1:
+            breakpoint()
 
     def visit_ConstantExpr(self, node: tree.ConstantExpr):
         self.write(node.value)
@@ -576,4 +616,46 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_OverrideAttr(self, node: tree.OverrideAttr):
         self.write(" ", "override", ";")
         self.newline(extra=1)
+
+    def visit_CXXMemberCallExpr(self, node: tree.CXXMemberCallExpr):
+        self.write(node.subnodes[0], "(")
+        self.comma_list(node.subnodes[1:])
+        self.write(")")
+        #if len(node.subnodes) > 1:
+            #self.write(node.subnodes[0], "(", node.subnodes[1], ")")
+        #else:
+            #self.write(node.subnodes[0])
+
+    def visit_CallExpr(self, node: tree.CallExpr):
+        self.write(node.subnodes[0])
+        if len(node.subnodes) > 1:
+            self.write("(")
+            self.comma_list(node.subnodes[1:])
+            self.write(")")
+
+    def visit_CXXOperatorCallExpr(self, node: tree.CXXOperatorCallExpr):
+        self.write(node.left, " ", node.op, " ", node.right)
+
+    def visit_CXXBoolLiteralExpr(self, node: tree.CXXBoolLiteralExpr):
+        self.write("true" if node.value == "True" else "false")
+
+    def visit_CXXFunctionalCastExpr(self, node: tree.CXXFunctionalCastExpr):
+        self.write(node.type, "(", node.subnodes[0], ")")
+
+    def visit_CXXTemporaryObjectExpr(self, node: tree.CXXTemporaryObjectExpr):
+        self.write(node.type, "(")
+        self.comma_list(node.subnodes)
+        self.write(")")
+
+    def visit_ForStmt(self, node: tree.ForStmt):
+        self.write("for (", node.subnodes[0])
+        if not self.result[-1].strip().endswith(";"):
+            self.write("; ")
+        self.write(node.subnodes[1], "; ",
+                   node.subnodes[2], ")\n", node.subnodes[3])
+
+    def visit_ContinueStmt(self, node: tree.ContinueStmt):
+        self.write("continue;")
+        self.newline(extra=1)
+
 

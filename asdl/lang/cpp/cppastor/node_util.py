@@ -141,6 +141,9 @@ class ExplicitNodeVisitor(object):
 
     """
 
+    #def __init__(self):
+        #self.stack = []
+
     def abort_visit(node):  # XXX: self?
         msg = (f"No defined visitor for node of type {node.__class__.__name__}\n"
                f"please define 'visit_{node.__class__.__name__}' "
@@ -151,8 +154,11 @@ class ExplicitNodeVisitor(object):
         """Visit a node."""
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, abort)
-        print(f"visiting {method}", file=sys.stderr)
+        print(f"node_util.visit {method}", file=sys.stderr)
+        #self.stack.append(node.__class__.__name__)
         return visitor(node)
+        #self.stack.pop()
+        #return result
 
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""

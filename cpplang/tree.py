@@ -299,6 +299,14 @@ class IfStmt(Statement):
     attrs = ()
 
 
+class ForStmt(Statement):
+    attrs = ()
+
+
+class ContinueStmt(Statement):
+    attrs = ()
+
+
 class WhileStmt(Statement):
     attrs = ("condition", "body")
 
@@ -361,7 +369,7 @@ class ReturnStmt(Statement):
 
 
 class DeclRefExpr(Node):
-    attrs = ("name",)
+    attrs = ("name", "kind",)
 
 
 class NamespaceDecl(Node):
@@ -379,7 +387,7 @@ class DeclStmt(Node):
 
 
 class VarDecl(Node):
-    attrs = ("name", "type", "array")
+    attrs = ("name", "type", "array", "storage_class", "init",)
 
 
 class TypeRef(Node):
@@ -398,7 +406,7 @@ class ExprWithCleanups(Node):
     attrs = ()
 
 class CXXConstructExpr(Node):
-    attrs = ()
+    attrs = ("type",)
 
 class MaterializeTemporaryExpr(Node):
     attrs = ()
@@ -482,7 +490,7 @@ class BinaryOperator(Node):
 
 
 class UnaryOperator(Node):
-    attrs = ("opcode",)
+    attrs = ("opcode", "postfix",)
 
 
 class MethodReference(Primary):
@@ -529,6 +537,34 @@ class MemberExpr(Primary):
 
 class ConstantExpr(Primary):
     attrs = ("value",)
+
+
+class CXXMemberCallExpr(Primary):
+    attrs = ()
+
+
+class CallExpr(Primary):
+    attrs = ()
+
+
+class CXXOperatorCallExpr(Primary):
+    attrs = ("left", "op", "right",)
+
+
+class CXXBoolLiteralExpr(Primary):
+    attrs = ("value",)
+
+
+class CXXTemporaryObjectExpr(Node):
+    attrs = ("type",)
+
+
+class CXXFunctionalCastExpr(Node):
+    attrs = ("type",)
+
+
+class NullStmt(Node):
+    attrs = ()
 
 
 class Cast(Primary):
