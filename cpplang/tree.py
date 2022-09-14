@@ -665,3 +665,6 @@ class EmptyDecl(Node):
 
 class CStyleCastExpr(Node):
     attrs = ("type",)
+
+class FriendDecl(Node):
+    attrs = ("type",)

@@ -41,7 +41,6 @@ DoStmt
 ElaboratedType
 EnumType
 FormatAttr
-FriendDecl
 FunctionProtoType
 GNUNullExpr
 IndirectFieldDecl
@@ -133,6 +132,7 @@ ExprWithCleanups
 FieldDecl
 FloatingLiteral
 ForStmt
+FriendDecl
 FullComment
 FunctionDecl
 FunctionTemplateDecl

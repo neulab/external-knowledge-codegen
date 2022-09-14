@@ -462,7 +462,8 @@ class Parser(object):
         the_type = node['type']['qualType']
         try:
             i = the_type.index('noexcept')
-            noexcept = the_type[i:]
+            if 'noexcept' in self.get_node_source_code(node):
+                noexcept = the_type[i:]
         except Exception as _:
             pass
         if len(noexcept) == 0:
@@ -960,6 +961,13 @@ class Parser(object):
         the_type = self.get_node_source_code(node)
         subnodes = self.parse_subnodes(node)
         return tree.CStyleCastExpr(type=the_type, subnodes=subnodes)
+
+    @parse_debug
+    def parse_FriendDecl(self, node) -> tree.FriendDecl:
+        assert node['kind'] == "FriendDecl"
+        the_type = node['type']['qualType']
+        #subnodes = self.parse_subnodes(node)
+        return tree.FriendDecl(type=the_type)
 
 
 def parse(tokens, debug=False):

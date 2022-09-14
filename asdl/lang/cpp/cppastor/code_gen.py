@@ -301,14 +301,15 @@ class SourceGenerator(ExplicitNodeVisitor):
         parameters = []
         initializers = []
         statements = []
-        for c in node.subnodes:
-            if c.__class__.__name__ == "ParmVarDecl":
-                parameters.append(c)
-            elif c.__class__.__name__ == "CXXCtorInitializer":
-                if c.subnodes is not None and len(c.subnodes) > 0:
-                    initializers.append(c)
-            else:
-                statements.append(c)
+        if node.subnodes is not None:
+            for c in node.subnodes:
+                if c.__class__.__name__ == "ParmVarDecl":
+                    parameters.append(c)
+                elif c.__class__.__name__ == "CXXCtorInitializer":
+                    if c.subnodes is not None and len(c.subnodes) > 0:
+                        initializers.append(c)
+                else:
+                    statements.append(c)
         self.write(node.name)
         self.write("(")
         if parameters:
@@ -705,4 +706,8 @@ class SourceGenerator(ExplicitNodeVisitor):
 
     def visit_CXXThisExpr(self, node: tree.CXXThisExpr):
         self.write("this")
+
+    def visit_FriendDecl(self, node: tree.FriendDecl):
+        self.write("friend ", node.type, ";")
+        self.newline(extra=1)
 
