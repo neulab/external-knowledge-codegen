@@ -24,6 +24,8 @@ from cpplang.ast import Node
 import itertools
 import sys
 
+ENABLE_DEBUG_SUPPORT = False
+
 try:
     zip_longest = itertools.zip_longest
 except AttributeError:
@@ -152,9 +154,11 @@ class ExplicitNodeVisitor(object):
 
     def visit(self, node, abort=abort_visit):
         """Visit a node."""
+        global ENABLE_DEBUG_SUPPORT
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, abort)
-        print(f"node_util.visit {method}", file=sys.stderr)
+        if ENABLE_DEBUG_SUPPORT:
+            print(f"node_util.visit {method}", file=sys.stderr)
         #self.stack.append(node.__class__.__name__)
         return visitor(node)
         #self.stack.pop()

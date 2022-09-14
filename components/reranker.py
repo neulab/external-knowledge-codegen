@@ -5,7 +5,6 @@ import math
 import itertools
 import re
 import sys, os
-import six
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -21,10 +20,7 @@ from datasets.concode import evaluator as concode_evaluator
 from model import utils
 from components.dataset import Example
 
-if six.PY3:
-    from asdl import Python3TransitionSystem
-else:
-    from asdl import PythonTransitionSystem
+from asdl import Python3TransitionSystem
 
 import xgboost as xgb
 
@@ -135,13 +131,6 @@ class HypCodeTokensCount(RerankingFeature):
             return float(len(code_tokens))
         # else:
         #     return len(hyp.actions)
-        elif six.PY2 and isinstance(kwargs['transition_system'], PythonTransitionSystem):
-            code_tokens = [c.replace('\r\n', '#NEWLINE#').replace('\r', '#NEWLINE#').replace('\n', '#NEWLINE#')
-                           for c in kwargs['transition_system'].tokenize_code(hyp.code)]
-            # remove consecutive spaces
-            code_tokens = re.sub(r'\s+', ' ', ' '.join(code_tokens)).strip().split(' ')
-            code_tokens = list(filter(lambda x: len(x) > 0, code_tokens))
-            return float(len(code_tokens))
 
         return len(kwargs['transition_system'].tokenize_code(hyp.code))
 

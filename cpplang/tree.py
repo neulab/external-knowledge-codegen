@@ -80,7 +80,7 @@ class CXXRecordDecl(TypeDeclaration):
 
 
 class CXXConstructorDecl(Node):
-    attrs = ("name",)
+    attrs = ("name", "noexcept", "default",)
 
 
 class CXXCtorInitializer(Node):
@@ -88,7 +88,7 @@ class CXXCtorInitializer(Node):
 
 
 class CXXDestructorDecl(Node):
-    attrs = ("name", "virtual",)
+    attrs = ("name", "virtual", "default", "noexcept",)
 
 
 class AccessSpecDecl(Node):
@@ -204,7 +204,7 @@ class Member(NonEmptyDeclaration):
 
 
 class CXXMethodDecl(Declaration):
-    attrs = ("return_type", "name",)
+    attrs = ("virtual", "return_type", "name", "noexcept", "const", "default",)
 
 
 class FunctionDecl(Declaration):
@@ -238,9 +238,6 @@ class ParmVarDecl(Node):
 class FieldDecl(Node):
     attrs = ("type", "name", "dimensions",)
 
-
-class ConstructorDeclaration(NonEmptyDeclaration):
-    attrs = ("type_parameters", "name", "parameters", "throws", "body",)
 
 # ------------------------------------------------------------------------------
 
@@ -532,7 +529,7 @@ class CXXThisExpr(Primary):
 
 
 class MemberExpr(Primary):
-    attrs = ("name", )
+    attrs = ("name", "op",)
 
 
 class ConstantExpr(Primary):
@@ -640,17 +637,31 @@ class ClassBody(Node):
 class EmptyClassBody(Node):
     attrs = ()
 
+
+class ImplicitValueInitExpr(Node):
+    attrs = ()
+
+
+class CXXConversionDecl(Node):
+    attrs = ("name",)
+
 # ------------------------------------------------------------------------------
 
 
-class EnumBody(Node):
-    attrs = ("constants", "separator", "declarations", "comma")
+class EnumConstantDecl(Node):
+    attrs = ("name", )
 
 
-class EnumConstantDeclaration(NonEmptyDeclaration):
-    attrs = ("name", "arguments", "body")
+class EnumDecl(Node):
+    attrs = ("name",)
 
 
 class AnnotationMethod(NonEmptyDeclaration):
     attrs = ("name", "return_type", "dimensions", "default")
 
+
+class EmptyDecl(Node):
+    attrs = ()
+
+class CStyleCastExpr(Node):
+    attrs = ("type",)

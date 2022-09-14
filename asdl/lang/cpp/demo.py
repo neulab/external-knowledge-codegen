@@ -124,13 +124,16 @@ def preprocess_code(cpp_code):
         input=cpp_code.encode())
     preprocessed_code = preprocess_stdout_data.decode()
     lines = preprocessed_code.split('\n')
-    first_line = -1
-    for i, line in enumerate(reversed(lines)):
-        if "<stdin>" in line:
-            first_line = i
-            break
-    assert first_line != -1
-    return "\n".join(lines[len(lines)-first_line:])
+    lines_in = []
+    in_stdin = False
+    for i, line in enumerate(lines):
+        if line.startswith("#") and "<stdin>" in line:
+            in_stdin = True
+        elif line.startswith("#"):
+            in_stdin = False
+        elif in_stdin:
+            lines_in.append(line)
+    return "\n".join(lines_in)
 
 def test(cpp_code, filepath, check_hypothesis=False, fail_on_error=False, member=False,
          debug=False):
@@ -141,7 +144,7 @@ def test(cpp_code, filepath, check_hypothesis=False, fail_on_error=False, member
     if member:
         cpp_ast = cpplang.parse.parse_member_declaration(cpp_code)
     else:
-        cpp_ast = cpplang.parse.parse(cpp_code)
+        cpp_ast = cpplang.parse.parse(cpp_code, debug=debug)
     # convert the cpp AST into general-purpose ASDL AST used by tranX
     asdl_ast = cpp_ast_to_asdl_ast(cpp_ast, grammar)
     if debug:
@@ -304,7 +307,7 @@ def collect_files(dir: str) -> int:
     return res
 
 
-def load_exclusions(exclusions_file: str) -> List[str]:
+def load_exclusions(exclusions_file: str, debug: bool = False) -> List[str]:
     exclusions = []
     if exclusions_file:
         with open(exclusions_file, 'r') as ex:
@@ -312,7 +315,8 @@ def load_exclusions(exclusions_file: str) -> List[str]:
                 exclusion = exclusion.strip()
                 if exclusion and exclusion[0] != '#':
                     exclusions.append(exclusion)
-    print(f"loaded exclusions are: {exclusions}", file=sys.stderr)
+    if debug:
+        print(f"loaded exclusions are: {exclusions}", file=sys.stderr)
     return exclusions
 
 
@@ -356,41 +360,11 @@ if __name__ == '__main__':
     fail_on_error = args.fail_on_error
     check_hypothesis = args.check_hypothesis
     exclusions = args.exclude
-    exclusions.extend(load_exclusions(args.exclusions))
+    exclusions.extend(load_exclusions(args.exclusions, debug=args.debug))
     nb_ok = 0
     nb_ko = 0
     filepaths = [
         "test.cpp"
-        # "test/test_sourcecode/com/github/cppparser/printer/CppConcepts.cpp"
-        # "test/Test.cpp",
-        # "test/Final.cpp",
-        # "test/ComplexGeneric.cpp",
-        # "test/DiamondCall.cpp",
-        # "test/AnnotationCppdoc.cpp",
-        # "test/Implements.cpp",
-        # "test/Wildcard.cpp",
-        # "test/CallOnCast.cpp",
-        # "test/cpp/com/github/cppparser/VisitorTest.cpp",
-        # "test/test_sourcecode/com/github/cppparser/printer/CppConcepts.cpp",
-        # "test/test_sourcecode/cppsymbolsolver_0_6_0/src/cpp-symbol-solver-core/com/github/cppparser/symbolsolver/SourceFileInfoExtractor.cpp",
-        # "test/cpp/com/github/cppparser/SlowTest.cpp",
-        # "test/cpp/com/github/cppparser/symbolsolver/Issue3038Test.cpp",
-        # "test/test_sourcecode/cppparser_new_src/cppparser-generated-sources/com/github/cppparser/ASTParser.cpp",
-        # "test/resources/issue1599/A.cpp",
-        # "test/resources/issue241/TypeWithMemberType.cpp",
-        # "test/resources/cppssist_symbols/main_jar/src/com/github/cppparser/cppsymbolsolver/cppssist_symbols/main_jar/EnumInterfaceUserOwnJar.cpp",
-        # "test/ParameterizedCall.cpp",
-        # "test/test_sourcecode/cppsymbolsolver_0_6_0/src/cpp-symbol-solver-core/com/github/cppparser/symbolsolver/cppparsermodel/DefaultVisitorAdapter.cpp",
-        # "test/resources/issue2366/Test.cpp",
-        # "test/resources/recursion-issue/Base.cpp",
-        # "test/resources/issue1868/B.cpp",
-        # "test/resources/issue1574/BlockComment.cpp",
-        # "test/resources/issue1574/ClassWithOrphanComments.cpp",
-        # "test/resources/TypeResolutionWithSameNameTest/02_ignore_static_non_type_import/another/MyEnum.cpp",
-        # "test/resources/cppssist_generics/cppparser/GenericClass.cpp",
-        # "test/resources/com/github/cppparser/samples/CppConcepts.cpp",
-        # "test/test_sourcecode/cppsymbolsolver_0_6_0/src/cpp-symbol-solver-core/com/github/cppparser/symbolsolver/cppparsermodel/TypeExtractor.cpp",
-        # "test/test_sourcecode/cppsymbolsolver_0_6_0/src/cpp-symbol-solver-core/com/github/cppparser/symbolsolver/cppparsermodel/declarations/CppParserAnonymousClassDeclaration.cpp",
     ]
     test_num = 0
 
@@ -401,7 +375,8 @@ if __name__ == '__main__':
         files = args.file
     else:
         files = collect_files(args.dir)
-    print(files)
+    if args.debug:
+        print(files)
     total = len(files)
     for filepath in files:
         test_num += 1

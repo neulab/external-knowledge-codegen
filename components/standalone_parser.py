@@ -2,8 +2,6 @@ from __future__ import print_function
 
 import sys
 
-import six
-
 from common.registerable import Registrable
 from components.reranker import GridSearchReranker
 from components.dataset import Example
@@ -11,9 +9,6 @@ from model.parser import Parser
 from model.reconstruction_model import Reconstructor
 from model.paraphrase import ParaphraseIdentificationModel
 from datasets.conala import example_processor
-
-if six.PY3:
-    pass
 
 
 class StandaloneParser(object):

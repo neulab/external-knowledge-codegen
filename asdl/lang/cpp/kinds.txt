@@ -13,11 +13,9 @@ CompoundAssignOperator
 ConditionalOperator
 ConstantArrayType
 ConstAttr
-CStyleCastExpr
 CXX11NoReturnAttr
 CXXCatchStmt
 CXXConstCastExpr
-CXXConversionDecl
 CXXDefaultArgExpr
 CXXDeleteExpr
 CXXDependentScopeMemberExpr
@@ -29,6 +27,7 @@ CXXPseudoDestructorExpr
 CXXReinterpretCastExpr
 CXXScalarValueInitExpr
 CXXStaticCastExpr
+CXXThisExpr
 CXXThrowExpr
 CXXTryStmt
 CXXTypeidExpr
@@ -40,8 +39,6 @@ DependentTemplateSpecializationType
 DeprecatedAttr
 DoStmt
 ElaboratedType
-EnumConstantDecl
-EnumDecl
 EnumType
 FormatAttr
 FriendDecl
@@ -112,12 +109,15 @@ Comment
 CompoundStmt
 ConstantExpr
 ContinueStmt
+CStyleCastExpr
 CXXBindTemporaryExpr
 CXXBoolLiteralExpr
 CXXConstructExpr
 CXXConstructorDecl
+CXXConversionDecl
 CXXCtorInitializer
 CXXDestructorDecl
+CXXFunctionalCastExpr
 CXXMemberCallExpr
 CXXMethodDecl
 CXXOperatorCallExpr
@@ -126,6 +126,9 @@ CXXTemporaryObjectExpr
 DeclRefExpr
 DeclStmt
 DefaultStmt
+EmptyDecl
+EnumConstantDecl
+EnumDecl
 ExprWithCleanups
 FieldDecl
 FloatingLiteral
@@ -135,6 +138,7 @@ FunctionDecl
 FunctionTemplateDecl
 IfStmt
 ImplicitCastExpr
+ImplicitValueInitExpr
 InitListExpr
 IntegerLiteral
 MaterializeTemporaryExpr
@@ -159,7 +163,5 @@ VarDecl
 
 
 # Ongoing
-
-CXXFunctionalCastExpr
 
 

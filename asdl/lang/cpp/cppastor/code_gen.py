@@ -181,6 +181,8 @@ class SourceGenerator(ExplicitNodeVisitor):
                             append(self.indent_with * self.indentation)
                         self.new_lines = 0
                     if item:
+                        #if item == 'NoParameters':
+                            #breakpoint()
                         append(item)
 
         self.write = write
@@ -312,15 +314,17 @@ class SourceGenerator(ExplicitNodeVisitor):
         if parameters:
             self.comma_list(parameters)
         self.write(")")
+        if len(node.noexcept) > 0:
+            self.write(" ", node.noexcept)
         if len(initializers) > 0:
             self.write(" : ")
             self.comma_list(initializers)
         if len(statements) > 0:
-            #self.write(" {", "\n")
             for c in statements:
                 self.write(c)
-            #self.write("}", "\n")
         else:
+            if len(node.default) > 0:
+                self.write(" = ", node.default)
             self.write(";")
         self.newline(extra=1)
 
@@ -342,11 +346,14 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.name)
         self.write("(")
         self.write(")")
-        if node.subnodes is not None and len(node.subnodes) > 0:
-            #self.write(" {", "\n")
+        if len(node.noexcept) > 0:
+            self.write(" ", node.noexcept)
+        if len(node.default) > 0:
+            self.write(" = ", node.default)
+            self.write(";")
+        elif node.subnodes is not None and len(node.subnodes) > 0:
             for c in node.subnodes:
                 self.write(c)
-            #self.write("}", "\n")
         else:
             self.write(";")
         self.newline(extra=1)
@@ -397,7 +404,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.subnodes[0])
 
     def visit_ImplicitCastExpr(self, node: tree.ImplicitCastExpr):
-        self.write(node.subnodes[0])
+        if len(node.subnodes) > 0:
+            self.write(node.subnodes[0])
 
     def visit_VarDecl(self, node: tree.VarDecl):
         if len(node.storage_class) > 0:
@@ -434,16 +442,24 @@ class SourceGenerator(ExplicitNodeVisitor):
                 statements.append(c)
         if len(comment) > 0:
             self.write("/** ", comment, "*/\n")
+        if len(node.virtual) > 0:
+            self.write("virtual ")
         self.write(node.return_type, " ")
         self.write(node.name)
         self.write("(")
         if parameters:
             self.comma_list(parameters)
         self.write(")")
+        if len(node.const) > 0:
+            self.write(" ", node.const)
+        if len(node.noexcept) > 0:
+            self.write(" ", node.noexcept)
         if len(statements) > 0:
             for c in statements:
                 self.write(c)
         else:
+            if len(node.default) > 0:
+                self.write(" = ", node.default)
             self.write(";")
         self.newline(extra=1)
 
@@ -462,10 +478,8 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.comma_list(parameters)
         self.write(")")
         if len(statements) > 0:
-            #self.write(" {", "\n")
             for c in statements:
                 self.write(c)
-            #self.write("}", "\n")
         else:
             self.write(";")
         self.newline(extra=1)
@@ -551,15 +565,15 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("break;\n")
 
     def visit_MemberExpr(self, node: tree.MemberExpr):
-        if (len(node.subnodes) > 0
+        if (node.subnodes is not None and len(node.subnodes) > 0
                 and node.subnodes[0].__class__.__name__ in ['DeclRefExpr',
                                                             'ImplicitCastExpr',
                                                             'MaterializeTemporaryExpr',
                                                             'MemberExpr']):
-            self.write(node.subnodes[0], ".")
+            #if node.op == "->":
+                #breakpoint()
+            self.write(node.subnodes[0], node.op)
         self.write(node.name)
-        if len(node.subnodes) > 1:
-            breakpoint()
 
     def visit_ConstantExpr(self, node: tree.ConstantExpr):
         self.write(node.value)
@@ -614,8 +628,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("/** ", node.comment, "*/")
 
     def visit_OverrideAttr(self, node: tree.OverrideAttr):
-        self.write(" ", "override", ";")
-        self.newline(extra=1)
+        pass
+        #self.write(" ", "override", ";")
+        #self.newline(extra=1)
 
     def visit_CXXMemberCallExpr(self, node: tree.CXXMemberCallExpr):
         self.write(node.subnodes[0], "(")
@@ -658,4 +673,36 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("continue;")
         self.newline(extra=1)
 
+    def visit_EnumConstantDecl(self, node: tree.EnumConstantDecl):
+        self.write(node.name)
+        if node.subnodes is not None and len(node.subnodes) > 0:
+            self.write(" = ", node.subnodes[0])
+
+    def visit_EnumDecl(self, node: tree.EnumDecl):
+        self.write("enum ", node.name, " {\n")
+        self.comma_list(node.subnodes)
+        self.write("};")
+        self.newline(extra=1)
+
+    def visit_ImplicitValueInitExpr(self, node: tree.ImplicitValueInitExpr):
+        pass
+
+    def visit_CXXConversionDecl(self, node: tree.CXXConversionDecl):
+        self.write(node.name,  node.subnodes[0])
+
+    def visit_EmptyDecl(self, node: tree.EmptyDecl):
+        self.write(";")
+
+    def visit_CStyleCastExpr(self, node: tree.CStyleCastExpr):
+        def get_deeper_member_name(node):
+            if node.subnodes is not None and len(node.subnodes) > 0:
+                return get_deeper_member_name(node.subnodes[0])
+            elif node.__class__.__name__ != "MemberExpr":
+                return None
+            else:
+                return node.name
+        self.write(node.type, get_deeper_member_name(node))
+
+    def visit_CXXThisExpr(self, node: tree.CXXThisExpr):
+        self.write("this")
 

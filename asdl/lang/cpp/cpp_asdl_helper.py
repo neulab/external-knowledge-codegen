@@ -4,6 +4,7 @@ import sys
 
 from asdl.asdl_ast import RealizedField, AbstractSyntaxTree
 
+ENABLE_DEBUG_SUPPORT = False
 
 # from https://stackoverflow.com/questions/15357422/python-determine-if-a-string-should-be-converted-into-int-or-float
 def isfloat(x):
@@ -26,6 +27,7 @@ def isint(x):
 
 
 def cpp_ast_to_asdl_ast(cpp_ast_node, grammar):
+    global ENABLE_DEBUG_SUPPORT
     # node should be composite
     cpp_node_name = type(cpp_ast_node).__name__
     # assert py_node_name.startswith('_ast.')
@@ -35,7 +37,8 @@ def cpp_ast_to_asdl_ast(cpp_ast_node, grammar):
 
     fields = []
     for field in production.fields:
-        print(f"cpp_ast_to_asdl_ast {cpp_node_name}, field: {field.name}")
+        if ENABLE_DEBUG_SUPPORT:
+            print(f"cpp_ast_to_asdl_ast {cpp_node_name}, field: {field.name}")
         #try:
             #field_value = next(c for c in cpp_ast_node.get_children() if c.kind.name == field.name)
         #except StopIteration as e:
