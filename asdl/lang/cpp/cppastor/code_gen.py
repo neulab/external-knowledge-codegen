@@ -405,7 +405,9 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.subnodes[0])
 
     def visit_ImplicitCastExpr(self, node: tree.ImplicitCastExpr):
-        if len(node.subnodes) > 0:
+        if node.name is not None and len(node.name) > 0:
+            self.write(node.name)
+        elif len(node.subnodes) > 0:
             self.write(node.subnodes[0])
 
     def visit_VarDecl(self, node: tree.VarDecl):
@@ -566,8 +568,11 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("break;\n")
 
     def visit_MemberExpr(self, node: tree.MemberExpr):
+        if 'addSearchPathes' in node.name:
+            breakpoint()
         if (node.subnodes is not None and len(node.subnodes) > 0
-                and node.subnodes[0].__class__.__name__ in ['DeclRefExpr',
+                and node.subnodes[0].__class__.__name__ in ['CallExpr',
+                                                            'DeclRefExpr',
                                                             'ImplicitCastExpr',
                                                             'MaterializeTemporaryExpr',
                                                             'MemberExpr']):
@@ -650,7 +655,9 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(")")
 
     def visit_CXXOperatorCallExpr(self, node: tree.CXXOperatorCallExpr):
-        self.write(node.left, " ", node.op, " ", node.right)
+        self.write(node.left, " ", node.op, " ")
+        if node.right is not None:
+            self.write(node.right)
 
     def visit_CXXBoolLiteralExpr(self, node: tree.CXXBoolLiteralExpr):
         self.write("true" if node.value == "True" else "false")
@@ -669,6 +676,9 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write("; ")
         self.write(node.subnodes[1], "; ",
                    node.subnodes[2], ")\n", node.subnodes[3])
+
+    def visit_WhileStmt(self, node: tree.ForStmt):
+        self.write("while (", node.subnodes[0], ")\n", node.subnodes[1])
 
     def visit_ContinueStmt(self, node: tree.ContinueStmt):
         self.write("continue;")
@@ -711,3 +721,7 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("friend ", node.type, ";")
         self.newline(extra=1)
 
+    def visit_CXXStdInitializerListExpr(self, node: tree.CXXStdInitializerListExpr):
+        self.write("{")
+        self.comma_list(node.subnodes)
+        self.write("}")

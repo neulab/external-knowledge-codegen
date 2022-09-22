@@ -24,7 +24,7 @@ from cpplang.ast import Node
 import itertools
 import sys
 
-ENABLE_DEBUG_SUPPORT = False
+ENABLE_DEBUG_SUPPORT = True
 
 try:
     zip_longest = itertools.zip_longest

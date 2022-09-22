@@ -4,7 +4,7 @@ import sys
 
 from asdl.asdl_ast import RealizedField, AbstractSyntaxTree
 
-ENABLE_DEBUG_SUPPORT = False
+ENABLE_DEBUG_SUPPORT = True
 
 # from https://stackoverflow.com/questions/15357422/python-determine-if-a-string-should-be-converted-into-int-or-float
 def isfloat(x):

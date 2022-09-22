@@ -144,7 +144,7 @@ def test(cpp_code, filepath, check_hypothesis=False, fail_on_error=False, member
     if member:
         cpp_ast = cpplang.parse.parse_member_declaration(cpp_code)
     else:
-        cpp_ast = cpplang.parse.parse(cpp_code, debug=debug)
+        cpp_ast = cpplang.parse.parse(cpp_code, debug=debug, filepath=filepath)
     # convert the cpp AST into general-purpose ASDL AST used by tranX
     asdl_ast = cpp_ast_to_asdl_ast(cpp_ast, grammar)
     if debug:

@@ -300,6 +300,10 @@ class ForStmt(Statement):
     attrs = ()
 
 
+class WhileStmt(Statement):
+    attrs = ()
+
+
 class ContinueStmt(Statement):
     attrs = ()
 
@@ -412,7 +416,7 @@ class CXXBindTemporaryExpr(Node):
     attrs = ()
 
 class ImplicitCastExpr(Node):
-    attrs = ()
+    attrs = ("name",)
 
 # ------------------------------------------------------------------------------
 
@@ -663,8 +667,15 @@ class AnnotationMethod(NonEmptyDeclaration):
 class EmptyDecl(Node):
     attrs = ()
 
+
 class CStyleCastExpr(Node):
     attrs = ("type",)
 
+
 class FriendDecl(Node):
     attrs = ("type",)
+
+
+class CXXStdInitializerListExpr(Node):
+    attrs = ()
+

@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 import subprocess
 import sys
 from typing import (List, Set, Tuple)
@@ -97,33 +98,49 @@ class Parser(object):
                             set(('+', '-')),
                             set(('*', '/', '%'))]
 
-    def __init__(self, cpp_code):
-        preprocess = subprocess.Popen(
-            ["clang", "-x", "c++", "-std=c++17", "-fPIC",
-             "-I/usr/include/x86_64-linux-gnu/qt5",
-             "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
-             "-I/home/gael/Projets/Lima/lima/lima_common/src/",
-             "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
-             "-E", "-"],
-
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-        preprocess_stdout_data, preprocess_stderr_data = preprocess.communicate(
-            input=cpp_code.encode())
-        p = subprocess.Popen(
-            ["clang", "-x", "c++", "-std=c++17", "-fPIC",
-             "-I/usr/include/x86_64-linux-gnu/qt5",
-             "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
-             "-I/home/gael/Projets/Lima/lima/lima_common/src/",
-             "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
-             "-Xclang", "-ast-dump=json",
-             "-fsyntax-only", "-"],
-
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-        stdout_data, stderr_data = p.communicate(input=preprocess_stdout_data)
+    def __init__(self, cpp_code, filepath=None):
+        try:
+            self.filepath=filepath
+            preprocess = subprocess.run(
+                [shutil.which("clang"), "-x", "c++", "-std=c++17", "-fPIC",
+                 "-I/usr/include/x86_64-linux-gnu/qt5",
+                 "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/AbstractFactoryPattern",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
+                 "-E", "-"],
+                capture_output=True,
+                input=cpp_code.encode(),
+                check=True)
+        except subprocess.CalledProcessError as e:
+            if self.filepath is not None:
+                print(f"While handling {self.filepath},\n")
+            print(f"Preprocessing error {e.returncode}:\n{e.stderr.decode()}", file=sys.stderr)
+            raise
+        preprocess_stdout_data = preprocess.stdout
+        preprocess_stderr_data = preprocess.stderr
+        try:
+            p = subprocess.run(
+                [shutil.which("clang"), "-x", "c++", "-std=c++17", "-fPIC",
+                 "-I/usr/include/x86_64-linux-gnu/qt5",
+                 "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/AbstractFactoryPattern",
+                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
+                 "-Xclang", "-ast-dump=json",
+                 "-fsyntax-only", "-"],
+                capture_output=True,
+                input=preprocess_stdout_data,
+                check=True)
+        except subprocess.CalledProcessError as e:
+            if self.filepath is not None:
+                print(f"While handling {self.filepath},\n")
+            print(f"Parsing error {e.returncode}:\n{e.stderr.decode()}", file=sys.stderr)
+            raise
+        stdout_data = p.stdout
+        stderr_data = p.stdout
         self.tu = json.loads(stdout_data.decode())
         self.stack = []
         self.debug = False
@@ -358,7 +375,7 @@ class Parser(object):
     @parse_debug
     def parse_TranslationUnit(self, node) -> tree.TranslationUnit:
         assert node['kind'] == "TranslationUnitDecl"
-        #print(f"parse_TranslationUnit {node}", file=sys.stderr)
+        # print(f"parse_TranslationUnit {node}", file=sys.stderr)
         subnodes = self.parse_subnodes(node)
         return tree.TranslationUnit(subnodes=subnodes)
 
@@ -594,6 +611,12 @@ class Parser(object):
         return tree.ForStmt(subnodes=subnodes)
 
     @parse_debug
+    def parse_WhileStmt(self, node) -> tree.WhileStmt:
+        assert node['kind'] == "WhileStmt"
+        subnodes = self.parse_subnodes(node)
+        return tree.WhileStmt(subnodes=subnodes)
+
+    @parse_debug
     def parse_ContinueStmt(self, node) -> tree.ContinueStmt:
         assert node['kind'] == "ContinueStmt"
         subnodes = self.parse_subnodes(node)
@@ -655,6 +678,10 @@ class Parser(object):
         name = self.get_node_source_code(node)+node['referencedDecl']['name']
         kind = node['referencedDecl']['kind']
         subnodes = self.parse_subnodes(node)
+        # if 'changeable' in name or 'operator' in name:
+        #     breakpoint()
+        if name.startswith("operator"):
+            name = name[len("operator"):]
         return tree.DeclRefExpr(name=name, kind=kind, subnodes=subnodes)
 
     @parse_debug
@@ -702,7 +729,8 @@ class Parser(object):
     @parse_debug
     def parse_UsingDirectiveDecl(self, node) -> tree.UsingDirectiveDecl:
         assert node['kind'] == "UsingDirectiveDecl"
-        name = node['nominatedNamespace']['name']
+        name = (self.get_node_source_code(node).replace('using namespace','').strip()
+                + node['nominatedNamespace']['name'])
         return tree.UsingDirectiveDecl(name=name)
 
     @parse_debug
@@ -789,7 +817,15 @@ class Parser(object):
         subnodes = self.parse_subnodes(node)
         if len(subnodes) == 0:
             return None
-        return tree.ImplicitCastExpr(subnodes=subnodes)
+        if 'name' in subnodes[0].__dict__:
+            name = subnodes[0].name
+        # elif 'value' in subnodes[0].__dict__:
+        #     name = subnodes[0].value
+        else:
+            name = None
+
+        print(f"parse_ImplicitCastExpr {name}", file=sys.stderr)
+        return tree.ImplicitCastExpr(name=name, subnodes=subnodes)
 
     @parse_debug
     def parse_CXXDefaultArgExpr(self, node) -> None:
@@ -884,10 +920,10 @@ class Parser(object):
     def parse_CXXOperatorCallExpr(self, node) -> tree.CXXOperatorCallExpr:
         assert node['kind'] == "CXXOperatorCallExpr"
         subnodes = self.parse_subnodes(node)
-        assert len(subnodes) == 3
+        assert len(subnodes) >= 2
         op = subnodes[0]
         left = subnodes[1]
-        right = subnodes[2]
+        right = subnodes[2] if len(subnodes) == 3 else None
         return tree.CXXOperatorCallExpr(left=left, op=op, right=right)
 
     @parse_debug
@@ -901,7 +937,7 @@ class Parser(object):
         assert node['kind'] == "CXXTemporaryObjectExpr"
         the_type = node['type']['qualType']
         subnodes = self.parse_subnodes(node)
-        assert len(subnodes) > 0
+        # assert len(subnodes) > 0
         return tree.CXXTemporaryObjectExpr(type=the_type, subnodes=subnodes)
 
     @parse_debug
@@ -966,11 +1002,17 @@ class Parser(object):
     def parse_FriendDecl(self, node) -> tree.FriendDecl:
         assert node['kind'] == "FriendDecl"
         the_type = node['type']['qualType']
-        #subnodes = self.parse_subnodes(node)
         return tree.FriendDecl(type=the_type)
 
+    @parse_debug
+    def parse_CXXStdInitializerListExpr(self, node) -> tree.CXXStdInitializerListExpr:
+        assert node['kind'] == "CXXStdInitializerListExpr"
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXStdInitializerListExpr(subnodes=subnodes)
 
-def parse(tokens, debug=False):
-    parser = Parser(tokens)
+
+def parse(tokens, debug=False, filepath=None):
+    parser = Parser(tokens, filepath)
     parser.set_debug(debug)
     return parser.parse()
+

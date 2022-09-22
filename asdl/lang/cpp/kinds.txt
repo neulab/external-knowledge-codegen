@@ -89,7 +89,6 @@ VarTemplateDecl
 VisibilityAttr
 WarnUnusedResultAttr
 WeakRefAttr
-WhileStmt
 
 
 
@@ -121,6 +120,7 @@ CXXMemberCallExpr
 CXXMethodDecl
 CXXOperatorCallExpr
 CXXRecordDecl
+CXXStdInitializerListExpr
 CXXTemporaryObjectExpr
 DeclRefExpr
 DeclStmt
@@ -160,6 +160,7 @@ TypeRef
 UnaryOperator
 UsingDirectiveDecl
 VarDecl
+WhileStmt
 
 
 # Ongoing
