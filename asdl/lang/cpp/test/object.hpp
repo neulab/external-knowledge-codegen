@@ -36,7 +36,7 @@ public:
     else
     {
       float f1 = 0.11;
-//       std::cerr << s << " " << b << std::endl;
+      std::cerr << s << " " << b << std::endl;
       return 1;
     }
   }

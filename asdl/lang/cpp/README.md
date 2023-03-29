@@ -175,10 +175,24 @@ attribute.
 
 ### Understanding why something fails
 
-  * Compare the "String representation of the ASDL AST" and the "String representation of the reconstructed CPP AST"
+  * Compare the "String representation of the ASDL AST" and the "String representation of the reconstructed CPP AST". If a token is missing in the second one or in the contrary if there is duplicated tokens,
+    * it could be from a missing attribute in the corresponding rule in the grammar in `cpp_asdl_simplified.txt`
+    * it could come from  a `visit_XYZ` method in `code_gen.py`;
   * If with the swich `-c` which check if the hypotheses ASDL parse tree can regenerate the initial code, you get something like
     `Error: Valid continuation types are (<class 'asdl.transition_system.GenTokenAction'>,) but current action class is
     <class 'asdl.transition_system.ApplyRuleAction'>`, it probably means that a `visit_XYZ` method in `code_gen.py` has
     not generated the correct tokens or that there is an incoherence between a class definition in `tree.py` and
     `cpp_asdl_simplified.txt`. Check the class in the right of the previous `ApplyRule` action (printed in debug mode).
+  * If you get `AttributeError: No defined visitor for node of type XYZ`, `please define 'visit_XYZ' in cpp/cppastor/code_gen.py.`, the message explains clearly what to do, but check that `XYZ` is defined in `cpp_asdl_simplified.txt`, `parser.py` and `tree.py`.
+  * If you get `AttributeError: module 'cpplang.tree' has no attribute 'XYZ'`, add this class to `tree.py`. Check also its definition in `code_gen.py`, `cpp_asdl_simplified.txt`, `parser.py`.
+  * If you get `AttributeError: No defined parse handler for clang node of type "XYZ".`, `please define "parse_ImplicitCastExpr" in cpplang/parser.py.`, the message explains clearly what to do, but check that `XYZ` is defined in `cpp_asdl_simplified.txt`, `code_gen.py` and `tree.py`.
+  * If you get `Exception: Error: there is no production named XYZ in the ASDL grammar`, then add `XYZ` in `cpp_asdl_simplified.txt`, but check that `XYZ` is defined in `parser.py`, `code_gen.py` and `tree.py`.
+  * If you get
+
+```
+  File "…/external-knowledge-codegen/asdl/lang/cpp/cpp_asdl_helper.py", line 47, in cpp_ast_to_asdl_ast
+    field_value = getattr(cpp_ast_node, field.name)
+AttributeError: 'XYZ' object has no attribute 'xy'
+```
+it could be that there is a typo in the attribute name in `cpp_asdl_simplified.txt` or that the attribute is missing in `tree.py`.
 

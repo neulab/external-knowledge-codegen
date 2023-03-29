@@ -110,6 +110,7 @@ class Parser(object):
                 "-I/home/gael/Projets/Lima/lima/lima_common/src/",
                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common",
                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/AbstractFactoryPattern",
+                "-I/home/gael/Projets/Lima/lima/lima_common/src/common/QsLog",
                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
                 "-E", "-"]
             preprocess = subprocess.run(
@@ -839,10 +840,10 @@ class Parser(object):
             return None
         if 'name' in subnodes[0].__dict__:
             name = subnodes[0].name
-        # elif 'value' in subnodes[0].__dict__:
-        #     name = subnodes[0].value
+        elif 'value' in subnodes[0].__dict__:
+            name = subnodes[0].value
         else:
-            name = None
+            name = ""
 
         print(f"parse_ImplicitCastExpr {name}", file=sys.stderr)
         return tree.ImplicitCastExpr(name=name, subnodes=subnodes)
