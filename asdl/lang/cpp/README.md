@@ -177,4 +177,8 @@ attribute.
 
   * Compare the "String representation of the ASDL AST" and the "String representation of the reconstructed CPP AST"
   * If with the swich `-c` which check if the hypotheses ASDL parse tree can regenerate the initial code, you get something like
-    `Error: Valid continuation types are (<class 'asdl.transition_system.GenTokenAction'>,) but current action class is <class 'asdl.transition_system.ApplyRuleAction'>`, it means that
+    `Error: Valid continuation types are (<class 'asdl.transition_system.GenTokenAction'>,) but current action class is
+    <class 'asdl.transition_system.ApplyRuleAction'>`, it probably means that a `visit_XYZ` method in `code_gen.py` has
+    not generated the correct tokens or that there is an incoherence between a class definition in `tree.py` and
+    `cpp_asdl_simplified.txt`. Check the class in the right of the previous `ApplyRule` action (printed in debug mode).
+
