@@ -1,3 +1,9 @@
+# NOTE
+
+Read the `asdl/lang/cpp/README.md` for information about the C++ to AST to C++ process.
+
+The Java to AST to Java process is quite complete. Go there and run `demo.py` to test it.
+
 # Incorporating External Knowledge through Pre-training for Natural Language to Code Generation
 
 This repository contains code and resources for the ACL20 paper ["Incorporating External Knowledge through Pre-training for Natural Language to Code Generation"](https://arxiv.org/abs/2004.09015).
