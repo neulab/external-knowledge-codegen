@@ -135,12 +135,13 @@ def preprocess_code(cpp_code):
             lines_in.append(line)
     return "\n".join(lines_in)
 
+
 def test(cpp_code, filepath, check_hypothesis=False, fail_on_error=False, member=False,
          debug=False):
 
     # get the (domain-specific) cpp AST of the example Cpp code snippet
-    if debug:
-        print(f'Cpp code: \n{cpp_code}')
+    # if debug:
+    #     print(f'Cpp code: \n{cpp_code}')
     if member:
         cpp_ast = cpplang.parse.parse_member_declaration(cpp_code)
     else:
@@ -352,7 +353,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('-f', '--file', action='append',
                             type=str,
                             help='Set the given file to be tested.')
-    arg_parser.add_argument('-d', '--dir', default='test/',
+    arg_parser.add_argument('-d', '--dir', default='test',
                             type=str,
                             help='Set the files in the given dir to be tested.')
     args = arg_parser.parse_args()
@@ -375,6 +376,7 @@ if __name__ == '__main__':
         files = args.file
     else:
         files = collect_files(args.dir)
+        files.remove(f"{args.dir}/exclusions.txt")
     if args.debug:
         print(files)
     total = len(files)

@@ -11,15 +11,15 @@ if __name__ == '__main__':
     grammar = ASDLGrammar.from_text(asdl_text)
 
     #py_code = """pandas.read('file.csv', nrows=100)"""
-    #py_code = """class A:
-    #def __init__(self):
-        #pass
-    #"""
-    py_code = """1+3"""
+    py_code = """class A:
+    def __init__(self):
+        pass
+    """
+    # py_code = """1+3"""
 
     # get the (domain-specific) python AST of the example Python code snippet
     py_ast = ast.parse(py_code)
-
+    print(py_ast)
     # convert the python AST into general-purpose ASDL AST used by tranX
     asdl_ast = python_ast_to_asdl_ast(py_ast.body[0], grammar)
     print('String representation of the ASDL AST: \n%s' % asdl_ast.to_string())

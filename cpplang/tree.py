@@ -76,7 +76,7 @@ class PackageDeclaration(NonEmptyDeclaration):
 
 
 class CXXRecordDecl(TypeDeclaration):
-    attrs = ("kind", "bases",)
+    attrs = ("kind", "bases", "complete_definition",)
 
 
 class CXXConstructorDecl(Node):
@@ -250,6 +250,7 @@ class VariableInitializer(Node):
     """
     A VariableInitializer is either an expression or an array initializer
     https://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3
+    TODO This is not C++ !!!
     """
     attrs = ("expression", "array",)
 

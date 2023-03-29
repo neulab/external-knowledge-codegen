@@ -58,7 +58,7 @@ class ASDLGrammar(object):
         except KeyError as e:
             print(f"Error: there is no production named {name} in the ASDL grammar",
                   file=sys.stderr)
-            sys.exit(1)
+            raise Exception(f"Error: there is no production named {name} in the ASDL grammar")
 
     @property
     def types(self):

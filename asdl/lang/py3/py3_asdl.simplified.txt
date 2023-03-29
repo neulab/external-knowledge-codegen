@@ -53,6 +53,7 @@ expr = BoolOp(boolop op, expr* values)
      ## a number as a PyObject.
      | Num(object n)
      ## need to specify raw, unicode, etc?
+     | Constant(string s)
      | Str(string s)
      | Bytes(bytes s)
      | NameConstant(singleton value)

@@ -100,16 +100,20 @@ class Parser(object):
 
     def __init__(self, cpp_code, filepath=None):
         try:
-            self.filepath=filepath
+            self.filepath = filepath
+            # TODO replace in commandss below the include path by thosee given by the
+            # C++ project build system
+            preprocess_command = [
+                shutil.which("clang"), "-x", "c++", "-std=c++17", "-fPIC",
+                "-I/usr/include/x86_64-linux-gnu/qt5",
+                "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+                "-I/home/gael/Projets/Lima/lima/lima_common/src/",
+                "-I/home/gael/Projets/Lima/lima/lima_common/src/common",
+                "-I/home/gael/Projets/Lima/lima/lima_common/src/common/AbstractFactoryPattern",
+                "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
+                "-E", "-"]
             preprocess = subprocess.run(
-                [shutil.which("clang"), "-x", "c++", "-std=c++17", "-fPIC",
-                 "-I/usr/include/x86_64-linux-gnu/qt5",
-                 "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/AbstractFactoryPattern",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
-                 "-E", "-"],
+                preprocess_command,
                 capture_output=True,
                 input=cpp_code.encode(),
                 check=True)
@@ -119,18 +123,23 @@ class Parser(object):
             print(f"Preprocessing error {e.returncode}:\n{e.stderr.decode()}", file=sys.stderr)
             raise
         preprocess_stdout_data = preprocess.stdout
+        # if ENABLE_DEBUG_SUPPORT:
+        #     print(f"\npreprocess_stdout_data:\n{preprocess_stdout_data.decode()}\n",
+        #           file=sys.stderr)
         preprocess_stderr_data = preprocess.stderr
+        process_command = [
+            shutil.which("clang"), "-x", "c++", "-std=c++17", "-fPIC",
+            "-I/usr/include/x86_64-linux-gnu/qt5",
+            "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+            "-I/home/gael/Projets/Lima/lima/lima_common/src/",
+            "-I/home/gael/Projets/Lima/lima/lima_common/src/common",
+            "-I/home/gael/Projets/Lima/lima/lima_common/src/common/AbstractFactoryPattern",
+            "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
+            "-Xclang", "-ast-dump=json",
+            "-fsyntax-only", "-"]
         try:
             p = subprocess.run(
-                [shutil.which("clang"), "-x", "c++", "-std=c++17", "-fPIC",
-                 "-I/usr/include/x86_64-linux-gnu/qt5",
-                 "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/AbstractFactoryPattern",
-                 "-I/home/gael/Projets/Lima/lima/lima_common/src/common/XMLConfigurationFiles",
-                 "-Xclang", "-ast-dump=json",
-                 "-fsyntax-only", "-"],
+                process_command,
                 capture_output=True,
                 input=preprocess_stdout_data,
                 check=True)
@@ -140,7 +149,10 @@ class Parser(object):
             print(f"Parsing error {e.returncode}:\n{e.stderr.decode()}", file=sys.stderr)
             raise
         stdout_data = p.stdout
+        # if ENABLE_DEBUG_SUPPORT:
+        #     print(f"stdout_data:\n{stdout_data.decode()}\n\n", file=sys.stderr)
         stderr_data = p.stdout
+        # print(stderr_data.decode(), file=sys.stderr)
         self.tu = json.loads(stdout_data.decode())
         self.stack = []
         self.debug = False
@@ -155,7 +167,7 @@ class Parser(object):
 # ------------------------------------------------------------------------------
 # ---- Parsing entry point ----
 
-    def parse(self):
+    def parse(self) -> tree.TranslationUnit:
         return self.parse_TranslationUnit(self.tu)
 
 # ------------------------------------------------------------------------------
@@ -386,6 +398,10 @@ class Parser(object):
             return None
         name = node['name']
         kind = node['tagUsed']
+        complete_definition = ('complete_definition'
+                               if ('completeDefinition' in node
+                                   and node['completeDefinition'])
+                               else '')
         bases = ""
         if "bases" in node:
             s = self.get_node_source_code(node)
@@ -402,6 +418,7 @@ class Parser(object):
                     #bases.append(f"{base['type']['qualType']}")
         subnodes = self.parse_subnodes(node)
         return tree.CXXRecordDecl(name=name, kind=kind, bases=bases,
+                                  complete_definition=complete_definition,
                                   subnodes=subnodes)
 
     @parse_debug
@@ -747,13 +764,16 @@ class Parser(object):
         storage_class = node['storageClass'] if "storageClass" in node else ""
         splitted_type = self.source_code[
             node['range']['begin']['offset']:
-                node['range']['end']['offset']].strip().split(" ")
+                node['range']['end']['offset']].strip()
+        if splitted_type and splitted_type[-1] == "=":
+            splitted_type = splitted_type[:-1].strip()
+        splitted_type = splitted_type.split(" ")
+        # breakpoint()
         if len(storage_class) > 0:
             splitted_type.pop(0)
-        if len(splitted_type) > 1:
-            splitted_type.pop()
-        var_type, array_decl = (splitted_type if len(splitted_type) == 2
+        var_type, array_decl = (splitted_type[:2] if len(splitted_type) >= 2
                                 else (splitted_type[0], ""))
+        array_decl = re.sub(r'^' + re.escape(name), '', array_decl)
         if 'init' in node:
             subnodes = self.parse_subnodes(node)
         else:
@@ -843,6 +863,7 @@ class Parser(object):
             subnodes = self.parse_subnodes(node)
         else:
             subnodes = []
+        # breakpoint()
         return tree.FieldDecl(name=name, type=var_type, subnodes=subnodes)
 
     @parse_debug

@@ -294,6 +294,12 @@ class SourceGenerator(ExplicitNodeVisitor):
                 for c in node.subnodes:
                     self.write(c)
                 self.write("}")
+            elif len(node.complete_definition) > 0:
+                self.write(" {", "\n")
+                self.write("}")
+        elif node.completeDefinition:
+            self.write(" {", "\n")
+            self.write("}")
         self.write(";")
         self.newline(extra=1)
 
@@ -413,6 +419,7 @@ class SourceGenerator(ExplicitNodeVisitor):
     def visit_VarDecl(self, node: tree.VarDecl):
         if len(node.storage_class) > 0:
             self.write(node.storage_class, " ")
+        # breakpoint()
         self.write(node.type, " ", node.name, node.array)
         if node.subnodes is not None and len(node.subnodes) > 0:
             if node.init == 'call':
