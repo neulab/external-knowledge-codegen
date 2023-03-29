@@ -297,7 +297,7 @@ class SourceGenerator(ExplicitNodeVisitor):
             elif len(node.complete_definition) > 0:
                 self.write(" {", "\n")
                 self.write("}")
-        elif node.completeDefinition:
+        elif node.complete_definition:
             self.write(" {", "\n")
             self.write("}")
         self.write(";")
@@ -411,10 +411,11 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.subnodes[0])
 
     def visit_ImplicitCastExpr(self, node: tree.ImplicitCastExpr):
-        if node.name is not None and len(node.name) > 0:
-            self.write(node.name)
-        elif len(node.subnodes) > 0:
+        if node.subnodes is not None and len(node.subnodes) > 0:
             self.write(node.subnodes[0])
+        else:
+        # if node.name is not None and len(node.name) > 0:
+            self.write(node.name)
 
     def visit_VarDecl(self, node: tree.VarDecl):
         if len(node.storage_class) > 0:

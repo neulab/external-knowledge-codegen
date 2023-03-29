@@ -176,3 +176,5 @@ attribute.
 ### Understanding why something fails
 
   * Compare the "String representation of the ASDL AST" and the "String representation of the reconstructed CPP AST"
+  * If with the swich `-c` which check if the hypotheses ASDL parse tree can regenerate the initial code, you get something like
+    `Error: Valid continuation types are (<class 'asdl.transition_system.GenTokenAction'>,) but current action class is <class 'asdl.transition_system.ApplyRuleAction'>`, it means that

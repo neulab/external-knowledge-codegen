@@ -64,7 +64,8 @@ def code_from_hyp(asdl_ast, debug=False):
         valid_cont_types = parser.get_valid_continuation_types(hypothesis)
         if action.__class__ not in valid_cont_types:
             print(f"Error: Valid continuation types are {valid_cont_types} "
-                  f"but current action class is {action.__class__}",
+                  f"but current action class is {action.__class__} "
+                  f"on frontier {hypothesis.frontier_node} / {hypothesis.frontier_field}",
                   file=sys.stderr)
             raise Exception(f"{action.__class__} is not in {valid_cont_types}")
 
