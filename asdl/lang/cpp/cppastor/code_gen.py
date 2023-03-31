@@ -421,13 +421,20 @@ class SourceGenerator(ExplicitNodeVisitor):
         if len(node.storage_class) > 0:
             self.write(node.storage_class, " ")
         # breakpoint()
-        self.write(node.type, " ", node.name, node.array)
-        if node.subnodes is not None and len(node.subnodes) > 0:
-            if node.init == 'call':
-                self.write("(", node.subnodes[0], ")")
-            else:
-                self.write(" = ", node.subnodes[0])
-        self.conditional_write(";")
+        if node.implicit == "implicit" and node.referenced == "referenced":
+            self.write(node.subnodes[0])
+        else:
+            self.write(node.type, " ", node.name, node.array)
+            if node.subnodes is not None and len(node.subnodes) > 0:
+                if node.init == 'call':
+                    self.write("(", node.subnodes[0], ")")
+                    self.conditional_write(";")
+                elif "ImplicitCastExpr" in node.subnodes[0].__class__.__name__   and len(node.subnodes[0].name) == 0:
+                    pass
+                else:
+                    self.write(" = ", node.subnodes[0])
+                    self.conditional_write(";")
+            pass
 
     def visit_FieldDecl(self, node: tree.FieldDecl):
         self.write(node.type, " ", node.name)
@@ -685,6 +692,12 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write(node.subnodes[1], "; ",
                    node.subnodes[2], ")\n", node.subnodes[3])
 
+    def visit_CXXForRangeStmt(self, node: tree.CXXForRangeStmt):
+        assert len(node.subnodes) == 7
+        self.write("for (", node.subnodes[-2])
+        self.write(": ", node.subnodes[0], ")\n")
+        self.write(node.subnodes[-1])
+
     def visit_WhileStmt(self, node: tree.ForStmt):
         self.write("while (", node.subnodes[0], ")\n", node.subnodes[1])
 
@@ -733,3 +746,8 @@ class SourceGenerator(ExplicitNodeVisitor):
         self.write("{")
         self.comma_list(node.subnodes)
         self.write("}")
+
+    def visit_CXXNewExpr(self, node: tree.CXXNewExpr):
+        if node.subnodes is not None and len(node.subnodes) > 0:
+            self.write("new ", node.subnodes[0])
+

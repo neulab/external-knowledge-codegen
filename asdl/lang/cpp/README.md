@@ -155,6 +155,20 @@ Common prefix end: namespacen{template<typenamet,typenames>classobject (92%)
     class body is replaced by a `;` as in a forward declaration
   * By looking at the AST (see above how to generate it) of the same class with and without body (forward declaration or not), one can see that with a body, there is an attribute `definition` and subnodes to the `CXXRecordDecl` object that are absent without a body. When looking at the corresponding json (which is what is handled in our python code), we see that the actual attribute is `completeDefinition`  and it is set to `true`. This attribute is absent in the case of a forward declaration. The solution is to add the `completeDefinition` attribute.
 
+### Adding support for a new C++ AST libclang class
+
+Adding support for a new class from libclang C++ AST is made in 4 files:
+
+  * The grammar (`cpp_asdl_simplified.txt`)
+  * Node subclass to build the in-memory AST tree (`tree.py`)
+  * The parsing method to generate the tree class instance during parsing from the json representation of the AST built by clang (`parser.py`)
+  * The visitor method used to regenerate C++ tokens from the internal AST
+
+To determine how to implement each of them, one can run clang in syntax only mode either with default output to get an idea of the organization or with json output to check the exact content.Then, after a first implementation, it is possible to run in debug mode and to stop in the parser method to verify the available attributes.
+
+Sometimes, the libclang AST contains information that is not rendered in final code depending on the context and it can be not easy to identify such cases. For example, the CXXForRangeStmt has several subnodes whose content are not or only partially rendered as they are implicit. In this kind of case, you can be forced to trace down the execution. by setting breakpoint at strategic points. This can be in the `parse_XYZ` or `visit_XYZ` methods in question. or at `r = method(self, node)` in `parser.py` where the recursion is applied during parsing or at `visit(item)` in `code_gen.py`  where the recursion is applied during code generation. For CXXForRangeStmt we determined that its `VarDecl` subnodes had to be generated differently if they were present in a CXXForRangeStmt or in other context. This could be determined by looking at the `VarDecl` `isImplicit` and `isReferenced` members. So they had to be stored as attributes in the `tree.VarDecl` class and then used in `vist_VarDecl` to condition its outpout.
+
+
 ### Adding an attribute to an AST node
 
 Let the node be called XYZ and the attribute x.

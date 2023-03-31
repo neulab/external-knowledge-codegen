@@ -1,12 +1,18 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+// typedef int entier;
+
 #include <iostream>
 #include <string>
 
 
 int var = 0;
 int tab[3] = {1,2,3};
+
+void f() {
+for (int i: tab) {}
+}
 
 namespace N {
 template <typename T, typename S>

@@ -349,8 +349,11 @@ class Parser(object):
             return None
         if ENABLE_DEBUG_SUPPORT:
             print(f"parse_node {node['kind']}", file=sys.stderr)
-        if (('isImplicit' in node and node['isImplicit'])
-            or ('loc' in node and 'includedFrom' in node['loc'])
+        if ('isImplicit' in node and node['isImplicit'] and not ('isReferenced' in node and node['isReferenced'])):
+            return None
+        elif 'isImplicit' in node and node['isImplicit'] and 'isReferenced' in node and node['isReferenced'] and node['kind'] == 'TypedefDecl':
+            return None
+        elif (('loc' in node and 'includedFrom' in node['loc'])
             or ('range' in node and 'includedFrom' in node['range']['begin'])
             or ('loc' in node and 'range' in node['loc']
                 and 'includedFrom' in node['loc']['range']['begin'])
@@ -762,6 +765,8 @@ class Parser(object):
         assert node['kind'] == "VarDecl"
         name = node['name']
         init = node['init']
+        implicit = 'implicit' if 'isImplicit' in node and node['isImplicit'] else ''
+        referenced = 'referenced' if 'isReferenced' in node and node['isReferenced'] else ''
         storage_class = node['storageClass'] if "storageClass" in node else ""
         splitted_type = self.source_code[
             node['range']['begin']['offset']:
@@ -779,8 +784,14 @@ class Parser(object):
             subnodes = self.parse_subnodes(node)
         else:
             subnodes = []
-        return tree.VarDecl(name=name, storage_class=storage_class, type=var_type,
-                            array=array_decl, init=init, subnodes=subnodes)
+        return tree.VarDecl(name=name,
+                            storage_class=storage_class,
+                            type=var_type,
+                            array=array_decl,
+                            init=init,
+                            implicit=implicit,
+                            referenced=referenced,
+                            subnodes=subnodes)
 
     @parse_debug
     def parse_InitListExpr(self, node) -> tree.InitListExpr:
@@ -1031,6 +1042,17 @@ class Parser(object):
         assert node['kind'] == "CXXStdInitializerListExpr"
         subnodes = self.parse_subnodes(node)
         return tree.CXXStdInitializerListExpr(subnodes=subnodes)
+
+    @parse_debug
+    def parse_CXXNewExpr(self, node) -> tree.CXXNewExpr:
+        assert node['kind'] == "CXXNewExpr"
+        subnodes = self.parse_subnodes(node)
+
+    @parse_debug
+    def parse_CXXForRangeStmt(self, node) -> tree.CXXForRangeStmt:
+        assert node['kind'] == "CXXForRangeStmt"
+        subnodes = self.parse_subnodes(node)
+        return tree.CXXForRangeStmt(subnodes=subnodes)
 
 
 def parse(tokens, debug=False, filepath=None):

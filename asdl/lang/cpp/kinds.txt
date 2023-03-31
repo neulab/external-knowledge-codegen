@@ -4,11 +4,15 @@ AlignedAttr
 ArraySubscriptExpr
 AsmLabelAttr
 AtomicExpr
+AttributedType
+BindingDecl
 BuiltinType
 CallbackAttr
 CallExpr
+ClassScopeFunctionSpecializationDecl,
 ClassTemplatePartialSpecializationDecl
 ClassTemplateSpecializationDecl
+ComplexType
 CompoundAssignOperator
 ConditionalOperator
 ConstantArrayType
@@ -20,7 +24,6 @@ CXXDefaultArgExpr
 CXXDeleteExpr
 CXXDependentScopeMemberExpr
 CXXDynamicCastExpr
-CXXNewExpr
 CXXNoexceptExpr
 CXXNullPtrLiteralExpr
 CXXPseudoDestructorExpr
@@ -34,21 +37,30 @@ CXXTypeidExpr
 CXXUnresolvedConstructExpr
 DecltypeType
 DependentNameType
+DependentSizedArrayType
 DependentScopeDeclRefExpr
 DependentTemplateSpecializationType
 DeprecatedAttr
 DoStmt
 ElaboratedType
 EnumType
+Expr
 FormatAttr
+FunctionNoProtoType
 FunctionProtoType
 GNUNullExpr
+GotoStmt
+IncompleteArrayType
 IndirectFieldDecl
+IndirectGotoStmt
 InjectedClassNameType
+LabelStmt
 LinkageSpecDecl
 LValueReferenceType
 MemberPointerType
 ModeAttr
+MSDependentExistsStmt
+NamespaceAliasDecl,
 NonNullAttr
 NoThrowAttr
 OwnerAttr
@@ -59,39 +71,49 @@ PointerAttr
 PointerType
 PureAttr
 QualType
+RecordDecl,
 RecordType
 RestrictAttr
 ReturnsTwiceAttr
 RValueReferenceType
+SEHExceptStmt
+SEHFinallyStmt
+SEHTryStmt
 SizeOfPackExpr
 StaticAssertDecl
 SubstNonTypeTemplateParmExpr
 SubstTemplateTypeParmType
+SwitchCase
+TagDecl
+TagType
 TemplateArgument
+TemplateDecl
 TemplateSpecializationType
 TemplateTemplateParmDecl
 TemplateTypeParmType
+TranslationUnitDecl
 TypeAliasDecl
 TypeAliasTemplateDecl
 TypedefDecl
 TypedefType
 TypeOfExprType
+TypeOfType
 TypeTraitExpr
 UnaryExprOrTypeTraitExpr
 UnaryTransformType
 UnresolvedLookupExpr
 UnresolvedMemberExpr
+UnresolvedUsingType
 UnresolvedUsingValueDecl
 UnusedAttr
 UsingDecl
 UsingShadowDecl
 VarTemplateDecl
+VarTemplateSpecializationDecl
+VectorType
 VisibilityAttr
 WarnUnusedResultAttr
 WeakRefAttr
-
-
-
 
 
 # Done
@@ -118,6 +140,7 @@ CXXDestructorDecl
 CXXFunctionalCastExpr
 CXXMemberCallExpr
 CXXMethodDecl
+CXXNewExpr
 CXXOperatorCallExpr
 CXXRecordDecl
 CXXStdInitializerListExpr
@@ -164,5 +187,4 @@ WhileStmt
 
 
 # Ongoing
-
-
+CXXForRangeStmt

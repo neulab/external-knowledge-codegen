@@ -389,7 +389,7 @@ class DeclStmt(Node):
 
 
 class VarDecl(Node):
-    attrs = ("name", "type", "array", "storage_class", "init",)
+    attrs = ("name", "type", "array", "storage_class", "init", "implicit", "referenced")
 
 
 class TypeRef(Node):
@@ -407,14 +407,26 @@ class ExpressionStmt(Statement):
 class ExprWithCleanups(Node):
     attrs = ()
 
+
 class CXXConstructExpr(Node):
     attrs = ("type",)
+
 
 class MaterializeTemporaryExpr(Node):
     attrs = ()
 
+
 class CXXBindTemporaryExpr(Node):
     attrs = ()
+
+
+class CXXNewExpr(Node):
+    attrs = ()
+
+
+class CXXForRangeStmt(Node):
+    attrs = ()
+
 
 class ImplicitCastExpr(Node):
     attrs = ("name",)
