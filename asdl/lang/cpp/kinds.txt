@@ -94,7 +94,6 @@ TemplateTypeParmType
 TranslationUnitDecl
 TypeAliasDecl
 TypeAliasTemplateDecl
-TypedefDecl
 TypedefType
 TypeOfExprType
 TypeOfType
@@ -137,6 +136,7 @@ CXXConstructorDecl
 CXXConversionDecl
 CXXCtorInitializer
 CXXDestructorDecl
+CXXForRangeStmt
 CXXFunctionalCastExpr
 CXXMemberCallExpr
 CXXMethodDecl
@@ -179,6 +179,7 @@ SwitchStmt
 TemplateTypeParmDecl
 TextComment
 TranslationUnit
+TypedefDecl
 TypeRef
 UnaryOperator
 UsingDirectiveDecl
@@ -187,4 +188,3 @@ WhileStmt
 
 
 # Ongoing
-CXXForRangeStmt

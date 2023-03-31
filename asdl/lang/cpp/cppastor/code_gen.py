@@ -444,6 +444,10 @@ class SourceGenerator(ExplicitNodeVisitor):
             self.write(";")
         self.newline(extra=1)
 
+    def visit_TypedefDecl(self, node: tree.TypedefDecl):
+        self.write("typedef ", node.type, " ", node.name, ";")
+        self.newline(extra=1)
+
     def visit_TypeRef(self, node: tree.TypeRef):
         self.write(node.name)
 

@@ -392,6 +392,10 @@ class VarDecl(Node):
     attrs = ("name", "type", "array", "storage_class", "init", "implicit", "referenced")
 
 
+class TypedefDecl(Node):
+    attrs = ("name", "type",)
+
+
 class TypeRef(Node):
     attrs = ("name",)
 

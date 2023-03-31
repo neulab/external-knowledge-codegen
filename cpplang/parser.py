@@ -589,6 +589,14 @@ class Parser(object):
         return tree.FunctionDecl(name=name, return_type=return_type, subnodes=subnodes)
 
     @parse_debug
+    def parse_TypedefDecl(self, node) -> tree.TypedefDecl:
+        assert node['kind'] == "TypedefDecl"
+        name = node['name']
+        type = node['type']['qualType']
+        # subnodes = self.parse_subnodes(node)
+        return tree.TypedefDecl(name=name, type=type)
+
+    @parse_debug
     def parse_ParmVarDecl(self, node) -> tree.ParmVarDecl:
         assert node['kind'] == "ParmVarDecl"
         name = node['name'] if 'name' in node else ''
